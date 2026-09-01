@@ -31,6 +31,8 @@ def connect(database=None):
 
 def apply_schema(reset=False):
     raw = (ROOT / "schema.sql").read_text(encoding="utf-8")
+    if Config.DB_NAME != "traffic_hub":
+        raw = raw.replace("traffic_hub", Config.DB_NAME)  # schema.sql hardcodes the default name
     sql = "\n".join(l for l in raw.splitlines() if not l.strip().startswith("--"))
     conn = connect()
     with conn.cursor() as cur:
