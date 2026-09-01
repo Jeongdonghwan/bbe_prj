@@ -4,3 +4,4 @@ python-dotenv>=1.0
 bleach>=6.0
 openpyxl>=3.1
 pillow>=10
+waitress>=3.0
