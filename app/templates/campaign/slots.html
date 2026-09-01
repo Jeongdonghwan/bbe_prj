@@ -1,0 +1,23 @@
+{% extends "layout/base.html" %}
+{% block title %}쇼핑 작업량 권장 체크{% endblock %}
+{% block content %}
+<div class="ph"><div><h1>쇼핑 작업량 권장 체크</h1><p>추적 슬롯에 상품 키워드를 등록하면 월 검색량 기준 권장 일 작업량을 무료로 계산해줍니다.</p></div>
+  <div class="act"><a class="btn pri" href="/campaign/store/new">+ 새 쇼핑 캠페인</a></div></div>
+{% include "campaign/_store_hub.html" %}
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var skw = document.getElementById('skw'), svol = document.getElementById('svol'), t;
+  if (!skw) return;
+  skw.addEventListener('input', function () {
+    clearTimeout(t); var v = skw.value.trim(); if (!v) { svol.value = ''; return; }
+    t = setTimeout(function () {
+      fetch('/api/campaign/volume?kw=' + encodeURIComponent(v)).then(function (r) { return r.json(); }).then(function (j) {
+        if (j.ok) svol.value = j.total.toLocaleString() + '  → 권장 ' + j.reco + '건/일';
+      });
+    }, 300);
+  });
+})();
+</script>
+{% endblock %}

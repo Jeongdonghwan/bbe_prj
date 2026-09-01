@@ -1,0 +1,8 @@
+<div class="dh"><div class="avatar">{{ u.nickname[:2] }}</div><div><h3>{{ u.nickname }}</h3><div style="font-size:12px;color:var(--text-2)">{{ u.phone or '-' }} · {{ u.created_at | fmt_date('%Y.%m.%d') }} 가입 · {{ '정상' if u.status == 'active' else '정지' }}</div></div><button class="icon-btn x" id="dclose" type="button"><i data-lucide="x" class="i"></i></button></div>
+<div class="db">
+  <div class="dsec"><div class="dgrid"><div><span>누적 결제</span><b class="num">{{ paid_total | won }}</b></div><div><span>등급</span><b>{{ {'biz': '사업자', 'agency': '대행사', 'master': '총판'}.get(u.grade, u.grade) }}</b></div><div><span>사업자</span><b>{{ u.biz_name or '-' }}</b></div><div><span>사업자번호</span><b>{{ u.biz_no or '-' }}</b></div></div></div>
+  <div class="dsec"><h6>캠페인 {{ campaigns | length }}</h6>
+    {% for c in campaigns %}<div class="kv"><span><a class="lnk" href="/admin/orders?q={{ c.order_no }}">{{ c.order_no }}</a> · {{ channel_label[c.channel] }} · {{ c.biz_name }}</span><b><span class="st {{ status_class[c.status] }}">{{ status_label[c.status] }}</span> {{ c.paid_amount | fmt_num }}</b></div>{% else %}<div class="empty" style="padding:12px 0">캠페인 없음</div>{% endfor %}</div>
+  <div class="dsec"><h6>작성 글 {{ posts | length }}</h6>
+    {% for p in posts %}<div class="kv"><span>[{{ p.board_name }}] {{ p.title }}{% if p.is_blind %} <span class="tag t-must">블라인드</span>{% endif %}</span><b class="mut">{{ p.created_at | fmt_date }}</b></div>{% else %}<div class="empty" style="padding:12px 0">작성 글 없음</div>{% endfor %}</div>
+</div>

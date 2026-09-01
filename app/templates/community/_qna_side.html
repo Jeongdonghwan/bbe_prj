@@ -1,0 +1,8 @@
+<div class="side">
+  <div class="card"><div class="ch"><h3>답변 없는 질문</h3></div><div class="cb"><ol class="hotlist">
+    {% for u in unanswered %}<li><a href="/community/qna/{{ u.id }}">{{ u.title }}</a><span class="cnt">{{ u.views }}</span></li>{% else %}<li><span class="thin">모든 질문에 답변이 달렸어요</span></li>{% endfor %}
+  </ol></div></div>
+  <div class="card"><div class="ch"><h3>이런 질문은 공지에 있어요</h3></div><div class="cb"><ul class="list" style="font-size:13px">
+    {% for n in notices %}<li><a href="/notice/{{ n.id }}">{{ n.title }}</a></li>{% endfor %}
+  </ul></div></div>
+</div>

@@ -1,0 +1,30 @@
+{% extends "layout/base.html" %}
+{% from "macros/pagination.html" import pager %}
+{% block title %}대행의뢰 · 제안{% endblock %}
+{% block content %}
+<div class="ph"><div><h1>대행의뢰 · 제안</h1><p>의뢰 상태 변경, 제안 현황, 대행사 인증 승인.</p></div><div class="act"><form method="post" action="/admin/agency/close-stale"><button class="btn sec" type="submit">30일 경과 자동 마감</button></form></div></div>
+<div class="card"><div class="cb" style="padding-top:6px">
+  <div class="tabs">{% for key, label in [('requests','의뢰'),('proposals','제안'),('applies','인증 신청')] %}<a href="/admin/agency?tab={{ key }}"><button type="button"{% if tab == key %} class="on"{% endif %}>{{ label }}{% if key == 'applies' and pending_applies %}<em>{{ pending_applies }}</em>{% endif %}</button></a>{% endfor %}</div>
+  <div style="overflow-x:auto;margin:0 -18px">
+  {% if tab == 'requests' %}
+  <table><thead><tr><th>상태</th><th>채널</th><th>업종 · 지역</th><th>닉네임</th><th>회원</th><th>연락처</th><th style="text-align:right">제안</th><th>등록</th><th></th></tr></thead><tbody>
+    {% for r in rows %}<tr><td><span class="pill {{ ag_pill[r.status] }}">{{ ag_status[r.status] }}</span></td><td>{{ ag_channel[r.channel] }}</td><td><a class="lnk" href="/community/agency/{{ r.id }}" target="_blank">{{ r.industry }}{% if r.region %} · {{ r.region }}{% endif %}</a></td><td>{{ r.anon_nick }}</td><td><a class="lnk" href="/admin/users?open={{ r.user_id }}">#{{ r.user_id }}</a></td><td>{{ r.contact or '-' }}</td><td class="num" style="text-align:right">{{ r.proposal_cnt }}</td><td class="num mut">{{ r.created_at | fmt_date }}</td>
+      <td><div class="rowact" style="opacity:1">{% if r.status != 'closed' %}<form method="post" action="/admin/agency/requests/{{ r.id }}/status"><input type="hidden" name="status" value="closed"><button type="submit">마감</button></form>{% else %}<form method="post" action="/admin/agency/requests/{{ r.id }}/status"><input type="hidden" name="status" value="open"><button type="submit">재오픈</button></form>{% endif %}</div></td></tr>
+    {% else %}<tr><td colspan="9"><div class="empty">의뢰가 없습니다.</div></td></tr>{% endfor %}
+  </tbody></table>
+  {% elif tab == 'proposals' %}
+  <table><thead><tr><th>의뢰</th><th>제안자</th><th>계획</th><th>기간</th><th>상태</th><th>일시</th></tr></thead><tbody>
+    {% for p in rows %}<tr><td><a class="lnk" href="/community/agency/{{ p.request_id }}" target="_blank">{{ p.industry }}{% if p.region %} · {{ p.region }}{% endif %}</a> <span class="thin">({{ ag_status[p.req_status] }})</span></td><td>{{ p.proposer_name }}</td><td style="white-space:normal;max-width:360px">{{ p.plan[:120] }}</td><td>{{ p.duration or '-' }}</td><td>{{ {'sent':'검토 중','accepted':'수락','rejected':'미선택'}[p.status] }}</td><td class="num mut">{{ p.created_at | fmt_date('%m.%d %H:%M') }}</td></tr>
+    {% else %}<tr><td colspan="6"><div class="empty">제안이 없습니다.</div></td></tr>{% endfor %}
+  </tbody></table>
+  {% else %}
+  <table><thead><tr><th>회원</th><th>상호</th><th>사업자번호</th><th>증빙</th><th>상태</th><th>신청일</th><th></th></tr></thead><tbody>
+    {% for a in rows %}<tr><td>{{ a.nickname }} <span class="mut">{{ a.phone or '' }}</span></td><td>{{ a.biz_name or '-' }}</td><td class="num">{{ a.biz_no }}</td><td>{% if a.biz_cert_url %}<a class="lnk" href="{{ a.biz_cert_url }}" target="_blank">보기</a>{% else %}-{% endif %}</td><td>{{ {'pending':'대기','approved':'승인','rejected':'반려'}[a.status] }}</td><td class="num mut">{{ a.created_at | fmt_date }}</td>
+      <td><div class="rowact" style="opacity:1">{% if a.status == 'pending' %}<form method="post" action="/admin/agency/applies/{{ a.id }}/review"><input type="hidden" name="approve" value="1"><button type="submit" style="color:var(--success)">승인</button></form><form method="post" action="/admin/agency/applies/{{ a.id }}/review"><input type="hidden" name="approve" value="0"><button type="submit" style="color:var(--danger)">반려</button></form>{% endif %}</div></td></tr>
+    {% else %}<tr><td colspan="7"><div class="empty">인증 신청이 없습니다.</div></td></tr>{% endfor %}
+  </tbody></table>
+  {% endif %}
+  </div>
+  {{ pager(page, total_pages, 'admin.agency', tab=tab) }}
+</div></div>
+{% endblock %}

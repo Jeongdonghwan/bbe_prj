@@ -1,0 +1,20 @@
+{% extends "layout/base.html" %}
+{% from "macros/pagination.html" import pager %}
+{% block title %}신고 · 블라인드{% endblock %}
+{% block content %}
+<div class="ph"><div><h1>신고 · 블라인드</h1><p>신고 3회 이상은 자동 블라인드됩니다. 작성자는 3회 이상 누적 건에서만 표시됩니다.</p></div></div>
+<div class="card"><div class="cb" style="padding-top:6px">
+  <div class="tabs"><a href="/admin/reports"><button type="button"{% if not tt %} class="on"{% endif %}>전체</button></a><a href="/admin/reports?type=post"><button type="button"{% if tt == 'post' %} class="on"{% endif %}>글</button></a><a href="/admin/reports?type=comment"><button type="button"{% if tt == 'comment' %} class="on"{% endif %}>댓글</button></a></div>
+  <div style="overflow-x:auto;margin:0 -18px"><table><thead><tr><th>유형</th><th>게시판</th><th>내용</th><th style="text-align:right">누적</th><th>사유</th><th>작성자</th><th>상태</th><th></th></tr></thead><tbody>
+    {% for r in rows %}
+    <tr{% if r.cnt >= 3 and not r.is_blind %} style="background:var(--danger-soft)"{% endif %}><td>{{ '글' if r.target_type == 'post' else '댓글' }}</td><td>{{ r.board_name }}</td>
+      <td style="white-space:normal">{% if r.target_type == 'post' %}<a class="lnk" href="/community/anon/{{ r.target_id }}" target="_blank">{{ r.text }}</a>{% else %}{{ r.text }}{% endif %}</td>
+      <td class="num" style="text-align:right"><b{% if r.cnt >= 3 %} style="color:var(--danger)"{% endif %}>{{ r.cnt }}</b></td><td class="mut" style="white-space:normal">{{ r.reasons or '-' }}</td>
+      <td>{% if r.cnt >= 3 %}<a class="lnk" href="/admin/users?open={{ r.user_id }}">user #{{ r.user_id }}</a>{% else %}<span class="mut">비공개</span>{% endif %}</td>
+      <td>{% if r.is_blind %}<span class="st s-rej">블라인드</span>{% else %}<span class="st s-run">노출</span>{% endif %}</td>
+      <td><div class="rowact" style="opacity:1"><form method="post" action="/admin/reports/{{ r.target_type }}/{{ r.target_id }}/blind"><input type="hidden" name="blind" value="{{ 0 if r.is_blind else 1 }}"><button type="submit"{% if not r.is_blind %} style="color:var(--danger)"{% endif %}>{% if r.is_blind %}해제{% else %}블라인드{% endif %}</button></form></div></td></tr>
+    {% else %}<tr><td colspan="8"><div class="empty">신고된 글·댓글이 없습니다.</div></td></tr>{% endfor %}
+  </tbody></table></div>
+  {{ pager(page, total_pages, 'admin.reports', type=tt) }}
+</div></div>
+{% endblock %}

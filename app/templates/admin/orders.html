@@ -1,0 +1,53 @@
+{% extends "layout/base.html" %}
+{% from "macros/pagination.html" import pager %}
+{% block title %}주문 관리{% endblock %}
+{% block content %}
+<div class="ph"><div><h1>주문 관리</h1><p>상태 변경과 순위 입력을 표에서 바로 합니다. 반려는 사유가 필수입니다.</p></div>
+  <div class="act"><a class="btn sec" href="/admin/orders/export?{{ request.query_string.decode() }}">엑셀 내보내기</a><button class="btn sec" type="button" data-modal="rankUploadModal">순위 일괄 업로드</button></div></div>
+<div class="card"><div class="cb" style="padding-top:6px">
+  <div class="tabs"><a href="/admin/orders"><button type="button"{% if not status %} class="on"{% endif %}>전체<em>{{ total_all }}</em></button></a>
+    {% for s in status_order %}<a href="/admin/orders?status={{ s }}{% if channel %}&channel={{ channel }}{% endif %}"><button type="button"{% if status == s %} class="on"{% endif %}>{{ status_label[s] }}<em>{{ counts.get(s, 0) }}</em></button></a>{% endfor %}</div>
+  <form class="tbar" method="get">{% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}
+    <select class="in" name="channel" onchange="this.form.submit()"><option value="">모든 채널</option>{% for k, v in channel_label.items() %}<option value="{{ k }}"{% if channel == k %} selected{% endif %}>{{ v }}</option>{% endfor %}</select>
+    <select class="in" name="media" onchange="this.form.submit()"><option value="">모든 매체</option>{% for m in medias %}<option value="{{ m.id }}"{% if media_id == m.id %} selected{% endif %}>{{ m.name }}</option>{% endfor %}</select>
+    <select class="in" name="period" onchange="this.form.submit()"><option value="">전체 기간</option><option value="today"{% if period == 'today' %} selected{% endif %}>오늘 접수</option><option value="week"{% if period == 'week' %} selected{% endif %}>이번 주</option><option value="month"{% if period == 'month' %} selected{% endif %}>이번 달</option></select>
+    <div class="search"><i data-lucide="search" class="i"></i><input class="in" name="q" value="{{ q or '' }}" placeholder="주문번호 · 회원 · 업체명"></div></form>
+  <form method="post" action="/admin/orders/bulk" id="bulkForm"><input type="hidden" name="back" value="{{ request.full_path }}">
+  <div class="bulk" id="bulkBar" style="display:none"><span class="chk on"><i></i></span><span id="bulkCount">0</span>건 선택됨 <button class="btn pri sm" style="margin-left:auto" name="action" value="approve" type="submit">선택 승인</button><button class="btn sec sm" type="button" id="bulkReject">선택 반려</button></div>
+  <div style="overflow-x:auto;margin:0 -18px"><table><thead><tr><th><input type="checkbox" id="chkAll"></th><th>주문</th><th>회원</th><th>채널</th><th>업체 · 키워드</th><th>매체</th><th>기간 · 수량</th><th>링크</th><th>상태</th><th>순위</th><th></th></tr></thead><tbody>
+    {% for r in rows %}
+    <tr{% if r.warn.block %} style="background:var(--danger-soft)"{% endif %}>
+      <td>{% if r.status in ('review','approved') %}<input type="checkbox" name="ids" value="{{ r.id }}" class="rowchk">{% endif %}</td>
+      <td class="ord">{{ r.order_no }}<br><span class="mut" style="font-size:11px">{{ pay_method_label[r.pay_method] }} {{ r.paid_amount | fmt_num }}</span></td>
+      <td>{{ r.nickname }}</td>
+      <td><span class="pill p-{{ r.channel }}">{{ channel_label[r.channel] }}</span></td>
+      <td><b>{{ r.biz_name }}</b><br>{% if r.warn.block %}<span style="color:var(--danger);font-size:12px">⚠ 금지 문구 "{{ r.warn.block | join(', ') }}" 감지</span>{% elif r.warn.warn %}<span style="color:var(--warn);font-size:12px">주의 "{{ r.warn.warn | join(', ') }}"</span> <span class="mut">{{ r.main_keyword }}</span>{% else %}<span class="mut">{{ r.main_keyword }}</span>{% endif %}</td>
+      <td>{{ r.media_name }}</td>
+      <td class="num">{{ r.start_date | fmt_date }}~{{ r.end_date | fmt_date }}<br><span class="mut">{{ r.daily_qty }}/일{% if r.status == 'running' %} · {{ r.day_idx }}일차{% endif %}</span></td>
+      <td><a class="lnk" href="{{ r.target_url }}" target="_blank" rel="noopener">확인</a></td>
+      <td>{% if r.status in ('review','approved') %}<form method="post" action="/admin/orders/{{ r.id }}/action" class="statusForm" data-id="{{ r.id }}" data-order="{{ r.order_no }}"><input type="hidden" name="action" value="status"><input type="hidden" name="back" value="{{ request.full_path }}"><select class="sel-in" name="status"><option value="{{ r.status }}">{{ status_label[r.status] }}</option>{% if r.status == 'review' %}<option value="approved">승인</option>{% else %}<option value="running">구동 시작</option>{% endif %}<option value="rejected">반려</option></select></form>{% else %}<span class="st {{ status_class[r.status] }}">{{ status_label[r.status] }}</span>{% endif %}</td>
+      <td>{% if r.status == 'running' %}<form method="post" action="/admin/orders/{{ r.id }}/rank" style="display:flex;gap:4px;align-items:center"><input type="hidden" name="back" value="{{ request.full_path }}"><span class="num mut">{{ r.rank_start or '-' }} →</span><input class="rank-in" name="rank" value="{{ r.today.rank if r.today else (r.rank_now or '') }}" placeholder="오늘"><input class="rank-in" name="done_qty" value="{{ r.today.done_qty if r.today else r.daily_qty }}" title="오늘 작업량" style="width:56px"><button class="btn sec sm" type="submit">저장</button></form>{% elif r.rank_start %}<span class="rank num">{{ r.rank_start }} → <b>{{ r.rank_now }}</b></span>{% else %}<span class="mut">-</span>{% endif %}</td>
+      <td><div class="rowact" style="opacity:1">
+        {% if r.status == 'review' %}<button type="button" style="color:var(--success)" data-act="approve" data-id="{{ r.id }}">승인</button><button type="button" style="color:var(--danger)" data-reject="{{ r.id }}" data-order="{{ r.order_no }}">{% if r.warn.block %}반려 사유 입력{% else %}반려{% endif %}</button>
+        {% elif r.status == 'approved' %}<button type="button" data-act="start" data-id="{{ r.id }}">구동 시작</button><button type="button" style="color:var(--danger)" data-reject="{{ r.id }}" data-order="{{ r.order_no }}">반려</button>
+        {% elif r.status == 'running' %}<button type="button" data-act="done" data-id="{{ r.id }}">완료</button><button type="button" style="color:var(--warn)" data-act="stop" data-id="{{ r.id }}" data-confirm="중단하면 잔여일분이 환불됩니다. 중단할까요?">중단</button>
+        {% elif r.status == 'pay_wait' and r.pay_method == 'bank' %}<button type="button" style="color:var(--success)" data-act="paid" data-id="{{ r.id }}">입금 확인</button>{% endif %}
+        <button type="button" data-memo="{{ r.id }}" data-order="{{ r.order_no }}" data-text="{{ r.admin_memo or '' }}">메모</button>
+      </div></td>
+    </tr>
+    {% else %}<tr><td colspan="11"><div class="empty">조건에 맞는 주문이 없습니다.</div></td></tr>{% endfor %}
+  </tbody></table></div></form>
+  {{ pager(page, total_pages, 'admin.orders', status=status, channel=channel, media=media_id, period=period, q=q) }}
+</div></div>
+{% include "admin/_reject_modal.html" %}
+<div class="modal" id="memoModal"><form class="modal-box" method="post" id="memoForm" action=""><input type="hidden" name="action" value="memo"><input type="hidden" name="back" value="{{ request.full_path }}">
+  <h3>운영팀 메모 <span class="thin" id="memoOrder"></span></h3><p class="thin" style="margin:4px 0 12px">회원의 캠페인 상세 드로어에 표시됩니다.</p>
+  <div class="f"><textarea class="in" name="memo" id="memoText" rows="4"></textarea></div>
+  <div style="display:flex;gap:8px"><button class="btn sec" type="button" data-close style="flex:1">취소</button><button class="btn pri" type="submit" style="flex:1">저장</button></div></form></div>
+<div class="modal" id="rankUploadModal"><form class="modal-box" method="post" action="/admin/orders/rank-upload" enctype="multipart/form-data">
+  <h3>순위 일괄 업로드</h3><p class="thin" style="margin:4px 0 12px">CSV 컬럼: <code>order_no,date,rank,done_qty</code> (헤더 행 선택). 예) N581520800,2026-08-30,12,200</p>
+  <div class="f"><input class="in" type="file" name="file" accept=".csv,text/csv" required style="padding-top:8px"></div>
+  <div style="display:flex;gap:8px"><button class="btn sec" type="button" data-close style="flex:1">취소</button><button class="btn pri" type="submit" style="flex:1">업로드</button></div></form></div>
+<form method="post" id="actForm" action="" style="display:none"><input type="hidden" name="action" id="actName"><input type="hidden" name="back" value="{{ request.full_path }}"></form>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/admin.js') }}"></script>{% endblock %}

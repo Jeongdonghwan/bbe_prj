@@ -1,0 +1,61 @@
+{% extends "layout/base.html" %}
+{% from "macros/pagination.html" import pager %}
+{% block title %}질문답변{% endblock %}
+{% block content %}
+<div class="cgrid">
+  <div class="board-panel">
+    <div class="list-head"><h1>질문답변</h1>
+      {% if current_user %}<button class="btn pri" type="button" id="askBtn"><i data-lucide="pen-line" class="i i16"></i>질문하기</button>
+      {% else %}<a class="btn pri" href="/auth/login?next=/community/qna"><i data-lucide="pen-line" class="i i16"></i>질문하기</a>{% endif %}
+    </div>
+
+    {% if current_user %}
+    <form class="card" method="post" action="/community/qna/write" id="askForm" style="display:none;padding:14px;margin:8px 0 4px">
+      <div class="f"><input class="in" name="title" placeholder="질문 제목" maxlength="200" required></div>
+      <div class="f"><textarea class="in" name="body" rows="5" placeholder="상황, 시도한 것, 궁금한 점을 적어주세요. 업체명·전화번호는 자동으로 가려집니다." required></textarea></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><select class="in" name="channel_tag" style="width:auto;height:36px"><option value="">태그 없음</option>{% for k, v in tag_label.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select><span class="anonlbl" style="font-size:11.5px;color:var(--text-3);display:flex;gap:4px;align-items:center"><i data-lucide="lock" class="i i14"></i>이 질문에서 당신은 <b style="color:var(--text)">{{ nick }}</b></span><button class="btn sec sm" type="button" id="askCancel" style="margin-left:auto">취소</button><button class="btn pri sm" type="submit">질문 등록</button></div>
+    </form>
+    {% endif %}
+
+    <form class="cat-tabs" method="get" style="flex-wrap:nowrap;overflow-x:auto">
+      <input type="hidden" name="sort" value="{{ sort }}">{% if tag %}<input type="hidden" name="tag" value="{{ tag }}">{% endif %}
+      {% for key, label in [('new','최신'),('unanswered','답변 없는 질문'),('admin','운영팀 답변')] %}<a href="/community/qna?sort={{ key }}{% if tag %}&tag={{ tag }}{% endif %}{% if q %}&q={{ q | urlencode }}{% endif %}"{% if sort == key %} class="on"{% endif %}>{{ label }}</a>{% endfor %}
+      <span style="flex:none;width:1px;height:16px;background:var(--border);margin:0 4px"></span>
+      {% for k, v in tag_label.items() %}<a href="/community/qna?sort={{ sort }}{% if tag != k %}&tag={{ k }}{% endif %}{% if q %}&q={{ q | urlencode }}{% endif %}"{% if tag == k %} class="on"{% endif %}>{{ v }}</a>{% endfor %}
+      <input class="search-input" type="text" name="q" value="{{ q or '' }}" placeholder="이미 답변된 질문 찾기" style="flex:0 1 200px;min-width:120px;margin-left:auto;height:34px;border:1px solid var(--border);border-radius:8px;padding:0 12px;background:var(--surface);outline:none;font-size:13px">
+    </form>
+    {% if q %}<div class="thin" style="margin:6px 0 0">'{{ q }}' 검색 결과 <a class="lnk" href="/community/qna?sort={{ sort }}">검색닫기</a></div>{% endif %}
+
+    <div class="board-list">
+      {% for r in rows %}
+      <a class="board-list-item" href="/community/qna/{{ r.id }}">
+        <div class="board-list-col"><span class="category-list-label">{{ tag_label.get(r.channel_tag, '일반') }}</span></div>
+        <div class="board-list-content">
+          <div class="board-list-title"><strong>{{ r.title }}</strong>
+            {% if r.comment_cnt %}<span style="flex-shrink:0;font-size:12.5px;font-weight:600;color:var(--accent)">[{{ r.comment_cnt }}]</span>{% endif %}
+          </div>
+          <p class="board-list-desc">{{ r.preview }}</p>
+          <div class="board-list-meta">
+            <div class="board-list-stats-item"><span>{{ r.anon_nick }}</span></div>
+            <div class="board-list-stats-item"><span>{{ r.rel }}</span></div>
+            <div class="board-list-stats-item"><span>조회 {{ r.views | fmt_num }}</span></div>
+            <div class="board-list-stats-item"><i data-lucide="message-circle" class="i i14"></i><span class="num">{{ r.comment_cnt }}</span></div>
+          </div>
+        </div>
+        <div class="board-list-author"><span class="profile-thumb2"><i data-lucide="venetian-mask" class="i"></i></span><span>{{ r.anon_nick }}</span></div>
+        <div class="board-list-stats">
+          <div class="board-list-stats-item"><span>{{ r.rel }}</span></div>
+          <div class="board-list-stats-item"><span>조회 {{ r.views | fmt_num }}</span></div>
+          <div class="board-list-stats-item"><i data-lucide="message-circle" class="i"></i><span class="num">{{ r.comment_cnt }}</span></div>
+        </div>
+      </a>
+      {% else %}
+      <div style="grid-column:1/-1"><div class="empty">{% if sort == 'unanswered' %}답변 없는 질문이 없습니다.{% elif q %}'{{ q }}' 검색 결과가 없습니다.{% else %}질문이 없습니다.{% endif %}</div></div>
+      {% endfor %}
+    </div>
+    {{ pager(page, total_pages, 'community.qna', sort=sort, tag=tag, q=q) }}
+  </div>
+  {% include "community/_qna_side.html" %}
+</div>
+{% endblock %}
+{% block scripts %}<script>(function(){var b=document.getElementById('askBtn'),f=document.getElementById('askForm'),c=document.getElementById('askCancel');if(b&&f){b.addEventListener('click',function(){f.style.display=f.style.display==='none'?'block':'none';if(f.style.display==='block')f.querySelector('input').focus();});}if(c&&f)c.addEventListener('click',function(){f.style.display='none';});})();</script>{% endblock %}

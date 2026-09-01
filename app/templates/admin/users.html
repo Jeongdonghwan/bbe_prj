@@ -1,0 +1,21 @@
+{% extends "layout/base.html" %}
+{% from "macros/pagination.html" import pager %}
+{% block title %}회원 목록{% endblock %}
+{% block content %}
+<div class="ph"><div><h1>회원 목록</h1><p>행을 클릭하면 캠페인·글 이력이 열립니다.</p></div></div>
+<div class="card"><div class="cb" style="padding-top:6px">
+  <div class="tabs"><a href="/admin/users"><button type="button"{% if not status %} class="on"{% endif %}>전체<em>{{ counts.values() | sum }}</em></button></a><a href="/admin/users?status=active"><button type="button"{% if status == 'active' %} class="on"{% endif %}>정상<em>{{ counts.get('active', 0) }}</em></button></a><a href="/admin/users?status=suspended"><button type="button"{% if status == 'suspended' %} class="on"{% endif %}>정지<em>{{ counts.get('suspended', 0) }}</em></button></a></div>
+  <form class="tbar" method="get">{% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}<div class="search"><i data-lucide="search" class="i"></i><input class="in" name="q" value="{{ q or '' }}" placeholder="닉네임 · 전화 · 상호"></div></form>
+  <div style="overflow-x:auto;margin:0 -18px"><table><thead><tr><th>닉네임</th><th>연락처</th><th>가입일</th><th style="text-align:right">누적 결제</th><th style="text-align:right">캠페인</th><th>등급</th><th>상태</th><th></th></tr></thead><tbody>
+    {% for u in rows %}
+    <tr data-open="{{ u.id }}"{% if u.id == open_id %} class="sel"{% endif %}><td><b>{{ u.nickname }}</b>{% if u.role == 'admin' %} <span class="tag t-pin">관리자</span>{% endif %}{% if u.biz_name %}<br><span class="mut">{{ u.biz_name }}</span>{% endif %}</td><td class="num">{{ u.phone or '-' }}</td><td class="num mut">{{ u.created_at | fmt_date('%Y.%m.%d') }}</td>
+      <td class="num" style="text-align:right">{{ u.paid_total | won }}</td><td class="num" style="text-align:right">{{ u.campaign_cnt }}</td><td>{% if u.role != 'admin' %}<form method="post" action="/admin/users/{{ u.id }}/grade?q={{ q or '' }}"><select class="sel-in" name="grade" onchange="this.form.submit()">{% for k, v in grade_label.items() %}<option value="{{ k }}"{% if u.grade == k %} selected{% endif %}>{{ v }}</option>{% endfor %}</select></form>{% else %}—{% endif %}</td>
+      <td>{% if u.status == 'active' %}<span class="st s-run">정상</span>{% else %}<span class="st s-rej">정지</span>{% endif %}</td>
+      <td><div class="rowact" style="opacity:1">{% if u.role != 'admin' %}<form method="post" action="/admin/users/{{ u.id }}/status?q={{ q or '' }}" onsubmit="return confirm('상태를 변경할까요?')"><button type="submit"{% if u.status == 'active' %} style="color:var(--danger)"{% endif %}>{% if u.status == 'active' %}정지{% else %}정지 해제{% endif %}</button></form>{% endif %}</div></td></tr>
+    {% else %}<tr><td colspan="8"><div class="empty">회원이 없습니다.</div></td></tr>{% endfor %}
+  </tbody></table></div>
+  {{ pager(page, total_pages, 'admin.users', q=q, status=status) }}
+</div></div>
+<div class="drawer" id="drawer"><div class="dh"><h3>불러오는 중…</h3><button class="icon-btn x" id="dclose" type="button"><i data-lucide="x" class="i"></i></button></div><div class="db"></div></div>
+{% endblock %}
+{% block scripts %}<script>window.DRAWER_BASE = "/admin/users/"; window.OPEN_ID = {{ open_id or 'null' }};</script><script src="{{ url_for('static', filename='js/campaign_manage.js') }}"></script>{% endblock %}

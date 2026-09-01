@@ -1,0 +1,12 @@
+{% extends "layout/base.html" %}
+{% from "macros/pagination.html" import pager %}
+{% block title %}알림{% endblock %}
+{% block content %}
+{% set icon = {'comment': 'message-circle', 'answer': 'circle-help', 'proposal': 'handshake', 'campaign': 'map-pin', 'payment': 'credit-card', 'agency': 'handshake', 'notice': 'megaphone'} %}
+<div class="ph"><div><h1>알림</h1><p>내 글의 댓글·답변, 제안 도착, 캠페인 상태 변경을 모아 보여줍니다.</p></div></div>
+<div class="card"><div class="cb" style="padding-top:4px"><ul class="list">
+  {% for n in rows %}
+  <li style="{% if not n.is_read %}font-weight:600{% endif %}"><i data-lucide="{{ icon.get(n.type, 'bell') }}" class="i i16" style="color:var(--text-3)"></i><a href="{{ n.link or '#' }}">{{ n.title }}</a><span class="dt">{{ n.rel }}</span></li>
+  {% else %}<li><div class="empty" style="width:100%">알림이 없습니다.</div></li>{% endfor %}
+</ul>{{ pager(page, total_pages, 'notifications.notifications') }}</div></div>
+{% endblock %}

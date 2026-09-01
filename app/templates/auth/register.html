@@ -1,0 +1,46 @@
+{% extends "layout/base.html" %}
+{% block title %}회원가입{% endblock %}
+{% block content %}
+<div style="max-width:420px;margin:36px auto 0">
+  <div class="card" style="padding:30px 32px 26px">
+    <h1 style="font-size:20px;font-weight:700;text-align:center;margin-bottom:4px">회원가입</h1>
+    <p class="thin" style="text-align:center;margin-bottom:18px">이메일로 가입하거나, <a class="lnk" href="/auth/login{% if next_url %}?next={{ next_url | urlencode }}{% endif %}">카카오로 3초 만에</a> 시작할 수 있어요.</p>
+    <form method="post" action="/auth/register{% if next_url %}?next={{ next_url | urlencode }}{% endif %}" id="regForm">
+      <div class="f"><label>이메일</label><input class="in" type="email" name="email" value="{{ form.get('email', '') }}" placeholder="you@example.com" required></div>
+      <div class="row2">
+        <div class="f"><label>비밀번호 <small>8자 이상</small></label><input class="in" type="password" name="password" minlength="8" required></div>
+        <div class="f"><label>비밀번호 확인</label><input class="in" type="password" name="password2" minlength="8" required></div>
+      </div>
+      <div class="row2">
+        <div class="f"><label>닉네임</label><input class="in" name="nickname" value="{{ form.get('nickname', '') }}" maxlength="20" required></div>
+        <div class="f"><label>연락처 <small>알림톡 수신용</small></label><input class="in" name="phone" value="{{ form.get('phone', '') }}" placeholder="010-1234-5678" required></div>
+      </div>
+      <div class="f" style="margin:10px 0 8px">
+        <label class="chk" style="cursor:pointer" id="agreeAll"><input type="checkbox" hidden><i></i><b>전체 동의</b></label>
+        <div style="border-top:1px solid var(--border);margin:6px 0"></div>
+        <label class="chk" style="cursor:pointer"><input type="checkbox" name="agree_terms" value="1" hidden><i></i>(필수) <a class="lnk" href="/terms" target="_blank">이용약관</a> 동의</label>
+        <label class="chk" style="cursor:pointer"><input type="checkbox" name="agree_privacy" value="1" hidden><i></i>(필수) <a class="lnk" href="/privacy" target="_blank">개인정보 수집·이용</a> 동의</label>
+        <label class="chk" style="cursor:pointer"><input type="checkbox" name="agree_marketing" value="1" hidden><i></i>(선택) 이벤트 · 신규 매체 소식 받기</label>
+      </div>
+      <button class="btn pri lg" type="submit">동의하고 가입하기</button>
+    </form>
+    <p class="thin" style="text-align:center;margin-top:12px;font-size:12.5px">이미 계정이 있으신가요? <a class="lnk" href="/auth/login{% if next_url %}?next={{ next_url | urlencode }}{% endif %}">로그인</a></p>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var f = document.getElementById('regForm');
+  f.querySelectorAll('.chk').forEach(function (c) { c.addEventListener('click', function (e) { if (e.target.closest('a')) return; setTimeout(function () { c.classList.toggle('on', c.querySelector('input').checked); }, 0); }); });
+  document.getElementById('agreeAll').addEventListener('click', function () { setTimeout(function () {
+    var on = document.querySelector('#agreeAll input').checked;
+    f.querySelectorAll('.chk input[name]').forEach(function (i) { i.checked = on; i.closest('.chk').classList.toggle('on', on); });
+  }, 0); });
+  f.addEventListener('submit', function (e) {
+    var t = f.querySelector('input[name=agree_terms]').checked, p = f.querySelector('input[name=agree_privacy]').checked;
+    if (!t || !p) { e.preventDefault(); alert('이용약관과 개인정보 수집·이용에 동의해주세요.'); }
+  });
+})();
+</script>
+{% endblock %}

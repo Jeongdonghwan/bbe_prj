@@ -1,0 +1,8 @@
+{# Mobile (<768) bottom tab bar: 홈 / 캠페인 / 커뮤니티 / 마이 / 메뉴 #}
+<nav class="bottom-tab">
+  <a href="/"{% if request.path == '/' %} class="on"{% endif %}><i data-lucide="house" class="i"></i>홈</a>
+  <a href="/campaign/place/new"{% if request.path.startswith('/campaign') %} class="on"{% endif %}><i data-lucide="map-pin" class="i"></i>캠페인</a>
+  <a href="/community/anon"{% if request.path.startswith('/community') %} class="on"{% endif %}><i data-lucide="venetian-mask" class="i"></i>커뮤니티</a>
+  <a href="/my"{% if request.path.startswith('/my') %} class="on"{% endif %}><i data-lucide="user" class="i"></i>마이</a>
+  <button type="button" data-side-toggle><i data-lucide="menu" class="i"></i>메뉴</button>
+</nav>

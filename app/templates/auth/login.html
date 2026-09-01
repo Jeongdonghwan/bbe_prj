@@ -1,0 +1,40 @@
+{% extends "layout/base.html" %}
+{% block title %}로그인 · 회원가입{% endblock %}
+{% block content %}
+<div style="max-width:420px;margin:48px auto 0">
+  <div class="card" style="padding:36px 32px 28px;text-align:center">
+    <div class="logo" style="justify-content:center;color:var(--text);padding-bottom:6px"><b style="width:28px;height:28px;font-size:13px">{{ APP_NAME[0] }}</b><span style="font-size:20px;font-weight:800;letter-spacing:-.02em">{{ APP_NAME }}</span></div>
+    <p class="thin" style="margin-bottom:22px">플레이스 · 쇼핑스토어 · 쿠팡 유입 캠페인을<br>직접 만들고 관리하는 셀프서브 광고 플랫폼</p>
+
+    <a class="kakao-btn" href="{{ kakao_url }}" style="height:48px;font-size:15px;margin-bottom:10px"><svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#191600"><path d="M12 3C6.5 3 2 6.6 2 11c0 2.8 1.8 5.2 4.6 6.6L5.5 21l4.6-2.7c.6.1 1.2.1 1.9.1 5.5 0 10-3.6 10-8S17.5 3 12 3z"/></svg>카카오로 3초 만에 시작하기</a>
+    <p class="thin" style="font-size:11.5px">카카오는 가입과 로그인이 한 번에 됩니다.<br>시작하면 <a class="lnk" href="/terms">이용약관</a>과 <a class="lnk" href="/privacy">개인정보처리방침</a>에 동의한 것으로 봅니다.</p>
+
+    <div style="display:flex;align-items:center;gap:10px;margin:18px 0 14px"><span style="flex:1;height:1px;background:var(--border)"></span><span class="thin" style="font-size:11.5px">또는 이메일로</span><span style="flex:1;height:1px;background:var(--border)"></span></div>
+    <form method="post" action="/auth/login{% if next_url %}?next={{ next_url | urlencode }}{% endif %}" style="text-align:left">
+      <div class="f"><input class="in" type="email" name="email" placeholder="이메일" required autocomplete="email"></div>
+      <div class="f"><input class="in" type="password" name="password" placeholder="비밀번호" required autocomplete="current-password"></div>
+      <button class="btn pri lg" type="submit">이메일로 로그인</button>
+    </form>
+    <p class="thin" style="font-size:12.5px;margin-top:12px">아직 계정이 없으신가요? <a class="lnk" href="/auth/register{% if next_url %}?next={{ next_url | urlencode }}{% endif %}"><b>이메일로 회원가입</b></a></p>
+
+    {% if no_key and not dev_mode %}
+    <p class="thin" style="font-size:11.5px;margin-top:10px;color:var(--warn)">카카오 로그인 키가 아직 설정되지 않았습니다 (.env KAKAO_REST_KEY).</p>
+    {% endif %}
+    {% if dev_mode %}
+    <div style="border-top:1px solid var(--border);margin:20px 0 14px"></div>
+    <div class="thin" style="font-size:12px;margin-bottom:8px">개발용 로그인 <span style="color:var(--warn)">(DEV_LOGIN=1 · DEBUG 전용)</span></div>
+    <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap">
+      <a class="btn sec sm" href="/auth/dev-login?as=user{% if next_url %}&next={{ next_url | urlencode }}{% endif %}">일반회원</a>
+      <a class="btn sec sm" href="/auth/dev-login?as=admin">관리자</a>
+      <a class="btn sec sm" href="/auth/dev-login?as=new">신규회원(가입 모달)</a>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="card" style="margin-top:12px"><div class="cb" style="padding-top:14px"><ol class="steps">
+    <li><div><b>카카오로 가입</b><span>닉네임 · 연락처만 입력하면 끝</span></div></li>
+    <li><div><b>캠페인 생성</b><span>매체사 · 기간 · 수량 설정, 키워드는 AI 자동 세팅</span></div></li>
+    <li><div><b>카드 · 계좌이체 결제</b><span>선충전 없이 주문 시 건별 결제</span></div></li>
+  </ol></div></div>
+</div>
+{% endblock %}

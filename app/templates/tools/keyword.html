@@ -1,0 +1,20 @@
+{% extends "layout/base.html" %}
+{% block title %}키워드 조회{% endblock %}
+{% block content %}
+<div class="ph"><div><h1>키워드 조회</h1><p>키워드 최대 5개의 월간 검색량(PC · 모바일)과 경쟁도를 조회합니다.</p></div>{% if rows %}<div class="act"><a class="btn sec" href="/tools/keyword?q={{ keywords | urlencode }}&sort={{ sort }}&csv=1">CSV 다운로드</a></div>{% endif %}</div>
+{% include "tools/_quota.html" %}
+<div class="card" style="margin-bottom:16px"><div class="cb" style="padding-top:16px">
+  <form method="post" action="/tools/keyword" style="display:flex;gap:8px;align-items:end;flex-wrap:wrap">
+    <div class="f" style="flex:1;min-width:260px;margin:0"><label>키워드 <small>쉼표로 구분, 최대 5개</small></label><input class="in" name="q" value="{{ keywords }}" placeholder="예) 일산 갈비, 부평 피부과, 송도 스터디카페" required></div>
+    <button class="btn pri" type="submit">조회</button>
+  </form>
+</div></div>
+{% if rows %}
+<div class="card"><div class="ch"><h3>결과 <span class="thin">{{ rows | length }}개{% if source == 'cache' %} · 캐시{% elif source == 'dummy' %} · 예시 데이터{% endif %}</span></h3>
+  <div class="txtab" style="margin:0 0 0 auto">{% for key, label in [('total','합계순'),('mo','모바일순'),('pc','PC순')] %}<a href="/tools/keyword?q={{ keywords | urlencode }}&sort={{ key }}"><button type="button"{% if sort == key %} class="on"{% endif %}>{{ label }}</button></a>{% endfor %}</div></div>
+  <div class="cb"><div style="margin:0 -18px;overflow-x:auto"><table><thead><tr><th>키워드</th><th style="text-align:right">PC 검색량</th><th style="text-align:right">모바일 검색량</th><th style="text-align:right">합계</th><th>경쟁도</th><th style="text-align:right">일 검색량</th><th></th></tr></thead><tbody>
+    {% for r in rows %}<tr><td><b>{{ r.keyword }}</b></td><td class="num" style="text-align:right">{{ r.pc | fmt_num }}</td><td class="num" style="text-align:right">{{ r.mo | fmt_num }}</td><td class="num" style="text-align:right"><b>{{ r.total | fmt_num }}</b></td><td>{% if r.comp %}<span class="pill {{ 'p-hot' if r.comp == '높음' else ('p-open' if r.comp == '중간' else 'p-solved') }}">{{ r.comp }}</span>{% else %}<span class="mut">-</span>{% endif %}</td><td class="num" style="text-align:right">{{ (r.total / 30) | round | int | fmt_num }}</td><td><div class="rowact" style="opacity:1"><a href="/tools/related?seed={{ r.keyword | urlencode }}"><button type="button">연관키워드</button></a></div></td></tr>{% endfor %}
+  </tbody></table></div>
+  <p class="thin" style="margin-top:10px">검색량은 네이버 검색광고 기준 최근 한 달. 10 미만은 0으로 표시됩니다.</p></div></div>
+{% endif %}
+{% endblock %}

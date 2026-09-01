@@ -1,0 +1,43 @@
+{% extends "layout/base.html" %}
+{% from "macros/pagination.html" import pager %}
+{% block title %}마케팅 정보{% endblock %}
+{% block content %}
+<div class="cgrid">
+  <div class="board-panel">
+    <div class="list-head"><h1>마케팅 정보</h1></div>
+    <form class="cat-tabs" method="get" style="flex-wrap:nowrap;overflow-x:auto">
+      {% if cat %}<input type="hidden" name="cat" value="{{ cat }}">{% endif %}
+      <a href="/community/info{% if q %}?q={{ q | urlencode }}{% endif %}"{% if not cat %} class="on"{% endif %}>전체</a>
+      {% for key, label in categories.items() %}<a href="/community/info?cat={{ key }}{% if q %}&q={{ q | urlencode }}{% endif %}"{% if cat == key %} class="on"{% endif %}>{{ label }}</a>{% endfor %}
+      <input class="search-input" type="text" name="q" value="{{ q or '' }}" placeholder="검색어 입력" style="flex:0 1 200px;min-width:120px;margin-left:auto;height:34px;border:1px solid var(--border);border-radius:8px;padding:0 12px;background:var(--surface);outline:none;font-size:13px">
+    </form>
+    {% if q %}<div class="thin" style="margin:6px 0 0">'{{ q }}' 검색 결과 <a class="lnk" href="/community/info{% if cat %}?cat={{ cat }}{% endif %}">검색닫기</a></div>{% endif %}
+
+    <div class="board-list">
+      {% for it in items %}
+      <a class="board-list-item{% if it.is_pinned %} is-notice{% endif %}" href="/community/info/{{ it.id }}">
+        <div class="board-list-col"><span class="category-list-label">{{ categories.get(it.category, it.category) }}</span></div>
+        <div class="board-list-content">
+          <div class="board-list-title"><strong>{{ it.title }}</strong>{% if it.is_pinned %}<span class="board-list-hot" style="background:var(--bg);color:var(--text-2)">고정</span>{% endif %}</div>
+          <p class="board-list-desc">{{ it.preview }}</p>
+          <div class="board-list-meta">
+            <div class="board-list-stats-item"><span>운영팀</span></div>
+            <div class="board-list-stats-item"><span class="num">{{ it.published_at | fmt_date('%Y.%m.%d') }}</span></div>
+            <div class="board-list-stats-item"><span>조회 {{ it.views | fmt_num }}</span></div>
+          </div>
+        </div>
+        <div class="board-list-author"><span>운영팀</span></div>
+        <div class="board-list-stats">
+          <div class="board-list-stats-item"><span class="num">{{ it.published_at | fmt_date('%Y.%m.%d') }}</span></div>
+          <div class="board-list-stats-item"><span>조회 {{ it.views | fmt_num }}</span></div>
+        </div>
+      </a>
+      {% else %}
+      <div style="grid-column:1/-1"><div class="empty">{% if q %}'{{ q }}' 검색 결과가 없습니다.{% else %}등록된 글이 없습니다.{% endif %}</div></div>
+      {% endfor %}
+    </div>
+    {{ pager(page, total_pages, 'community.info_index', cat=cat, q=q) }}
+  </div>
+  {% include "community/_series_side.html" %}
+</div>
+{% endblock %}

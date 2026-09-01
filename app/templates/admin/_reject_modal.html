@@ -1,0 +1,11 @@
+{# Reject-reason modal (required). admin.js fills campaign id / bulk ids. #}
+<div class="modal" id="rejectModal">
+  <form class="modal-box" method="post" id="rejectForm" action="">
+    <input type="hidden" name="action" value="reject"><input type="hidden" name="back" id="rejectBack" value="">
+    <div id="rejectIds"></div>
+    <h3>반려 사유 <span class="thin" id="rejectOrder"></span></h3>
+    <p class="thin" style="margin:4px 0 12px">반려하면 결제 금액이 전액 환불됩니다. 사유는 회원에게 표시됩니다.</p>
+    <div class="f"><textarea class="in" name="reason" rows="3" placeholder="예) 링크가 모바일 주소가 아님" required></textarea></div>
+    <div style="display:flex;gap:8px"><button class="btn sec" type="button" data-close style="flex:1">취소</button><button class="btn pri" type="submit" style="flex:1;background:var(--danger)">반려 · 환불</button></div>
+  </form>
+</div>

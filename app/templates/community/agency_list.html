@@ -1,0 +1,66 @@
+{% extends "layout/base.html" %}
+{% from "macros/pagination.html" import pager %}
+{% block title %}대행의뢰{% endblock %}
+{% block content %}
+<div class="cgrid">
+  <div class="board-panel">
+    <div class="list-head"><h1>대행의뢰</h1>
+      {% if current_user %}<button class="btn pri" type="button" id="askBtn"><i data-lucide="pen-line" class="i i16"></i>의뢰하기</button>
+      {% else %}<a class="btn pri" href="/auth/login?next=/community/agency"><i data-lucide="pen-line" class="i i16"></i>의뢰하기</a>{% endif %}
+    </div>
+
+    {% if current_user %}
+    <form class="card" method="post" action="/community/agency/new" id="askForm" style="display:none;margin:8px 0 4px"><div class="ch"><h3>의뢰 올리기</h3><span class="thin">무료 · 연락처는 제안을 수락한 곳에만 공개됩니다</span></div><div class="cb"><div class="agform">
+      <div class="f"><label>채널</label><select class="in" name="channel">{% for k, v in ag_channel.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></div>
+      <div class="f"><label>업종</label><input class="in" name="industry" placeholder="예) 피부과" required></div>
+      <div class="f"><label>월 예산</label><select class="in" name="budget">{% for k, v in budget_label.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></div>
+      <div class="f"><label>지역</label><input class="in" name="region" placeholder="예) 인천 부평"></div>
+      <div class="f wide"><label>요청 내용</label><textarea class="in" name="body" rows="3" placeholder="현재 상황, 목표 순위, 기간 등을 적어주세요. 업체명은 안 적어도 됩니다." required></textarea></div>
+      <div class="f wide"><label>연락처<small>선택 · 수락한 대행사에게만 공개</small></label><input class="in" name="contact" placeholder="카카오 ID 또는 전화번호" value="{{ current_user.phone or '' }}"></div>
+      <div class="f wide" style="display:flex;justify-content:flex-end;gap:8px"><span class="anonlbl" style="margin-right:auto;font-size:11.5px;color:var(--text-3);display:flex;align-items:center;gap:4px"><i data-lucide="lock" class="i i14"></i>목록에는 <b style="color:var(--text)">{{ nick }}</b>로 표시</span><button class="btn sec" type="button" id="askCancel">취소</button><button class="btn pri" type="submit">의뢰 등록</button></div>
+    </div></div></form>
+    {% endif %}
+
+    <form class="cat-tabs" method="get" style="flex-wrap:nowrap;overflow-x:auto">
+      <input type="hidden" name="f" value="{{ f }}">{% if channel %}<input type="hidden" name="channel" value="{{ channel }}">{% endif %}
+      {% for key, label in [('all','전체'),('open','모집 중'),('matched','매칭 완료'),('mine','내 의뢰')] %}<a href="/community/agency?f={{ key }}{% if channel %}&channel={{ channel }}{% endif %}{% if q %}&q={{ q | urlencode }}{% endif %}"{% if f == key %} class="on"{% endif %}>{{ label }}</a>{% endfor %}
+      <span style="flex:none;width:1px;height:16px;background:var(--border);margin:0 4px"></span>
+      {% for k in ['place','store','coupang'] %}<a href="/community/agency?f={{ f }}{% if channel != k %}&channel={{ k }}{% endif %}{% if q %}&q={{ q | urlencode }}{% endif %}"{% if channel == k %} class="on"{% endif %}>{{ ag_channel[k] }}</a>{% endfor %}
+      <input class="search-input" type="text" name="q" value="{{ q or '' }}" placeholder="업종 · 지역 · 내용 검색" style="flex:0 1 200px;min-width:120px;margin-left:auto;height:34px;border:1px solid var(--border);border-radius:8px;padding:0 12px;background:var(--surface);outline:none;font-size:13px">
+    </form>
+    {% if q %}<div class="thin" style="margin:6px 0 0">'{{ q }}' 검색 결과 <a class="lnk" href="/community/agency?f={{ f }}">검색닫기</a></div>{% endif %}
+
+    <div class="board-list">
+      {% for r in rows %}
+      <a class="board-list-item" href="/community/agency/{{ r.id }}">
+        <div class="board-list-col"><span class="category-list-label">{{ ag_channel[r.channel] }}</span></div>
+        <div class="board-list-content">
+          <div class="board-list-title">
+            <strong>{{ r.industry }}{% if r.region %} · {{ r.region }}{% endif %} — {{ r.body }}</strong>
+            {% if r.proposal_cnt %}<span style="flex-shrink:0;font-size:12.5px;font-weight:600;color:var(--accent)">제안 {{ r.proposal_cnt }}</span>{% endif %}
+          </div>
+          <p class="board-list-desc">{{ r.body[:120] }}</p>
+          <div class="board-list-meta">
+            <div class="board-list-stats-item"><span>{{ r.anon_nick }}</span></div>
+            <div class="board-list-stats-item"><span>{{ budget_label[r.budget] }}</span></div>
+            <div class="board-list-stats-item"><span>{{ r.rel }}</span></div>
+            <div class="board-list-stats-item"><span>조회 {{ r.views | fmt_num }}</span></div>
+          </div>
+        </div>
+        <div class="board-list-author"><span class="profile-thumb2"><i data-lucide="venetian-mask" class="i"></i></span><span>{{ r.anon_nick }}</span></div>
+        <div class="board-list-stats">
+          <div class="board-list-stats-item"><span>{{ budget_label[r.budget] }}</span></div>
+          <div class="board-list-stats-item"><span>{{ r.rel }}</span></div>
+          <div class="board-list-stats-item"><span>조회 {{ r.views | fmt_num }}</span></div>
+        </div>
+      </a>
+      {% else %}
+      <div style="grid-column:1/-1"><div class="empty">{% if q %}'{{ q }}' 검색 결과가 없습니다.{% elif f == 'mine' %}등록한 의뢰가 없습니다.{% else %}의뢰가 없습니다.{% endif %}</div></div>
+      {% endfor %}
+    </div>
+    {{ pager(page, total_pages, 'community.agency', f=f, channel=channel, q=q) }}
+  </div>
+  {% include "community/_agency_side.html" %}
+</div>
+{% endblock %}
+{% block scripts %}<script>(function(){var b=document.getElementById('askBtn'),f=document.getElementById('askForm'),c=document.getElementById('askCancel');if(b&&f){b.addEventListener('click',function(){f.style.display=f.style.display==='none'?'block':'none';if(f.style.display==='block')f.querySelector('input[name=industry]').focus();});}if(c&&f)c.addEventListener('click',function(){f.style.display='none';});})();</script>{% endblock %}

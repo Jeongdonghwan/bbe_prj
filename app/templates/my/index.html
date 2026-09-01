@@ -1,0 +1,91 @@
+{% extends "layout/base.html" %}
+{% from "macros/pagination.html" import pager %}
+{% block title %}마이페이지{% endblock %}
+{% block content %}
+{% set u = current_user %}
+<div class="ph"><div><h1>마이페이지</h1></div></div>
+<div class="mp">
+  <div>
+    <div class="card"><div class="me"><div class="avatar">{{ u.nickname[:2] }}</div><h3>{{ u.nickname }}</h3><p>{{ masked_phone }}</p><span class="kk">{% if u.kakao_id %}<i></i>카카오 계정 연결됨{% else %}{{ u.email }}{% endif %} · {{ u.created_at | fmt_date('%Y.%m') }} 가입</span></div>
+      <div class="grade"><div><span>완료 캠페인</span><b class="num">{{ done_count }}</b></div><div><span>누적 결제</span><b class="num">{{ paid_total_fmt }}</b></div><div><span>등급</span><b>{{ grade_label }}</b></div></div></div>
+    <div class="card mpoint"><div style="font-size:12px;color:var(--text-2)">이번 달 결제</div><div class="big num">{{ month_paid | fmt_num }}<i> 원</i></div><div class="thin" style="margin-top:2px">캠페인 주문 시 카드·계좌이체로 건별 결제됩니다</div><div class="rw"><a class="btn pri" href="/campaign/place/new" style="flex:1">새 캠페인</a><a class="btn sec" href="/campaign/place" style="flex:1">캠페인 관리</a></div></div>
+    <div class="card"><div class="ch"><h3>사업자 정보</h3><a class="more" href="#" data-modal="bizModal">수정</a></div><div class="cb" style="font-size:13px;line-height:1.7">
+      <div><span class="thin">상호</span> {{ u.biz_name or '미등록' }}</div>
+      <div><span class="thin">사업자번호</span> {{ u.biz_no or '미등록' }}</div>
+      <div><span class="thin">업태</span> {{ u.biz_type or '미등록' }}</div>
+      <div><span class="thin">업종</span> {{ u.biz_item or '미등록' }}</div>
+      <div><span class="thin">이메일주소</span> {{ u.biz_email or '미등록' }}</div>
+    </div></div>
+    <div class="card"><div class="ch"><h3>대행사 인증</h3></div><div class="cb">
+      {% if u.is_agency or u.grade in ('agency', 'master') %}
+      <p style="font-size:12.5px;color:var(--success);font-weight:600"><i data-lucide="badge-check" class="i i14"></i> 인증된 대행사입니다. 대행의뢰에 제안을 보낼 수 있어요.</p>
+      {% elif my_apply and my_apply.status == 'pending' %}
+      <p style="font-size:12.5px;color:var(--text-2)">인증 심사 중입니다. 운영팀 승인 후 대행사 등급이 적용됩니다.</p>
+      <p class="thin" style="margin-top:4px">신청일 {{ my_apply.created_at | fmt_date('%Y.%m.%d') }} · 사업자번호 {{ my_apply.biz_no }}</p>
+      {% else %}
+      <p style="font-size:12.5px;color:var(--text-2)">사업자등록증으로 인증하면 대행사 등급이 부여되고, 대행의뢰에 제안을 보낼 수 있습니다.{% if my_apply and my_apply.status == 'rejected' %} <b style="color:var(--danger)">이전 신청이 반려되었습니다. 다시 신청할 수 있어요.</b>{% endif %}</p>
+      <form method="post" action="/community/agency/apply" enctype="multipart/form-data" style="margin-top:10px">
+        <input type="hidden" name="back" value="/my">
+        <div class="f"><label>사업자번호</label><input class="in" name="biz_no" value="{{ u.biz_no or '' }}" placeholder="123-45-67890" required></div>
+        <div class="f"><label>사업자등록증 <small>이미지 파일</small></label><input class="in" type="file" name="cert" accept="image/*" required style="padding-top:8px"></div>
+        <button class="btn sec" style="width:100%" type="submit">인증 신청</button>
+      </form>
+      {% endif %}
+    </div></div>
+  </div>
+  <div>
+    <div class="card"><div class="ch"><h3>내 캠페인</h3><a class="more" href="/campaign/place">전체 관리<i data-lucide="chevron-right" class="i i14"></i></a></div><div class="cb"><div class="mini-camp">
+      {% for ch, label in channel_label.items() %}{% set s = summary.get(ch, {}) %}
+      <div><span>{{ label }}</span><b class="num">{% set parts = [] %}{% if s.get('running') %}{% set _ = parts.append('진행 ' ~ s.running) %}{% endif %}{% if s.get('pay_wait') %}{% set _ = parts.append('결제 대기 ' ~ s.pay_wait) %}{% endif %}{% if s.get('review') or s.get('approved') %}{% set _ = parts.append('검수 ' ~ (s.get('review', 0) + s.get('approved', 0))) %}{% endif %}{{ parts | join(' · ') if parts else '없음' }}</b></div>
+      {% endfor %}
+    </div></div></div>
+
+    <div class="card"><div class="ch"><h3>결제 내역</h3></div><div class="cb">
+      <div style="margin:0 -18px"><table><thead><tr><th>일시</th><th>주문번호</th><th>내용</th><th>상태</th><th style="text-align:right">결제금액</th></tr></thead><tbody>
+        {% for r in rows %}
+        <tr><td class="num"><span class="mut">{{ r.created_at | fmt_date('%m.%d %H:%M') }}</span></td>
+          <td class="ord"><a href="/campaign/{{ r.channel }}?open={{ r.id }}">{{ r.order_no }}</a></td>
+          <td style="white-space:normal">{{ r.biz_name }} · {{ r.media_name }} <span class="mut">{{ r.main_keyword }}</span></td>
+          <td><span class="st {{ status_class.get(r.status, 's-wait') }}">{{ status_label.get(r.status, r.status) }}</span></td>
+          <td class="num" style="text-align:right">{{ r.paid_amount | fmt_num }}원{% if r.refund_amount %} <span class="mut">(−{{ r.refund_amount | fmt_num }})</span>{% endif %}</td></tr>
+        {% else %}<tr><td colspan="5"><div class="empty">결제 내역이 없습니다. 첫 캠페인을 만들어보세요.</div></td></tr>{% endfor %}
+      </tbody></table></div>
+      {{ pager(page, total_pages, 'my.index') }}
+    </div></div>
+
+    <div class="card"><div class="ch"><h3>설정</h3></div><div class="cb">
+      <div class="setrow"><div>내가 쓴 글<span>익명 글 {{ post_counts.get("anon", 0) }} · 질문 {{ post_counts.get("qna", 0) }} · 댓글 {{ comment_cnt }}</span></div><a class="btn sec sm" style="margin-left:auto" href="/my/posts">보기</a></div>
+      <div class="setrow"><div>회원 탈퇴<span>진행 중 캠페인이 있으면 탈퇴할 수 없습니다</span></div><button class="btn ghost sm" style="margin-left:auto;color:var(--danger)" type="button" data-modal="withdrawModal">탈퇴</button></div>
+    </div></div>
+  </div>
+</div>
+
+<div class="modal" id="bizModal">
+  <form class="modal-box" method="post" action="/my/biz">
+    <h3>사업자 정보 수정</h3>
+    <div class="f" style="margin-top:12px"><label>상호</label><input class="in" name="biz_name" value="{{ u.biz_name or '' }}" maxlength="60"></div>
+    <div class="f"><label>사업자번호</label><input class="in" name="biz_no" value="{{ u.biz_no or '' }}" placeholder="123-45-67890"></div>
+    <div class="row2"><div class="f"><label>업태</label><input class="in" name="biz_type" value="{{ u.biz_type or '' }}" placeholder="예) 서비스" maxlength="40"></div>
+    <div class="f"><label>업종</label><input class="in" name="biz_item" value="{{ u.biz_item or '' }}" placeholder="예) 광고대행" maxlength="40"></div></div>
+    <div class="f"><label>이메일주소 <small>세금계산서 수신용</small></label><input class="in" type="email" name="biz_email" value="{{ u.biz_email or '' }}" placeholder="tax@company.com"></div>
+    <div style="display:flex;gap:8px;margin-top:14px"><button class="btn sec" type="button" data-close style="flex:1">취소</button><button class="btn pri" type="submit" style="flex:1">저장</button></div>
+  </form>
+</div>
+<div class="modal" id="withdrawModal">
+  <form class="modal-box" method="post" action="/my/withdraw">
+    <h3>정말 탈퇴하시겠어요?</h3>
+    <p class="thin" style="margin:6px 0 12px">캠페인 이력과 작성한 글이 모두 사라집니다. 확인을 위해 <b>탈퇴</b>를 입력해주세요.</p>
+    <div class="f"><input class="in" name="confirm" placeholder="탈퇴" autocomplete="off"></div>
+    <div style="display:flex;gap:8px;margin-top:8px"><button class="btn sec" type="button" data-close style="flex:1">취소</button><button class="btn pri" type="submit" style="flex:1;background:var(--danger)">탈퇴하기</button></div>
+  </form>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function(){
+  document.querySelectorAll('[data-modal]').forEach(function(el){el.addEventListener('click',function(e){e.preventDefault();document.getElementById(el.dataset.modal).classList.add('on');});});
+  document.querySelectorAll('.modal').forEach(function(m){m.addEventListener('click',function(e){if(e.target===m||e.target.closest('[data-close]'))m.classList.remove('on');});});
+  document.querySelectorAll('.chk').forEach(function(c){c.addEventListener('click',function(){setTimeout(function(){c.classList.toggle('on',c.querySelector('input').checked);},0);});});
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "layout/base.html" %}
+{% block title %}대행의뢰{% endblock %}
+{% block content %}
+<div class="ph"><div><h1>대행의뢰</h1></div><div class="act"><a class="btn sec sm" href="/community/agency">목록</a></div></div>
+<div class="cgrid">
+  <div>
+    <div class="card" style="margin-bottom:12px"><div class="ag" style="cursor:default"><div class="bud"><small>월 예산</small><b>{{ budget_label[r.budget] }}</b></div><div class="body">
+      <div class="head" style="display:flex;gap:8px;font-size:11.5px;color:var(--text-3);flex-wrap:wrap"><span style="font-weight:600;color:var(--text-2)">{{ ag_status[r.status] }}</span><span class="pill p-{{ r.channel if r.channel != 'multi' else 'tool' }}">{{ ag_channel[r.channel] }}</span><span>{{ r.industry }}{% if r.region %} · {{ r.region }}{% endif %}</span><span>·</span><span>{{ r.rel }}</span></div>
+      <p style="font-size:14.5px;line-height:1.8;white-space:pre-wrap;margin:8px 0">{{ r.body }}</p>
+      <div class="thin">{{ r.anon_nick }} · 조회 {{ r.views }} · 제안 {{ r.proposal_cnt }}</div>
+      {% if show_contact %}<div class="memo" style="margin-top:10px">연락처: <b>{{ r.contact }}</b>{% if not is_owner %} — 의뢰자가 제안을 수락해 공개되었습니다{% endif %}</div>{% elif r.contact and not is_owner %}<div class="thin" style="margin-top:8px"><i data-lucide="lock" class="i i14"></i> 연락처는 제안 수락 시 공개됩니다</div>{% endif %}
+      {% if is_owner and r.status == 'open' %}<form method="post" action="/community/agency/{{ r.id }}/close" style="margin-top:10px" onsubmit="return confirm('의뢰를 마감할까요?')"><button class="btn sec sm" type="submit">의뢰 마감</button></form>{% endif %}
+    </div></div></div>
+
+    {% if is_owner or is_admin %}
+    <div class="card" style="margin-bottom:12px"><div class="ch"><h3>받은 제안 <span class="thin">{{ proposals | length }}</span></h3>{% if is_owner %}<span class="thin">제안은 의뢰자에게만 보입니다</span>{% endif %}</div>
+      {% for p in proposals %}
+      <div class="post" style="cursor:default;{% if p.status == 'accepted' %}background:var(--success-soft){% elif p.status == 'rejected' %}opacity:.55{% endif %}"><div class="body">
+        <div class="head"><b style="color:var(--text)">{{ '운영팀' if p.proposer_role == 'admin' else (p.proposer_biz or p.proposer_name) }}</b><span>·</span><span>{{ p.created_at | fmt_date('%m.%d %H:%M') }}</span>{% if p.status == 'accepted' %}<span class="pill p-match">수락됨</span>{% endif %}</div>
+        <div class="kv"><span>예산안</span><b style="white-space:pre-wrap;font-weight:500">{{ p.budget_plan or '-' }}</b></div>
+        <div class="kv"><span>계획</span><b style="white-space:pre-wrap;font-weight:500">{{ p.plan }}</b></div>
+        <div class="kv"><span>예상 기간</span><b>{{ p.duration or '-' }}</b></div>
+        {% if is_owner and r.status == 'open' %}<form method="post" action="/community/agency/{{ r.id }}/accept/{{ p.id }}" style="margin-top:8px" onsubmit="return confirm('이 제안을 수락하면 연락처가 공개되고 다른 제안은 종료됩니다.')"><button class="btn pri sm" type="submit">이 제안 수락</button></form>{% endif %}
+      </div></div>
+      {% else %}<div class="empty">아직 제안이 없습니다.</div>{% endfor %}
+    </div>
+    {% endif %}
+
+    {% if can_propose and not is_owner %}
+    <div class="card"><div class="ch"><h3>제안 보내기</h3></div><div class="cb">
+      {% if my_prop %}<div class="memo">이미 제안을 보냈습니다 ({{ {'sent':'검토 중','accepted':'수락됨','rejected':'미선택'}[my_prop.status] }}).</div>
+      {% elif r.status != 'open' %}<div class="thin">모집이 종료된 의뢰입니다.</div>
+      {% else %}
+      <form method="post" action="/community/agency/{{ r.id }}/propose">
+        <div class="f"><label>예산안</label><textarea class="in" name="budget_plan" rows="2" placeholder="예) 월 120만원 — 오로라 200건/일 × 10일 + 유지 50건/일"></textarea></div>
+        <div class="f"><label>계획</label><textarea class="in" name="plan" rows="4" placeholder="세팅 키워드, 매체, 단계별 계획" required></textarea></div>
+        <div class="row2"><div class="f"><label>예상 기간</label><input class="in" name="duration" placeholder="예) 4주"></div><div class="f"><label>&nbsp;</label><button class="btn pri" style="width:100%" type="submit">제안 보내기</button></div></div>
+      </form>{% endif %}
+    </div></div>
+    {% endif %}
+  </div>
+  {% include "community/_agency_side.html" %}
+</div>
+{% endblock %}

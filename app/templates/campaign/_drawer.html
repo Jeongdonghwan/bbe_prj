@@ -1,0 +1,29 @@
+{# Drawer partial (prototype #drawer). Loaded via fetch into #drawer. #}
+<div class="dh"><div><h3>{{ c.biz_name }}</h3><div style="font-size:12px;color:var(--text-2)" class="mono">{{ c.order_no }} · {{ c.media_name }}</div></div><button class="icon-btn x" id="dclose" type="button"><i data-lucide="x" class="i"></i></button></div>
+<div class="db">
+  <div class="dsec"><div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap"><span class="st {{ status_class[c.status] }}">{{ status_label[c.status] }}</span>
+    <span style="font-size:12px;color:var(--text-2)">{% if c.status == 'running' %}{{ day_idx }}일차 / {{ prog.total }}일 · {{ c.end_date | fmt_date }} 종료{% elif c.status in ('pay_wait','review','approved') %}{{ c.start_date | fmt_date }} 시작 예정 · {{ prog.total }}일{% elif c.status == 'stopped' %}{{ prog.elapsed }}/{{ prog.total }}일 진행 후 중단{% elif c.status == 'done' %}{{ prog.total }}일 완료{% else %}{{ prog.label }}{% endif %}</span>
+    {% if c.status == 'running' %}<form method="post" action="/campaign/{{ channel }}/{{ c.id }}/stop" style="margin-left:auto" onsubmit="return confirm('중단하면 잔여일분만 환불됩니다. 중단할까요?')"><button class="btn sec sm" type="submit">중단 요청</button></form>
+    {% elif c.status == 'pay_wait' %}<a class="btn sec sm" style="margin-left:auto" href="/campaign/{{ channel }}/{{ c.id }}/{{ 'bank' if c.pay_method == 'bank' else 'pay' }}">{{ '입금 계좌' if c.pay_method == 'bank' else '결제하기' }}</a>{% endif %}</div>
+    <div class="dgrid"><div><span>희망 키워드</span><b>{{ c.main_keyword }}</b></div><div><span>일 작업량</span><b class="num">{{ c.daily_qty }}건</b></div><div><span>결제 금액</span><b class="num">{{ c.paid_amount | won }}{% if c.refund_amount %} <small class="thin">−{{ c.refund_amount | fmt_num }} 환불</small>{% endif %}</b></div><div><span>누적 작업</span><b class="num">{{ done_qty | fmt_num }} / {{ c.total_qty | fmt_num }}건</b></div></div>
+    {% if c.warn_words %}<div class="memo" style="margin-top:8px">주의 문구 감지: {{ c.warn_words }} — 검수 시 반려될 수 있습니다.</div>{% endif %}
+    {% if c.reject_reason %}<div class="memo" style="margin-top:8px;background:var(--danger-soft);color:#991B1B">반려 사유: {{ c.reject_reason }}</div>{% endif %}</div>
+
+  <div class="dsec"><h6>순위 변동 <span style="font-weight:500;color:var(--text-3)">· 낮을수록 좋음</span></h6>
+    {% if ranks %}<div class="rankchart">{% for d in ranks %}<i data-r="{{ d.rank }}" style="height:{{ d.h }}%"{% if loop.last %} class="now"{% endif %}></i>{% endfor %}</div>
+    <div class="spark-lb"><span>{{ ranks[0].date | fmt_date }}</span><span>{{ ranks[-1].date | fmt_date }}</span></div>
+    {% else %}<div class="empty" style="padding:16px 0">아직 순위 데이터가 없습니다.{% if c.status in ('running','approved') %} 운영팀이 매일 입력합니다.{% endif %}</div>{% endif %}</div>
+
+  <div class="dsec"><h6>결제</h6>
+    {% if p %}<div class="kv"><span>{{ pay_method_label[p.method] }}</span><b>{{ pay_status_label[p.status] }}{% if p.pg_tid %} <span class="mono thin">{{ p.pg_tid }}</span>{% endif %}</b></div>
+    {% if p.method == 'bank' and p.status == 'pending' %}<div class="kv"><span>입금 기한</span><b class="num">{{ p.bank_due_at | fmt_date('%m.%d %H:%M') }} · {{ p.depositor }}</b></div>{% endif %}
+    {% if p.paid_at %}<div class="kv"><span>결제일</span><b class="num">{{ p.paid_at | fmt_date('%Y.%m.%d %H:%M') }}</b></div>{% endif %}
+    {% if p.refund_amount %}<div class="kv"><span>환불</span><b class="num">{{ p.refund_amount | won }}</b></div>{% endif %}{% endif %}</div>
+
+  <div class="dsec"><h6>진행 이력</h6><ul class="timeline">
+    {% for l in logs %}<li class="on"><b>{% if l.from_status == l.to_status or l.from_status is none and l.to_status == 'pay_wait' %}{{ (l.memo or '').split(' · ')[0] }}{% else %}{{ status_label.get(l.to_status, l.to_status) }}{% endif %}</b><span>{{ l.created_at | fmt_date('%m.%d %H:%M') }}{% if l.memo %} — {{ l.memo }}{% endif %}</span></li>{% endfor %}
+  </ul></div>
+
+  {% if c.admin_memo %}<div class="dsec"><h6>운영팀 메모</h6><div class="memo">{{ c.admin_memo }}</div></div>{% endif %}
+  <div style="display:flex;gap:8px"><a class="btn sec" style="flex:1" href="/campaign/{{ channel }}/new?copy={{ c.id }}"><i data-lucide="copy" class="i i16"></i>같은 설정으로 복사</a><button class="btn sec" style="flex:1" type="button" disabled title="P5에서 제공">리포트 PDF</button></div>
+</div>

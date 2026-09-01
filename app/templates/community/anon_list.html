@@ -1,0 +1,63 @@
+{% extends "layout/base.html" %}
+{% from "macros/pagination.html" import pager %}
+{% block title %}익명 게시판{% endblock %}
+{% block content %}
+<div class="cgrid">
+  <div class="board-panel">
+    <div class="list-head"><h1>익명 게시판</h1></div>
+
+    {% if current_user %}
+    <div class="card write" id="writeBox" style="margin:8px 0 4px"><div class="avatar"><i data-lucide="venetian-mask" class="i i16"></i></div><input class="in" placeholder="무엇이든 익명으로 물어보세요" readonly><span class="anonlbl"><i data-lucide="lock" class="i i14"></i>이 글에서 당신은 <b style="color:var(--text)">{{ nick }}</b></span><button class="btn pri sm" type="button">글쓰기</button></div>
+    <form class="card" method="post" action="/community/anon/write" enctype="multipart/form-data" id="writeForm" style="display:none;padding:14px;margin:8px 0 4px">
+      <div class="f"><input class="in" name="title" placeholder="제목" maxlength="200" required></div>
+      <div class="f"><textarea class="in" name="body" rows="5" placeholder="업체명·전화번호는 자동으로 가려집니다." required></textarea></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><select class="in" name="channel_tag" style="width:auto;height:36px"><option value="">태그 없음</option>{% for k, v in tag_label.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select><label class="btn sec sm" style="cursor:pointer"><i data-lucide="image" class="i i14"></i>이미지<input type="file" name="image" accept="image/*" hidden></label><span class="anonlbl"><i data-lucide="lock" class="i i14"></i>{{ nick }}</span><button class="btn pri sm" type="submit" style="margin-left:auto">등록</button></div>
+    </form>
+    {% else %}
+    <div class="card write" style="margin:8px 0 4px"><div class="avatar"><i data-lucide="venetian-mask" class="i i16"></i></div><span class="thin" style="flex:1">로그인하면 익명으로 글을 쓸 수 있어요</span><a class="btn kakao sm" href="/auth/login" style="background:var(--kakao);color:#191600">로그인</a></div>
+    {% endif %}
+
+    <form class="cat-tabs" method="get" style="flex-wrap:nowrap;overflow-x:auto">
+      <input type="hidden" name="sort" value="{{ sort }}">{% if tag %}<input type="hidden" name="tag" value="{{ tag }}">{% endif %}
+      {% for key, label in [('new','최신'),('hot','인기'),('answers','답변 많은')] %}<a href="/community/anon?sort={{ key }}{% if tag %}&tag={{ tag }}{% endif %}{% if q %}&q={{ q | urlencode }}{% endif %}"{% if sort == key %} class="on"{% endif %}>{{ label }}</a>{% endfor %}
+      <span style="flex:none;width:1px;height:16px;background:var(--border);margin:0 4px"></span>
+      {% for k, v in tag_label.items() %}<a href="/community/anon?sort={{ sort }}{% if tag != k %}&tag={{ k }}{% endif %}{% if q %}&q={{ q | urlencode }}{% endif %}"{% if tag == k %} class="on"{% endif %}>{{ v }}</a>{% endfor %}
+      <input class="search-input" type="text" name="q" value="{{ q or '' }}" placeholder="검색어 입력" style="flex:0 1 200px;min-width:120px;margin-left:auto;height:34px;border:1px solid var(--border);border-radius:8px;padding:0 12px;background:var(--surface);outline:none;font-size:13px">
+    </form>
+    {% if q %}<div class="thin" style="margin:6px 0 0">'{{ q }}' 검색 결과 <a class="lnk" href="/community/anon?sort={{ sort }}">검색닫기</a></div>{% endif %}
+
+    <div class="board-list">
+      {% for r in rows %}
+      <a class="board-list-item" href="/community/anon/{{ r.id }}">
+        <div class="board-list-col"><span class="category-list-label">{{ tag_label.get(r.channel_tag, '자유') }}</span></div>
+        <div class="board-list-content">
+          <div class="board-list-title"><strong>{{ r.title }}</strong>
+            {% if r.image_url %}<svg class="board-list-img-badge" width="14" height="14" viewBox="0 0 16 16" aria-label="이미지 있음"><rect width="16" height="16" rx="2.5" fill="#43A047"/><circle cx="5.3" cy="5.3" r="1.6" fill="#fff"/><path d="M2.5 13.2L6.3 8.6l2.6 3 2.1-2.5 2.5 4.1z" fill="#fff"/></svg>{% endif %}
+            {% if r.comment_cnt %}<span style="flex-shrink:0;font-size:12.5px;font-weight:600;color:var(--accent)">[{{ r.comment_cnt }}]</span>{% endif %}
+          </div>
+          <p class="board-list-desc">{{ r.preview }}</p>
+          <div class="board-list-meta">
+            <div class="board-list-stats-item"><span>{{ r.anon_nick }}</span></div>
+            <div class="board-list-stats-item"><span>{{ r.rel }}</span></div>
+            <div class="board-list-stats-item"><span>조회 {{ r.views | fmt_num }}</span></div>
+            <div class="board-list-stats-item"><i data-lucide="message-circle" class="i i14"></i><span class="num">{{ r.comment_cnt }}</span></div>
+          </div>
+        </div>
+        <div class="board-list-author"><span class="profile-thumb2"><i data-lucide="venetian-mask" class="i"></i></span><span>{{ r.anon_nick }}</span></div>
+        <div class="board-list-stats">
+          <div class="board-list-stats-item"><span>{{ r.rel }}</span></div>
+          <div class="board-list-stats-item"><span>조회 {{ r.views | fmt_num }}</span></div>
+          <div class="board-list-stats-item"><i data-lucide="heart" class="i"{% if r.hot %} style="color:var(--danger);opacity:1"{% endif %}></i><span class="num">{{ r.likes }}</span></div>
+        </div>
+        {% if r.image_url %}<div class="board-list-thumb2"><img src="{{ r.image_url }}" alt="썸네일"></div>{% endif %}
+      </a>
+      {% else %}
+      <div style="grid-column:1/-1"><div class="empty">{% if sort == 'hot' %}24시간 내 추천 10개 이상 글이 아직 없어요.{% elif q %}'{{ q }}' 검색 결과가 없습니다.{% else %}글이 없습니다.{% endif %}</div></div>
+      {% endfor %}
+    </div>
+    {{ pager(page, total_pages, 'community.anon', sort=sort, tag=tag, q=q) }}
+  </div>
+  {% include "community/_anon_side.html" %}
+</div>
+{% endblock %}
+{% block scripts %}<script>(function(){var b=document.getElementById('writeBox'),f=document.getElementById('writeForm');if(b&&f){b.addEventListener('click',function(){b.style.display='none';f.style.display='block';f.querySelector('input[name=title]').focus();});}})();</script>{% endblock %}

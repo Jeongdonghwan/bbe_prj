@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ crumb_label }}{% endblock %} — {{ APP_NAME }}</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+{% block head %}{% endblock %}
+</head>
+<body{% if is_admin_path %} class="admin"{% endif %}>
+<div class="app">
+{% include "layout/sidebar.html" %}
+<div class="side-scrim"></div>
+<div class="main">
+  {% include "layout/header.html" %}
+  <section class="page on">
+    {% with msgs = get_flashed_messages() %}{% if msgs %}<div class="flash">{% for m in msgs %}<div>{{ m }}</div>{% endfor %}</div>{% endif %}{% endwith %}
+    {% block content %}{% endblock %}
+  </section>
+</div>
+</div>
+{% if needs_onboarding %}{% include "auth/_welcome_modal.html" %}{% endif %}
+{% include "layout/bottom_tab.html" %}
+{% if request.endpoint == 'main.dashboard' %}
+<a class="kakao-float" href="{{ KAKAO_CHAT_URL }}" target="_blank" rel="noopener" aria-label="카카오톡 바로상담">
+  <svg viewBox="0 0 24 24"><path d="M12 3C6.5 3 2 6.6 2 11c0 2.8 1.8 5.2 4.6 6.6L5.5 21l4.6-2.7c.6.1 1.2.1 1.9.1 5.5 0 10-3.6 10-8S17.5 3 12 3z"/></svg>
+  <span>바로상담</span>
+</a>
+{% endif %}
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script src="{{ url_for('static', filename='js/sidebar.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

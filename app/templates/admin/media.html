@@ -1,0 +1,44 @@
+{% extends "layout/base.html" %}
+{% block title %}매체사 관리{% endblock %}
+{% block content %}
+<div class="ph"><div><h1>매체사 관리</h1><p>단가·효율·규칙을 여기서 바꾸면 캠페인 생성 화면에 바로 반영됩니다.</p></div>
+  <div class="act"><div class="chan-tabs">{% for k, v in channel_label.items() %}<a href="/admin/media?channel={{ k }}"><button type="button"{% if channel == k %} class="on"{% endif %}><i class="dot c-{{ k }}"></i>{{ v }} {{ counts[k] }}</button></a>{% endfor %}</div><a class="btn pri" href="/admin/media?channel={{ channel }}&new=1">+ 매체사 추가</a></div></div>
+<div class="form2">
+  <div class="card"><div class="cb" style="padding-top:14px">
+    {% for m in rows %}
+      <div class="mrow"{% if not m.is_active %} style="opacity:.5"{% endif %}><div class="logo-slot" style="--av:{{ m.color }}">{{ m.name[:1] }}{% if m.logo_url %}<img alt="" src="{{ m.logo_url }}" onerror="this.remove()">{% endif %}</div>
+        <div style="width:150px"><b>{{ m.name }} </b><span>{{ m.group_name }}{% if m.tagline %} · {{ m.tagline }}{% endif %}</span></div><div style="display:none"><b>{% if m.badge == 'best' %}<span class="bd bd-best">BEST</span>{% elif m.badge == 'rec' %}<span class="bd bd-rec">인기</span>{% elif m.badge == 'new' %}<span class="bd bd-new">NEW</span>{% endif %}</b><span>{{ m.tagline or '' }}</span></div>
+        <div class="cell"><small>단가</small>{% if m.list_price and m.list_price > m.unit_price %}<span class="strike">{{ m.list_price | fmt_num }}</span>{% endif %}{{ m.unit_price | fmt_num }}원</div>
+        <div class="cell"><small>효율{% if m.efficiency_manual is not none %} (수동){% endif %}</small>{{ m.eff }}%{% if m.auto is not none %}<small>자동 {{ m.auto }}%</small>{% endif %}</div>
+        <div class="cell"><small>최소·범위</small>{{ m.min_days }}일 · {{ m.min_daily }}~{{ m.max_daily }}</div>
+        <div class="cell"><small>이번 달</small>{{ m.month }}건</div>
+        <div class="act2"><span class="toggle{% if m.is_active %} on{% endif %}" title="노출" data-toggle="/admin/media/{{ m.id }}/toggle"><i></i></span><a href="/admin/media?channel={{ channel }}&edit={{ m.id }}"><button class="btn sec sm" type="button"{% if edit and edit.id == m.id %} style="border-color:var(--accent);color:var(--accent)"{% endif %}>{% if edit and edit.id == m.id %}수정 중{% else %}수정{% endif %}</button></a></div></div>
+    {% else %}<div class="empty">등록된 매체사가 없습니다.</div>{% endfor %}
+    <p class="thin" style="padding:6px 0">효율 = 최근 30일 완료 캠페인 중 순위 상승한 비율. 새벽 배치(P5)로 자동 계산되며 수동 값을 넣으면 그 값이 우선합니다.</p>
+  </div></div>
+  {% if edit or new %}{% set m = edit or {} %}
+  <div class="card"><div class="ch"><h3>{% if edit %}{{ m.name }} 수정{% else %}매체사 추가{% endif %}</h3><a class="icon-btn" style="margin-left:auto" href="/admin/media?channel={{ channel }}"><i data-lucide="x" class="i"></i></a></div><div class="cb">
+    <form method="post" action="/admin/media/save" enctype="multipart/form-data">
+      {% if edit %}<input type="hidden" name="id" value="{{ m.id }}">{% endif %}<input type="hidden" name="channel" value="{{ channel }}">
+      <div class="f"><label>로고<small>정사각 PNG/SVG, 없으면 이니셜 표시</small></label><label class="upl" style="cursor:pointer"><div class="logo-slot" style="--av:{{ m.color or '#4B5563' }}">{{ (m.name or '?')[:1] }}{% if m.logo_url %}<img alt="" src="{{ m.logo_url }}" onerror="this.remove()">{% endif %}</div><span>클릭해서 {% if m.logo_url %}교체{% else %}업로드{% endif %}</span><input type="file" name="logo" accept=".png,.jpg,.jpeg,.svg,.webp" hidden></label>
+        {% if m.logo_url %}<div class="hint"><button type="submit" formaction="/admin/media/{{ m.id }}/logo/delete" style="color:var(--danger);text-decoration:underline">로고 삭제</button></div>{% endif %}</div>
+      <div class="row2"><div class="f"><label>이름</label><input class="in" name="name" value="{{ m.name or '' }}" required></div><div class="f"><label>섹션</label><select class="in" name="group_name">{% for s in ['리워드', '유입', '복합'] %}<option{% if m.group_name == s %} selected{% endif %}>{{ s }}</option>{% endfor %}</select></div></div>
+      <div class="row2"><div class="f"><label>한 줄 설명</label><input class="in" name="tagline" value="{{ m.tagline or '' }}"></div><div class="f"><label>이니셜 배경색</label><input class="in" name="color" type="color" value="{{ m.color or '#4B5563' }}" style="padding:4px"></div></div>
+      <div class="row2"><div class="f"><label>단가<small>원 / 건</small></label><input class="in num" name="unit_price" type="number" value="{{ m.unit_price or 100 }}" required></div><div class="f"><label>정가<small>세일 표시용, 비우면 없음</small></label><input class="in num" name="list_price" type="number" value="{{ m.list_price or '' }}" placeholder="—"></div></div>
+      <div class="row2"><div class="f"><label>최소 일수</label><input class="in num" name="min_days" type="number" value="{{ m.min_days or 3 }}"></div><div class="f"><label>일 수량 범위</label><div class="row2"><input class="in num" name="min_daily" type="number" value="{{ m.min_daily or 50 }}"><input class="in num" name="max_daily" type="number" value="{{ m.max_daily or 500 }}"></div></div></div>
+      <div class="row2"><div class="f"><label>접수 마감</label><input class="in" name="cutoff_time" type="time" value="{{ (m.cutoff_time | string)[:5] if m.cutoff_time else '13:30' }}"></div><div class="row2"><div class="f"><label>효율<small>게이지로 표시</small></label><select class="in" name="eff_level">{% for k, v in [('normal','보통'),('good','좋음'),('best','매우 좋음')] %}<option value="{{ k }}"{% if (m.eff_level or 'good') == k %} selected{% endif %}>{{ v }}</option>{% endfor %}</select></div><div class="f"><label>효율 설명<small>게이지 아래 표시</small></label><input class="in" name="eff_note" value="{{ m.eff_note or '' }}" maxlength="120" placeholder="예) 최근 4주 접수 반응 기준"></div></div></div>
+      <div class="f"><label>뱃지</label><div class="chan-tabs" id="badgeTabs" style="display:flex">{% for key, label in [('rec','인기'),('best','BEST'),('new','NEW'),('','없음')] %}<button type="button" data-badge="{{ key }}"{% if (m.badge or '') == key %} class="on"{% endif %} style="flex:1;justify-content:center">{{ label }}</button>{% endfor %}</div><input type="hidden" name="badge" id="badgeVal" value="{{ m.badge or '' }}"></div>
+      <div class="f"><label>상품 설명<small>구동 정보의 "상품 설명"에 표시</small></label><textarea class="in" name="description" rows="3">{{ m.description or '' }}</textarea></div>
+      <div class="row2"><div class="f"><label>정렬</label><input class="in num" name="sort" type="number" value="{{ m.sort or 0 }}"></div><div></div></div>
+      <label class="chk{% if m.is_active is not defined or m.is_active %} on{% endif %}" style="cursor:pointer"><input type="checkbox" name="is_active" value="1" hidden{% if m.is_active is not defined or m.is_active %} checked{% endif %}><i></i>캠페인 생성 화면에 노출</label>
+      <label class="chk{% if m.same_day is not defined or m.same_day %} on{% endif %}" style="cursor:pointer"><input type="checkbox" name="same_day" value="1" hidden{% if m.same_day is not defined or m.same_day %} checked{% endif %}><i></i>당일 구동 가능</label>
+      <div style="display:flex;gap:8px;margin-top:12px"><button class="btn pri" style="flex:1" type="submit">저장</button><a class="btn sec" href="/admin/media?channel={{ channel }}">취소</a></div>
+    </form>
+    {% if edit %}<form method="post" action="/admin/media/{{ m.id }}/delete" onsubmit="return confirm('매체사를 삭제할까요? 연결된 캠페인이 있으면 삭제되지 않습니다.')" style="margin-top:8px"><button class="btn ghost" style="width:100%;color:var(--danger)" type="submit">매체사 삭제</button></form>{% endif %}
+  </div></div>
+  {% else %}
+  <div class="card"><div class="cb" style="padding-top:16px"><div class="empty"><i data-lucide="mouse-pointer-click"></i>왼쪽 목록에서 수정할 매체사를 선택하세요.</div></div></div>
+  {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/admin.js') }}"></script>{% endblock %}

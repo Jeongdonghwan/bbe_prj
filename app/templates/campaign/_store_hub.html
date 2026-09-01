@@ -1,0 +1,34 @@
+{# Store hub (spec 2-4-1): channel notice strip + keyword tracking slots + running store campaigns. No rank tracking. #}
+{% if store.notice %}
+<div class="snotice"><i data-lucide="megaphone" class="i i16"></i><b>쇼핑 공지</b><span><a href="/notice/{{ store.notice.id }}">{{ store.notice.title }}</a></span><a class="more" href="/notice">쇼핑 공지 {{ store.notice_count }}건 →</a></div>
+{% endif %}
+<div class="grid2" style="grid-template-columns:1.35fr 1fr">
+  <div class="card"><div class="ch"><h3>쇼핑 추적 슬롯</h3><span class="thin">무료 · 최대 {{ store.slot_max }}개 · 검색량은 매일 새벽 갱신</span><span class="more" style="cursor:default">{{ store.slot_used }} / {{ store.slot_max }} 사용 중</span></div><div class="cb">
+    <form method="post" action="/campaign/store/slots" class="slot-add" id="slotForm">
+      <div class="f"><label>상품 키워드</label><input class="in" id="skw" name="keyword" placeholder="예) 아우라 방향제" required></div>
+      <div class="f"><label>상품 URL<small>선택</small></label><input class="in" name="product_url" placeholder="smartstore.naver.com/..."></div>
+      <div class="f"><label>월 검색량<small>자동 조회</small></label><input class="in num" id="svol" placeholder="—" readonly style="background:var(--surface)"></div>
+      <button class="btn pri" type="submit">슬롯 등록</button>
+    </form>
+    <div style="margin:0 -18px;overflow-x:auto"><table id="slots"><thead><tr><th>키워드</th><th>월 검색량</th><th style="text-align:right">일 검색량</th><th style="text-align:right">추천 일 수량</th><th></th></tr></thead><tbody>
+      {% for s in store.slots %}
+      <tr><td><b>{{ s.keyword }}</b>{% if s.store_name %}<br><span class="mut" style="font-size:11.5px">{{ s.store_name }}</span>{% endif %}</td>
+        <td><div class="vol"><b class="num">{{ s.total | fmt_num }}</b><small>PC {{ s.pc_cnt | fmt_num }} · 모바일 {{ s.mo_cnt | fmt_num }}</small></div></td>
+        <td class="num" style="text-align:right">{{ s.daily | fmt_num }}</td>
+        <td style="text-align:right"><span class="reco num">{{ s.reco_qty }}<small>건/일</small></span></td>
+        <td><div class="rowact" style="opacity:1"><a href="/campaign/store/new?slot={{ s.id }}"><button type="button" style="color:var(--accent)">이 수량으로 캠페인</button></a><form method="post" action="/campaign/store/slots/{{ s.id }}/delete" style="display:inline"><button type="submit">삭제</button></form></div></td></tr>
+      {% else %}
+      <tr><td colspan="5"><div class="empty">등록된 슬롯이 없습니다. 상품 키워드를 등록해보세요.</div></td></tr>
+      {% endfor %}
+    </tbody></table></div>
+  </div></div>
+  <div>
+    <div class="card"><div class="ch"><h3>쇼핑 진행 캠페인</h3><a class="more" href="/campaign/store">관리<i data-lucide="chevron-right" class="i i14"></i></a></div><div class="cb"><ul class="list">
+      {% for c in store.running %}
+      <li><span class="st {{ 's-run' if c.status == 'running' else ('s-review' if c.status in ('review','approved') else 's-wait') }}">{{ {'running':'진행','review':'검수','approved':'승인','pay_wait':'결제 대기'}[c.status] }}</span><a href="/campaign/store?open={{ c.id }}">{{ c.main_keyword }} · {{ c.media_name }}</a><span class="dt num">{% if c.rank_now %}{{ c.rank_now }}위{% else %}{{ c.start_date | fmt_date }}~{% endif %}</span></li>
+      {% else %}
+      <li><span class="dt">진행 중인 쇼핑 캠페인이 없습니다.</span></li>
+      {% endfor %}
+    </ul><a class="btn pri lg" style="margin-top:12px" href="/campaign/store/new">새 쇼핑 캠페인 만들기</a></div></div>
+  </div>
+</div>

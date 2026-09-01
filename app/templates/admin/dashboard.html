@@ -1,0 +1,32 @@
+{% extends "layout/base.html" %}
+{% block title %}운영 현황{% endblock %}
+{% block content %}
+<div class="ph"><div><h1>운영 현황</h1><p>지금 처리해야 할 것부터.</p></div><div class="act"><span class="thin">13:30 접수 마감까지 <b id="cd2" class="num" style="color:var(--text)">—</b></span></div></div>
+<div class="queue">
+  <a class="card" href="/admin/orders?status=review"><span class="k">검수 대기</span><span class="v num{% if q_review %} alert{% endif %}">{{ q_review }}</span><span class="d">{% if oldest is not none %}가장 오래된 건 {% if oldest >= 60 %}{{ oldest // 60 }}시간 {% endif %}{{ oldest % 60 }}분{% else %}대기 없음{% endif %}</span></a>
+  <a class="card" href="/admin/payments"><span class="k">무통장 입금 대기</span><span class="v num{% if q_bank %} alert{% endif %}">{{ q_bank }}</span><span class="d">합계 {{ bank_total | won }}</span></a>
+  <a class="card" href="/admin/orders?status=running"><span class="k">오늘 순위 미입력</span><span class="v num">{{ no_rank }}</span><span class="d">진행 중 {{ running }}건</span></a>
+  <a class="card" href="/admin/reports"><span class="k">신고 누적</span><span class="v num">{{ reports }}</span><span class="d">3회 이상 → 자동 블라인드</span></a>
+  <a class="card" href="/admin/orders?period=today"><span class="k">오늘 접수 · 매출</span><span class="v num">{{ today_n }}</span><span class="d">{{ today_amount | won }}</span></a>
+</div>
+<div class="grid2">
+  <div class="card"><div class="ch"><h3>검수 대기 큐</h3><a class="more" href="/admin/orders?status=review">주문 관리<i data-lucide="chevron-right" class="i i14"></i></a></div><div class="cb"><div style="margin:0 -18px;overflow-x:auto"><table><thead><tr><th>주문</th><th>업체 · 키워드</th><th>매체</th><th>접수</th><th></th></tr></thead><tbody>
+    {% for c in queue %}
+    <tr{% if c.warn.block %} style="background:var(--danger-soft)"{% endif %}><td class="ord">{{ c.order_no }}</td>
+      <td><b>{{ c.biz_name }}</b> <span class="mut">{{ c.main_keyword }}</span>{% if c.warn.block %}<br><span style="color:var(--danger);font-size:12px">⚠ 금지 문구 "{{ c.warn.block | join(', ') }}" 감지</span>{% elif c.warn.warn %}<br><span style="color:var(--warn);font-size:12px">주의 문구 "{{ c.warn.warn | join(', ') }}"</span>{% endif %}</td>
+      <td>{{ c.media_name }}</td><td><span class="mut">{% if c.age_min >= 60 %}{{ c.age_min // 60 }}시간 {% endif %}{{ c.age_min % 60 }}분 전</span></td>
+      <td><div class="rowact" style="opacity:1"><form method="post" action="/admin/orders/{{ c.id }}/action"><input type="hidden" name="action" value="approve"><input type="hidden" name="back" value="/admin"><button style="color:var(--success)" type="submit">승인</button></form><button type="button" style="color:var(--danger)" data-reject="{{ c.id }}" data-order="{{ c.order_no }}" data-back="/admin">반려</button></div></td></tr>
+    {% else %}<tr><td colspan="5"><div class="empty">검수 대기 건이 없습니다.</div></td></tr>{% endfor %}
+  </tbody></table></div></div></div>
+  <div>
+    <div class="card" style="margin-bottom:16px"><div class="ch"><h3>매체사별 오늘 접수</h3></div><div class="cb">
+      {% for m in by_media %}<div class="kv"><span>{{ m.name }}</span><b class="num">{{ m.n }}건 · {{ m.amount | won }}</b></div>{% else %}<div class="empty" style="padding:12px 0">오늘 접수 없음</div>{% endfor %}
+    </div></div>
+    <div class="card"><div class="ch"><h3>최근 처리</h3></div><div class="cb"><ul class="timeline" style="margin-top:4px">
+      {% for l in logs %}<li class="on"><b>{{ l.summary or l.action }}</b><span>{{ l.created_at | fmt_date('%m.%d %H:%M') }} · {{ l.admin_name or '시스템' }}</span></li>{% else %}<li><span class="thin">처리 이력이 없습니다.</span></li>{% endfor %}
+    </ul></div></div>
+  </div>
+</div>
+{% include "admin/_reject_modal.html" %}
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/admin.js') }}"></script>{% endblock %}

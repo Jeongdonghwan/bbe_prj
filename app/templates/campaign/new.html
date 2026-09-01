@@ -1,0 +1,113 @@
+{% extends "layout/base.html" %}
+{% block title %}{{ channels[channel] }} 캠페인 생성{% endblock %}
+{% block content %}
+{% set ch = channel %}
+<div class="ph"><div><h1>{% if editing %}주문 수정{% else %}캠페인 생성{% endif %}</h1><p>채널을 고르고 왼쪽부터 순서대로 진행하세요.{% if ch == 'store' %} 적정 수량은 <a class="lnk" href="/campaign/store/slots">쇼핑 작업량 권장 체크</a>에서 확인할 수 있어요.{% endif %}</p></div>
+  <div class="act"><div class="chan-tabs">
+    {% for key, label in channels.items() %}<a href="/campaign/{{ key }}/new"><button type="button"{% if key == ch %} class="on"{% endif %}><i class="dot c-{{ key }}"></i>{{ label }}</button></a>{% endfor %}
+  </div></div></div>
+
+<form method="post" id="campForm" autocomplete="off">
+<input type="hidden" name="media_id" id="mediaId" value="{{ pre.media_id or '' }}">
+{% if editing %}<input type="hidden" name="edit_id" value="{{ editing.id }}">{% endif %}
+<div class="progress">
+  <div class="p cur" id="pg1"><b>1</b><div>매체사 선택<span class="sub2" id="pg1s">{{ medias | length }}개 중 선택</span></div></div>
+  <div class="p" id="pg2"><b>2</b><div>구동 정보 확인<span class="sub2">단가 · 효율 · 접수 규칙</span></div></div>
+  <div class="p" id="pg3"><b>3</b><div>캠페인 설정<span class="sub2">기간 · 수량 · 키워드</span></div></div>
+  <div class="p" id="pg4"><b>4</b><div>결제<span class="sub2" id="pg4s">카드 · 무통장입금</span></div></div>
+</div>
+
+<div class="cols" id="cols">
+  <div class="col" id="col1"><div class="card"><div class="ch"><h3><span class="stepno">1</span>매체사 선택</h3><span class="more" style="cursor:default">단가 = 1건당 금액(VAT 별도)</span></div><div class="cb">
+    <div class="selsum">
+      <div class="mcard mtile sel"><b id="ssName"></b><span class="mprice num" id="ssPrice"></span></div>
+      <button type="button" class="btn sec sm" id="ssChange" style="width:100%;margin-top:12px"><i data-lucide="repeat" class="i i14"></i>다른 매체 선택</button>
+    </div>
+    <div class="mfilter"><button type="button" class="on" data-filter="all">전체</button><button type="button" data-filter="rec">인기</button><button type="button" data-filter="best">BEST</button><button type="button" data-filter="price">단가 낮은순</button></div>
+    {% for sec in sections %}
+    <div class="msec"><span class="msec-h">{{ sec.name }}</span>
+      <div class="mtiles">
+        {% for m in sec['items'] %}
+        <div class="mcard mtile{% if pre.media_id == m.id %} sel{% endif %}" data-id="{{ m.id }}" data-badge="{{ m.badge or '' }}" data-p="{{ m.unit_price }}" title="{{ m.tagline or m.name }}">
+          {% if m.badge == 'best' %}<span class="bd bd-best">BEST</span>{% elif m.badge == 'rec' %}<span class="bd bd-rec">인기</span>{% elif m.badge == 'new' %}<span class="bd bd-new">NEW</span>{% endif %}
+          <b>{{ m.name }}</b>
+          <span class="mprice num">{% if m.list_price and m.list_price > m.unit_price %}<span class="strike">{{ m.list_price | fmt_num }}</span> {% endif %}{{ m.unit_price | fmt_num }}원</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div></div></div>
+
+  <div class="col dim" id="col2"><div class="card"><div class="ch"><h3><span class="stepno">2</span>구동 정보</h3><span class="more" style="cursor:default" id="c2note">확인용 안내</span></div><div class="cb">
+    <div class="empty" id="c2empty"><i data-lucide="mouse-pointer-click"></i>왼쪽에서 매체사를 선택하세요</div>
+    <div id="c2body" style="display:none">
+      <div class="selhead"><div><b id="selName" style="font-size:16px"></b><span style="display:block;font-size:12px;color:var(--text-2)">{{ channels[ch] }} · <span id="selTag"></span></span></div></div>
+      <div class="kv" style="padding:14px 0"><span>1건당 단가</span><b class="num" id="selPrice"></b></div>
+      <div class="kv" style="padding:14px 0"><span>최소 구동 기간</span><b id="selMin"></b></div>
+      <div class="kv" style="padding:14px 0"><span>일 작업량 범위</span><b class="num" id="selRange"></b></div>
+      <div style="padding:14px 0 2px"><span style="font-size:13px;color:var(--text-2)">효율</span>
+        <div class="effbar"><div class="eff-fill" id="effFill"><span id="effLabel"></span></div></div>
+        <div class="hint" id="effNote" style="display:none;margin-top:6px"></div>
+      </div>
+      <div class="infobox" style="margin-top:18px"><h6><i data-lucide="calendar" class="i i14"></i>접수 · 구동 규칙</h6><ul>
+        <li>당일 접수 마감 <b id="selCutoff">13:30</b></li><li>당일 구동 <b class="ok" id="selSame">가능</b></li><li>구동 시작일 <b>평일만</b></li><li>중단 시 환불 <b>잔여일 비례</b></li></ul></div>
+      <div class="fsec" id="selDescWrap" style="display:none;margin-top:16px;border-top:1px solid var(--border);padding-top:14px"><h6><i data-lucide="info" class="i i14"></i>상품 설명</h6><p id="selDesc" style="font-size:13px;color:var(--text-2);line-height:1.7;white-space:pre-wrap;margin-top:6px"></p></div>
+    </div>
+  </div></div></div>
+
+  <div class="col dim" id="col3"><div class="card"><div class="ch"><h3><span class="stepno">3</span>캠페인 설정</h3></div><div class="cb">
+    <div class="fsec"><h6><i data-lucide="calendar" class="i i14"></i>기간 · 수량</h6>
+      <div class="f"><label>작업 기간</label><div class="row2"><input class="in" id="d1" name="start_date" type="date" value="{{ pre.start_date }}" required><input class="in" id="d2" name="end_date" type="date" value="{{ pre.end_date }}" required></div>
+        <div class="presets">{% for n in presets %}<button type="button" data-n="{{ n }}"{% if n == 10 and not editing %} class="on"{% endif %}>{{ n }}일</button>{% endfor %}</div>
+        <div class="hint" id="dhint"></div></div>
+      <div class="f"><label>일 작업량<small>건 / 일</small></label><div class="qrow"><div class="stepper"><button type="button" id="qm">−</button><input id="qty" name="daily_qty" type="number" value="{{ pre.daily_qty or 100 }}" min="50" max="500" step="10"><button type="button" id="qp">+</button></div><span class="qhint" id="qhint">{% if pre.slot_reco %}슬롯 추천 <b>{{ pre.slot_reco }}건</b> (매체 최소 수량 이상으로 조정)</span>{% else %}</span>{% endif %}</div></div>
+    </div>
+
+    {% if ch == 'place' %}
+    <div class="fsec"><h6><i data-lucide="map-pin" class="i i14"></i>플레이스 정보 · 키워드</h6>
+      <div class="row2"><div class="f"><label>플레이스명</label><input class="in" name="biz_name" value="{{ pre.biz_name or '' }}" placeholder="예) 대박갈비 일산동구점" required></div><div class="f"><label>순위 상승 희망 키워드</label><input class="in" id="kw" name="main_keyword" value="{{ pre.main_keyword or '' }}" placeholder="예) 일산 갈비" required></div></div>
+      <div class="f"><label>플레이스 링크<small>모바일 주소</small></label><input class="in" name="target_url" value="{{ pre.target_url or '' }}" placeholder="https://m.place.naver.com/..." required><div class="hint">PC 주소(place.naver.com, map.naver.com)를 넣으면 자동으로 변환됩니다.</div></div>
+    </div>
+    {% elif ch == 'store' %}
+    <div class="fsec"><h6><i data-lucide="shopping-bag" class="i i14"></i>상품 정보 · 키워드</h6>
+      <div class="row2"><div class="f"><label>상품명</label><input class="in" name="product_name" value="{{ pre.product_name or pre.biz_name or '' }}" placeholder="예) 아우라 방향제 200ml" required></div><div class="f"><label>순위 상승 희망 키워드</label><input class="in" id="kw" name="main_keyword" value="{{ pre.main_keyword or '' }}" placeholder="예) 아우라 방향제" required></div></div>
+      <div class="f"><label>상품 URL</label><input class="in" name="target_url" value="{{ pre.target_url or '' }}" placeholder="https://smartstore.naver.com/..." required><div class="hint">옵션 상품은 옵션 미선택 URL로 등록해주세요.</div></div>
+    </div>
+    {% else %}
+    <div class="fsec"><h6><i data-lucide="package" class="i i14"></i>상품 정보 · 키워드</h6>
+      <div class="row2"><div class="f"><label>상품명</label><input class="in" name="product_name" value="{{ pre.product_name or '' }}" placeholder="예) 무선 청소기 A1" required></div><div class="f"><label>순위 상승 희망 키워드</label><input class="in" id="kw" name="main_keyword" value="{{ pre.main_keyword or '' }}" placeholder="예) 무선 청소기" required></div></div>
+      <div class="f"><label>상품 URL</label><input class="in" name="target_url" value="{{ pre.target_url or '' }}" placeholder="https://www.coupang.com/vp/products/..." required></div>
+    </div>
+    {% endif %}
+
+    <div class="fsec"><h6><i data-lucide="credit-card" class="i i14"></i>결제</h6>
+      <div class="f"><label>결제 수단</label>
+        <div class="chan-tabs" id="payTabs" style="display:flex"><button type="button" class="on" data-pm="card" style="flex:1;justify-content:center">카드 결제</button><button type="button" data-pm="bank" style="flex:1;justify-content:center">무통장입금</button></div>
+        <input type="hidden" name="pay_method" id="payMethod" value="card">
+      </div>
+      <div class="f" id="depositorRow" style="display:none"><label>입금자명</label><input class="in" name="depositor" value="{{ current_user.biz_name or current_user.nickname }}" maxlength="40"><div class="hint">{{ bank.bank }} {{ bank.account }} ({{ bank.holder }}) · 등록 후 영업일 3일 내 입금</div></div>
+      <div class="pay">
+        <div class="kv"><span>주문 금액 <small style="color:var(--text-3)" id="calc"></small></span><b class="num" id="order">0원</b></div>
+        <div class="kv"><span>부가세 <small style="color:var(--text-3)">10%</small></span><b class="num" id="vat">0원</b></div>
+        <div class="kv total"><span>결제 금액</span><b class="num" id="total">0원</b></div>
+      </div>
+    </div>
+  </div></div></div>
+</div>
+
+<div class="paybar" id="paybar">
+  <div class="sum"><div>매체<b id="pbM">—</b></div><div>기간<b id="pbD">—</b></div><div>일 수량<b id="pbQ">—</b></div></div>
+  <div class="tot"><small>결제 금액 (VAT 포함)</small><b class="num" id="pbT">0원</b></div>
+  <button class="btn pri" id="submit" type="submit">{% if editing %}수정 저장{% else %}결제하고 등록{% endif %}</button>
+</div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>
+window.MEDIA = {{ media_json | safe }};
+window.CHANNEL = "{{ ch }}";
+window.EDITING = {{ 'true' if editing else 'false' }};
+</script>
+<script src="{{ url_for('static', filename='js/campaign_new.js') }}"></script>
+{% endblock %}

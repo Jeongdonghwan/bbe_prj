@@ -1,0 +1,26 @@
+{% extends "layout/base.html" %}
+{% block title %}{{ item.title }}{% endblock %}
+{% block content %}
+{% set current_id = item.id %}
+<div class="ph"><div><h1>마케팅 정보</h1></div><div class="act"><a class="btn sec sm" href="/community/info">목록</a></div></div>
+<div class="cgrid">
+  <div>
+    <div class="card">
+      <div class="ch" style="flex-direction:column;align-items:flex-start;gap:8px;border-bottom:1px solid var(--border);padding-bottom:16px">
+        <div style="display:flex;gap:6px;align-items:center">
+          {% if item.board == 'series' %}<span class="pill p-tool">처음 시작하는 분께 · {{ item.series_no }}편</span>
+          {% else %}{% if item.is_pinned %}<span class="tag t-pin">고정</span>{% endif %}<span class="pill p-tool">{{ categories.get(item.category, item.category) }}</span>{% endif %}
+        </div>
+        <h3 style="font-size:18px">{{ item.title }}</h3>
+        <div class="thin num">{{ item.published_at | fmt_date('%Y.%m.%d') }} · 조회 {{ (item.views + 1) | fmt_num }}</div>
+      </div>
+      <div class="cb" style="padding-top:18px;font-size:14.5px;line-height:1.8">{{ item.body | safe }}</div>
+    </div>
+    <div class="card" style="margin-top:12px"><div class="cb" style="padding-top:4px">
+      <div class="kv"><span>이전글</span>{% if prev_row %}<a class="lnk" href="/community/info/{{ prev_row.id }}">{{ prev_row.title }}</a>{% else %}<b class="thin">없음</b>{% endif %}</div>
+      <div class="kv"><span>다음글</span>{% if next_row %}<a class="lnk" href="/community/info/{{ next_row.id }}">{{ next_row.title }}</a>{% else %}<b class="thin">없음</b>{% endif %}</div>
+    </div></div>
+  </div>
+  {% include "community/_series_side.html" %}
+</div>
+{% endblock %}

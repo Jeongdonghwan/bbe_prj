@@ -1,0 +1,46 @@
+{# Sidebar driven by MENU constant (app/__init__.py). user/admin nav switch is done by body.admin CSS. #}
+{% macro nav_item(item) %}
+  {% if item.children %}
+    {% set ns = namespace(open=false) %}
+    {% for ch in item.children %}{% if ch.href == active_href %}{% set ns.open = true %}{% endif %}{% endfor %}
+    <button class="acc{% if ns.open %} open{% endif %}" type="button"><i data-lucide="{{ item.icon }}" class="i"></i><span class="lbl">{{ item.label }}</span><i data-lucide="chevron-down" class="chev"></i></button>
+    <div class="sub">{% for ch in item.children %}<a href="{{ ch.href }}"{% if ch.href == active_href %} class="on"{% endif %}>{{ ch.label }}</a>{% endfor %}</div>
+  {% elif item.external %}
+    <a href="{{ item.href }}" target="_blank" rel="noopener"><i data-lucide="{{ item.icon }}" class="i"></i><span class="lbl">{{ item.label }}</span><i data-lucide="external-link" class="ext"></i></a>
+  {% else %}
+    <a href="{{ item.href }}"{% if item.href == active_href %} class="on"{% endif %}><i data-lucide="{{ item.icon }}" class="i"></i><span class="lbl">{{ item.label }}</span></a>
+  {% endif %}
+{% endmacro %}
+<aside class="sidebar">
+  <a class="logo" href="/"><b>{{ APP_NAME[0] }}</b><span>{{ APP_NAME }}</span><small>{% if is_admin_path %}admin{% else %}beta{% endif %}</small></a>
+  {% if current_user %}
+  <a class="point-card" id="pointCard" href="/my" style="display:block"><div class="lbl">로그인 계정</div><div class="val">{{ current_user.nickname }}<i>{% if current_user.role == 'admin' %}관리자{% else %}{{ {'biz': '사업자', 'agency': '대행사', 'master': '총판'}.get(current_user.grade, '사업자') }}{% endif %}</i></div></a>
+  {% else %}
+  <a class="kakao-btn" id="kakaoBtn" href="/auth/login"><svg viewBox="0 0 24 24"><path d="M12 3C6.5 3 2 6.6 2 11c0 2.8 1.8 5.2 4.6 6.6L5.5 21l4.6-2.7c.6.1 1.2.1 1.9.1 5.5 0 10-3.6 10-8S17.5 3 12 3z"/></svg><span>카카오 3초 회원가입</span></a>
+  {% endif %}
+  <nav class="nav">
+   <div class="nav-user">
+    {% for sec in MENU.user %}
+    <div class="nav-sec"><h6>{{ sec.title }}</h6>
+      {% for item in sec['items'] %}{{ nav_item(item) }}{% endfor %}
+    </div>
+    {% endfor %}
+   </div>
+   <div class="nav-admin">
+    {% for sec in MENU.admin %}
+    <div class="nav-sec"><h6>{{ sec.title }}</h6>
+      {% for item in sec['items'] %}{{ nav_item(item) }}{% endfor %}
+    </div>
+    {% endfor %}
+   </div>
+  </nav>
+  <div class="side-foot">
+    {% if current_user %}
+    <a href="/my">마이페이지</a>
+    {% if current_user.role == 'admin' %}{% if is_admin_path %}<a href="/">사용자 화면</a>{% else %}<a href="/admin">관리자</a>{% endif %}{% endif %}
+    <a href="/auth/logout">로그아웃</a>
+    {% else %}
+    <a href="/guide">이용가이드</a><a href="/auth/login">로그인</a>
+    {% endif %}
+  </div>
+</aside>

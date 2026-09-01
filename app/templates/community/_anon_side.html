@@ -1,0 +1,7 @@
+<div class="side">
+  <div class="card"><div class="ch"><h3>지금 뜨는 글</h3><span style="font-size:11.5px;color:var(--text-3)">24시간</span></div><div class="cb"><ol class="hotlist">
+    {% for h in hot %}<li><a href="/community/anon/{{ h.id }}">{{ h.title }}</a><span class="cnt">{{ h.comment_cnt }}</span></li>{% else %}<li><span class="thin">24시간 내 글이 없습니다</span></li>{% endfor %}
+  </ol></div></div>
+  <div class="card"><div class="ch"><h3>익명이 지켜지는 방식</h3></div><div class="cb"><ul class="rule"><li>글마다 "수식어 + 동물" 닉네임이 새로 생성되고, 다른 글과 연결되지 않습니다</li><li>운영진도 글쓴이를 볼 수 없습니다 (신고 3회 누적 시에만 검토)</li><li>업체명·전화번호는 자동으로 가려집니다</li></ul></div></div>
+  <div class="card"><div class="ch"><h3>자주 쓰는 태그</h3></div><div class="cb"><div class="tagcloud">{% for t in tags %}<a href="/community/anon?q={{ t[1:] }}">{{ t }}</a>{% endfor %}</div></div></div>
+</div>

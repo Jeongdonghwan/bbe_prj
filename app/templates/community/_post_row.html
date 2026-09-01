@@ -1,0 +1,6 @@
+{# One anon-board row (prototype .post): vote · nick · time · tag · title · comments · views · optional thumb. No body preview. #}
+<a class="post" href="/community/anon/{{ r.id }}"><div class="vote{% if r.hot %} hot{% endif %}"><i data-lucide="chevron-up" class="i"></i>{{ r.likes }}</div>
+  <div class="body"><div class="head"><span class="anon" style="font-family:var(--font);font-weight:600;color:var(--text-2)">{{ r.anon_nick }}</span><span>·</span><span>{{ r.rel }}</span>{% if r.channel_tag %}<span class="pill p-{{ r.channel_tag }}">{{ tag_label[r.channel_tag] }}</span>{% endif %}{% if r.hot %}<span class="pill p-hot">인기</span>{% endif %}</div>
+    <h4>{{ r.title }}{% if r.comment_cnt >= 10 %} <em>답변 {{ r.comment_cnt }}</em>{% endif %}</h4>
+    <div class="foot"><span><i data-lucide="message-circle" class="i i14"></i><span class="c">{{ r.comment_cnt }}</span></span><span><i data-lucide="eye" class="i i14"></i>{{ r.views | fmt_num }}</span></div></div>
+  {% if r.image_url %}<div class="thumb" style="background-image:url('{{ r.image_url }}');background-size:cover"></div>{% endif %}</a>

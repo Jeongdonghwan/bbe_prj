@@ -1,0 +1,23 @@
+{# Comment thread (1-level replies). slug in ('anon','qna'). #}
+{% macro one(c, slug, p, my_nick, depth) %}
+<div class="post" id="c{{ c.id }}" style="cursor:default;{% if depth %}padding-left:48px;background:var(--bg){% endif %}{% if c.is_admin %};border-left:3px solid var(--accent){% endif %}">
+  <div class="body">
+    <div class="head"><span class="anon" style="font-family:var(--font);font-weight:600;color:var(--text-2)">{{ '운영팀' if c.is_admin else c.anon_nick }}</span>{% if c.is_author and not c.is_admin %}<span class="tag t-pin">글쓴이</span>{% endif %}<span>·</span><span>{{ c.rel }}</span></div>
+    {% if c.is_blind %}<p class="thin">신고 누적으로 블라인드된 댓글입니다.</p>{% else %}<p style="display:block;-webkit-line-clamp:unset;color:var(--text);white-space:pre-wrap">{{ c.body }}</p>{% endif %}
+    <div class="foot">{% if current_user and not depth %}<span><button type="button" class="lnk" data-reply="{{ c.id }}" data-nick="{{ c.anon_nick }}">답글</button></span>{% endif %}{% if current_user and current_user.id != c.user_id and not c.is_blind %}<form method="post" action="/community/{{ slug }}/report" style="display:inline"><input type="hidden" name="target_type" value="comment"><input type="hidden" name="target_id" value="{{ c.id }}"><input type="hidden" name="reason" value="댓글 신고"><input type="hidden" name="back" value="{{ request.path }}"><button type="submit" class="thin" style="text-decoration:underline">신고</button></form>{% endif %}</div>
+  </div>
+</div>
+{% for r in c.replies %}{{ one(r, slug, p, my_nick, 1) }}{% endfor %}
+{% endmacro %}
+<div class="card" id="comments">
+  <div class="ch"><h3>{{ '답변' if slug == 'qna' else '댓글' }} <span class="thin">{{ p.comment_cnt }}</span></h3></div>
+  {% for c in comments %}{{ one(c, slug, p, my_nick, 0) }}{% else %}<div class="empty">{% if slug == 'qna' %}아직 답변이 없습니다. 첫 답변을 남겨보세요.{% else %}첫 댓글을 남겨보세요.{% endif %}</div>{% endfor %}
+  {% if current_user %}
+  <form method="post" action="/community/{{ slug }}/{{ p.id }}/comment" class="cb" style="padding-top:12px;border-top:1px solid var(--border)" id="commentForm">
+    <input type="hidden" name="parent_id" id="parentId" value="">
+    <div class="anonlbl" style="margin-bottom:6px;font-size:11.5px;color:var(--text-3);display:flex;gap:4px;align-items:center"><i data-lucide="lock" class="i i14"></i>이 글에서 당신은 <b style="color:var(--text)">{{ '운영팀' if current_user.role == 'admin' else my_nick }}</b>{% if is_owner %} <span class="tag t-pin">글쓴이</span>{% endif %}<span id="replyTo" style="margin-left:8px"></span></div>
+    <textarea class="in" name="body" rows="3" placeholder="{{ '답변을 남겨주세요' if slug == 'qna' else '댓글을 남겨주세요' }}" required></textarea>
+    <div style="display:flex;justify-content:flex-end;margin-top:8px"><button class="btn pri sm" type="submit">등록</button></div>
+  </form>
+  {% else %}<div class="cb thin" style="padding-top:12px;border-top:1px solid var(--border)">로그인하면 {{ '답변' if slug == 'qna' else '댓글' }}을 남길 수 있습니다. <a class="lnk" href="/auth/login?next={{ request.path }}">로그인</a></div>{% endif %}
+</div>

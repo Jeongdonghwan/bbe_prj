@@ -1,0 +1,30 @@
+{% extends "layout/base.html" %}
+{% block title %}입금 안내{% endblock %}
+{% block content %}
+<div class="ph"><div><h1>무통장 입금 안내</h1><p>주문 {{ c.order_no }} · 입금 확인 후 검수가 시작됩니다.</p></div><div class="act"><a class="btn sec sm" href="/campaign/{{ channel }}?open={{ c.id }}">캠페인 관리</a></div></div>
+<div class="cgrid">
+  <div class="card"{% if p.status == 'pending' %} style="border-color:var(--accent)"{% endif %}><div class="ch"><h3>입금 정보</h3><span class="st {{ 's-wait' if p.status == 'pending' else ('s-run' if p.status == 'paid' else 's-rej') }}" style="margin-left:auto">{{ pay_status_label[p.status] }}</span></div><div class="cb">
+    <div class="kv"><span>입금 계좌</span><b>{{ bank.bank }} {{ bank.account }} <span class="thin">예금주 {{ bank.holder }}</span></b></div>
+    <div class="kv"><span>입금 금액</span><b class="num" style="font-size:18px;color:var(--accent)">{{ p.amount | won }}</b></div>
+    <div class="kv"><span>입금자명</span><b>{{ p.depositor }}{% if p.name_mismatch %} <span class="tag t-must">회원명과 다름</span>{% endif %}</b></div>
+    <div class="kv"><span>입금 기한</span><b class="num">{{ p.bank_due_at | fmt_date('%Y.%m.%d %H:%M') }}</b></div>
+    <div class="infobox"><h6><i data-lucide="info" class="i i14"></i>안내</h6><ul>
+      <li>입금자명이 다르면 확인이 지연될 수 있습니다. <b>{{ p.depositor }}</b>으로 입금해주세요.</li>
+      <li>기한 내 미입금 시 주문이 자동 취소됩니다.</li>
+      <li>입금 확인은 영업시간(평일 10~18시) 기준 1시간 내 처리됩니다.</li>
+      <li>세금계산서는 마이페이지 사업자 정보 기준으로 발행됩니다.</li></ul></div>
+  </div></div>
+  <div class="side">
+    <div class="card"><div class="ch"><h3>주문 내용</h3></div><div class="cb">
+      <div class="kv"><span>업체 · 키워드</span><b>{{ c.biz_name }} · {{ c.main_keyword }}</b></div>
+      <div class="kv"><span>매체</span><b>{{ c.media_name }}</b></div>
+      <div class="kv"><span>기간</span><b class="num">{{ c.start_date | fmt_date('%m.%d') }} ~ {{ c.end_date | fmt_date('%m.%d') }} · {{ c.daily_qty }}건/일</b></div>
+      <div class="kv"><span>공급가 + VAT</span><b class="num">{{ (c.paid_amount - c.vat) | won }} + {{ c.vat | won }}</b></div>
+      {% if c.status == 'pay_wait' %}
+      <a class="btn sec" style="width:100%;margin-top:12px" href="/campaign/{{ channel }}/new?edit={{ c.id }}">주문 수정</a>
+      <form method="post" action="/campaign/{{ channel }}/{{ c.id }}/cancel"><button class="btn ghost" style="width:100%;margin-top:6px;color:var(--danger)" type="submit">주문 취소</button></form>
+      {% endif %}
+    </div></div>
+  </div>
+</div>
+{% endblock %}

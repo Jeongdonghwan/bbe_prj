@@ -1,0 +1,36 @@
+{% extends "layout/base.html" %}
+{% block title %}결제{% endblock %}
+{% block content %}
+<div class="ph"><div><h1>결제</h1><p>주문 {{ c.order_no }} · 결제가 완료되면 검수가 시작됩니다.</p></div></div>
+<div class="cgrid">
+  <div class="card"><div class="ch"><h3>주문 내용</h3></div><div class="cb">
+    <div class="kv"><span>업체 · 키워드</span><b>{{ c.biz_name }} · {{ c.main_keyword }}</b></div>
+    <div class="kv"><span>매체</span><b>{{ c.media_name }}</b></div>
+    <div class="kv"><span>기간</span><b class="num">{{ c.start_date | fmt_date('%Y.%m.%d') }} ~ {{ c.end_date | fmt_date('%Y.%m.%d') }}</b></div>
+    <div class="kv"><span>일 작업량</span><b class="num">{{ c.daily_qty }}건 × {{ c.total_qty // c.daily_qty }}일</b></div>
+    <div class="pay">
+      <div class="kv"><span>주문 금액</span><b class="num">{{ (c.paid_amount - c.vat + c.discount) | won }}</b></div>
+      <div class="kv"><span>할인</span><b class="num">−{{ c.discount | won }}</b></div>
+      <div class="kv"><span>부가세</span><b class="num">{{ c.vat | won }}</b></div>
+      <div class="kv total"><span>결제 금액</span><b class="num">{{ c.paid_amount | won }}</b></div>
+    </div>
+  </div></div>
+  <div class="side">
+    <div class="card"><div class="ch"><h3>카드 결제</h3></div><div class="cb">
+      {% if adapter.name == 'mock' %}
+        {% if is_debug %}
+        <p class="thin" style="margin-bottom:12px">PG 연동 전 개발용입니다. 아래 버튼을 누르면 결제 승인으로 처리됩니다.</p>
+        <form method="post" action="/campaign/{{ channel }}/{{ c.id }}/pay/confirm"><button class="btn pri lg" type="submit">모의 결제 성공</button></form>
+        {% else %}
+        <div class="empty">결제 수단 준비 중입니다. 무통장입금을 이용해주세요.</div>
+        {% endif %}
+      {% else %}
+        <div id="pgWidget" data-pg='{{ pg | tojson }}'></div>
+        <form method="post" action="/campaign/{{ channel }}/{{ c.id }}/pay/confirm" id="pgConfirm"><input type="hidden" name="token" id="pgToken"><button class="btn pri lg" type="submit">결제하기</button></form>
+      {% endif %}
+      <a class="btn ghost" style="width:100%;margin-top:8px" href="/campaign/{{ channel }}/new?edit={{ c.id }}">주문 수정</a>
+      <form method="post" action="/campaign/{{ channel }}/{{ c.id }}/cancel"><button class="btn ghost" style="width:100%;color:var(--danger)" type="submit">주문 취소</button></form>
+    </div></div>
+  </div>
+</div>
+{% endblock %}

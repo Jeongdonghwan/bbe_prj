@@ -1,0 +1,35 @@
+{# First-login signup modal: nickname + phone + consents. Rendered by base.html when current_user has no phone. #}
+<div class="modal on" id="welcomeModal">
+  <form class="modal-box" method="post" action="/auth/welcome">
+    <input type="hidden" name="next" value="{{ request.path }}">
+    <h3>환영합니다! 가입을 완료해주세요</h3>
+    <p class="thin" style="margin:4px 0 14px">캠페인 검수·진행 상태를 카카오 알림톡으로 알려드리기 위해 필요합니다.</p>
+    <div class="f"><label>닉네임</label><input class="in" name="nickname" value="{{ current_user.nickname }}" maxlength="20" required></div>
+    <div class="f"><label>연락처 <small>캠페인 상태 알림톡 수신용</small></label><input class="in" name="phone" placeholder="010-1234-5678" required></div>
+    <div class="f" style="margin-bottom:8px">
+      <label class="chk" style="cursor:pointer" id="agreeAll"><input type="checkbox" hidden><i></i><b>전체 동의</b></label>
+      <div style="border-top:1px solid var(--border);margin:6px 0"></div>
+      <label class="chk" style="cursor:pointer"><input type="checkbox" name="agree_terms" value="1" hidden><i></i>(필수) <a class="lnk" href="/terms" target="_blank">이용약관</a> 동의</label>
+      <label class="chk" style="cursor:pointer"><input type="checkbox" name="agree_privacy" value="1" hidden><i></i>(필수) <a class="lnk" href="/privacy" target="_blank">개인정보 수집·이용</a> 동의</label>
+      <label class="chk" style="cursor:pointer"><input type="checkbox" name="agree_marketing" value="1" hidden><i></i>(선택) 이벤트 · 신규 매체 소식 받기</label>
+    </div>
+    <button class="btn pri lg" type="submit">동의하고 시작하기</button>
+    <a class="btn ghost" href="/auth/logout" style="width:100%;margin-top:6px;font-size:12.5px">나중에 하기 (로그아웃)</a>
+  </form>
+</div>
+<script>
+(function () {
+  var m = document.getElementById('welcomeModal'); if (!m) return;
+  var boxes = m.querySelectorAll('.chk');
+  boxes.forEach(function (c) { c.addEventListener('click', function (e) { if (e.target.closest('a')) return; setTimeout(function () { c.classList.toggle('on', c.querySelector('input').checked); }, 0); }); });
+  var all = document.getElementById('agreeAll');
+  all.addEventListener('click', function () { setTimeout(function () {
+    var on = all.querySelector('input').checked;
+    m.querySelectorAll('.chk input[name]').forEach(function (i) { i.checked = on; i.closest('.chk').classList.toggle('on', on); });
+  }, 0); });
+  m.querySelector('form').addEventListener('submit', function (e) {
+    var t = m.querySelector('input[name=agree_terms]').checked, p = m.querySelector('input[name=agree_privacy]').checked;
+    if (!t || !p) { e.preventDefault(); alert('이용약관과 개인정보 수집·이용에 동의해주세요.'); }
+  });
+})();
+</script>

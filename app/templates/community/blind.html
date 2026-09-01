@@ -1,0 +1,6 @@
+{% extends "layout/base.html" %}
+{% block title %}블라인드된 글{% endblock %}
+{% block content %}
+<div class="ph"><div><h1>{{ '익명 게시판' if slug == 'anon' else '질문답변' }}</h1></div></div>
+<div class="card"><div class="cb" style="padding-top:16px"><div class="empty"><i data-lucide="eye-off"></i>신고 누적으로 블라인드된 글입니다.<br><a class="lnk" href="/community/{{ slug }}">목록으로</a></div></div></div>
+{% endblock %}

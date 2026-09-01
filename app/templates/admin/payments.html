@@ -1,0 +1,31 @@
+{% extends "layout/base.html" %}
+{% from "macros/pagination.html" import pager %}
+{% block title %}결제 내역{% endblock %}
+{% block content %}
+<div class="ph"><div><h1>결제 내역 · 입금 확인</h1><p>무통장 입금을 확인하면 주문이 검수 단계로 넘어갑니다.</p></div>
+  <div class="act"><form method="post" action="/admin/payments/expire"><button class="btn sec" type="submit">기한 만료 처리</button></form></div></div>
+<div class="card"><div class="cb" style="padding-top:6px">
+  <div class="tabs">{% for key, label in [('pending','입금 대기'),('paid','확인 완료'),('expired','기한 만료'),('card','카드 전체')] %}<a href="/admin/payments?tab={{ key }}"><button type="button"{% if tab == key %} class="on"{% endif %}>{{ label }}{% if key == 'pending' %}<em>{{ pending_n }}</em>{% endif %}</button></a>{% endfor %}</div>
+  <div style="overflow-x:auto;margin:0 -18px"><table><thead><tr><th>주문</th><th>회원</th><th>입금자명</th><th>채널 · 업체</th><th style="text-align:right">금액</th><th>상태</th><th>요청 · 기한</th><th></th></tr></thead><tbody>
+    {% for r in rows %}
+    <tr{% if r.overdue %} style="background:var(--danger-soft)"{% endif %}><td class="ord">{{ r.order_no }}</td><td>{{ r.nickname }}</td>
+      <td><b>{{ r.depositor or '-' }}</b>{% if r.name_mismatch %} <span class="pill p-open">이름 다름</span>{% endif %}{% if r.pg_tid %}<br><span class="mono mut" style="font-size:11px">{{ r.pg_tid }}</span>{% endif %}</td>
+      <td><span class="pill p-{{ r.channel }}">{{ channel_label[r.channel] }}</span> {{ r.biz_name }}</td>
+      <td class="num" style="text-align:right"><b>{{ r.amount | fmt_num }}</b>{% if r.refund_amount %}<br><span class="mut" style="font-size:11px">환불 {{ r.refund_amount | fmt_num }}</span>{% endif %}</td>
+      <td><span class="st {{ 's-wait' if r.status == 'pending' else ('s-run' if r.status == 'paid' else 's-rej') }}">{{ pay_status_label[r.status] }}</span> <span class="thin">/ {{ status_label[r.campaign_status] }}</span></td>
+      <td><span class="mut">{{ r.created_at | fmt_date('%m.%d %H:%M') }}</span>{% if r.bank_due_at %}<br><span{% if r.overdue %} style="color:var(--danger)"{% elif r.age_h >= 24 %} style="color:var(--warn)"{% else %} class="mut"{% endif %}>기한 {{ r.bank_due_at | fmt_date('%m.%d %H:%M') }}{% if r.overdue %} · 경과{% elif r.age_h >= 24 %} · {{ r.age_h }}시간 경과{% endif %}</span>{% endif %}</td>
+      <td><div class="rowact" style="opacity:1">{% if r.status == 'pending' and r.method == 'bank' %}<form method="post" action="/admin/payments/{{ r.id }}/confirm"><button style="color:var(--success)" type="submit">입금 확인 → 검수</button></form><form method="post" action="/admin/payments/{{ r.id }}/cancel" onsubmit="return confirm('주문을 취소할까요?')"><button style="color:var(--danger)" type="submit">취소</button></form>{% endif %}<a href="/admin/orders?q={{ r.order_no }}"><button type="button">주문</button></a></div></td></tr>
+    {% else %}<tr><td colspan="8"><div class="empty">내역이 없습니다.</div></td></tr>{% endfor %}
+  </tbody></table></div>
+  {{ pager(page, total_pages, 'admin.payments', tab=tab) }}
+</div></div>
+<div class="card" style="margin-top:16px"><div class="ch"><h3>입금 계좌 · 기한 설정</h3><span class="thin">주문 화면의 안내 문구에 바로 반영됩니다</span></div><div class="cb">
+  <form method="post" action="/admin/payments/settings" style="display:grid;grid-template-columns:1fr 1.4fr 1fr 120px auto;gap:8px;align-items:end">
+    <div class="f" style="margin:0"><label>은행</label><input class="in" name="bank_name" value="{{ bank.bank }}"></div>
+    <div class="f" style="margin:0"><label>계좌번호</label><input class="in" name="bank_account" value="{{ bank.account }}"></div>
+    <div class="f" style="margin:0"><label>예금주</label><input class="in" name="bank_holder" value="{{ bank.holder }}"></div>
+    <div class="f" style="margin:0"><label>기한<small>영업일</small></label><input class="in" name="bank_due_days" type="number" min="1" max="10" value="{{ bank.due_days }}"></div>
+    <button class="btn pri" type="submit">저장</button>
+  </form>
+</div></div>
+{% endblock %}

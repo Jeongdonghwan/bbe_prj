@@ -1,0 +1,14 @@
+{# pager(page, total_pages, endpoint, **args): .pager markup from prototype, rendered as links. Page size is fixed at 20. #}
+{% macro pager(page, total_pages, endpoint) %}
+{% if total_pages > 1 %}
+{% set start = [1, page - 4] | max %}
+{% set end = [total_pages, start + 8] | min %}
+<div class="pager">
+  {% if page > 1 %}<a href="{{ url_for(endpoint, page=page - 1, **kwargs) }}"><button type="button">‹</button></a>{% endif %}
+  {% for p in range(start, end + 1) %}
+    <a href="{{ url_for(endpoint, page=p, **kwargs) }}"><button type="button"{% if p == page %} class="on"{% endif %}>{{ p }}</button></a>
+  {% endfor %}
+  {% if page < total_pages %}<a href="{{ url_for(endpoint, page=page + 1, **kwargs) }}"><button type="button">›</button></a>{% endif %}
+</div>
+{% endif %}
+{% endmacro %}

@@ -1,0 +1,10 @@
+{# "처음 시작하는 분께" series — the only side widget on the info board (spec 2-8). #}
+<div class="side">
+  <div class="card"><div class="ch"><h3>처음 시작하는 분께</h3></div><div class="cb"><ol class="series">
+    {% for s in series %}
+    <li><span class="n{% if s.is_read %} ok{% endif %}">{{ s.series_no or loop.index }}</span><a href="/community/info/{{ s.id }}"{% if s.id == current_id %} style="color:var(--accent);font-weight:600"{% endif %}>{{ s.title }}</a><span class="mut">{% if s.is_read %}읽음{% else %}{{ s.read_min }}분{% endif %}</span></li>
+    {% else %}
+    <li><span class="mut">준비 중</span></li>
+    {% endfor %}
+  </ol></div></div>
+</div>

@@ -1,0 +1,67 @@
+{% extends "layout/base.html" %}
+{% from "macros/pagination.html" import pager %}
+{% block title %}공지 · 정보글{% endblock %}
+{% block content %}
+{% set board_label = {'notice': '공지', 'info': '마케팅 정보', 'series': '입문 시리즈'} %}
+{% set tag_cls = {'must': 't-must', 'update': 't-upd', 'maint': 't-mnt', 'event': 't-evt'} %}
+<div class="ph"><div><h1>공지 · 정보글</h1><p>공지사항, 마케팅 정보, 입문 시리즈를 한 곳에서 씁니다.</p></div><div class="act"><a class="btn pri" href="/admin/content?new=1"><i data-lucide="pen-line" class="i i16"></i>새 글</a></div></div>
+<div class="form2">
+  <div>
+    <div class="card" style="margin-bottom:16px"><div class="cb" style="padding-top:6px">
+      <div class="tabs">{% for key, label in [('all','전체'),('notice','공지'),('info','마케팅 정보'),('series','입문 시리즈'),('draft','임시저장')] %}<a href="/admin/content?tab={{ key }}"><button type="button"{% if tab == key %} class="on"{% endif %}>{{ label }}<em>{{ counts[key] }}</em></button></a>{% endfor %}</div>
+      <div style="margin:0 -18px;overflow-x:auto"><table><thead><tr><th>게시판</th><th>분류</th><th>제목</th><th>상태</th><th>조회</th><th>일자</th><th></th></tr></thead><tbody>
+        {% for r in rows %}
+        <tr><td>{{ board_label[r.board] }}{% if r.channel %} <span class="thin">({{ channel_label[r.channel] }})</span>{% endif %}</td>
+          <td>{% if r.board == 'notice' %}<span class="tag {{ tag_cls.get(r.category, 't-mnt') }}">{{ notice_categories.get(r.category, r.category) }}</span>{% elif r.board == 'info' %}<span class="pill p-tool">{{ info_categories.get(r.category, r.category) }}</span>{% else %}<span class="mut">{{ r.series_no }}편</span>{% endif %}</td>
+          <td style="white-space:normal"><b>{{ r.title }}</b>{% if r.is_pinned %} <span class="tag t-pin">고정</span>{% endif %}</td>
+          <td>{% if r.status == 'published' %}<span class="st s-run">발행</span>{% elif r.status == 'scheduled' %}<span class="st s-appr">예약 {{ r.publish_at | fmt_date('%m.%d %H:%M') }}</span>{% else %}<span class="st s-wait">임시저장</span>{% endif %}</td>
+          <td class="num">{{ r.views | fmt_num if r.status == 'published' else '—' }}</td><td class="num mut">{{ (r.publish_at or r.created_at) | fmt_date }}</td>
+          <td><div class="rowact" style="opacity:1"><a href="/admin/content?tab={{ tab }}&edit={{ r.id }}"><button type="button">{% if r.status == 'draft' %}이어쓰기{% else %}수정{% endif %}</button></a>
+            {% if r.board != 'series' %}<form method="post" action="/admin/content/{{ r.id }}/pin"><input type="hidden" name="back" value="{{ request.full_path }}"><button type="submit">{% if r.is_pinned %}고정 해제{% else %}고정{% endif %}</button></form>
+            {% else %}<form method="post" action="/admin/content/{{ r.id }}/order/up"><button type="submit" title="위로">↑</button></form><form method="post" action="/admin/content/{{ r.id }}/order/down"><button type="submit" title="아래로">↓</button></form>{% endif %}
+            <form method="post" action="/admin/content/{{ r.id }}/delete" onsubmit="return confirm('삭제할까요?')"><button type="submit" style="color:var(--danger)">삭제</button></form></div></td></tr>
+        {% else %}<tr><td colspan="7"><div class="empty">글이 없습니다.</div></td></tr>{% endfor %}
+      </tbody></table></div>
+      {{ pager(page, total_pages, 'admin.content', tab=tab) }}
+    </div></div>
+    {% if new %}{% set e = edit or {} %}
+    <div class="card"><div class="ch"><h3>{% if edit %}글 수정{% else %}새 글{% endif %}</h3></div><div class="cb">
+      <div class="f"><label>제목</label><input class="in" name="title" form="contentForm" value="{{ e.title or '' }}" style="font-size:15px;font-weight:600" required></div>
+      <div class="f"><label>본문</label>
+        <div class="editor" style="padding:0;border:0;min-height:0">
+          <div class="tb" style="padding:8px 10px;border:1px solid var(--border);border-bottom:0;border-radius:8px 8px 0 0;margin:0">
+            {% for cmd, label, title in [('bold','B','굵게'),('italic','I','기울임'),('h2','H2','소제목'),('ul','•','목록'),('ol','1.','번호 목록'),('table','표','표'),('link','링크','링크'),('image','이미지','이미지 업로드'),('hr','—','구분선')] %}<button type="button" data-cmd="{{ cmd }}" title="{{ title }}"{% if cmd == 'italic' %}><i>I</i>{% else %}>{{ label }}{% endif %}</button>{% endfor %}
+            <button type="button" data-cmd="html" title="HTML 직접 편집" style="margin-left:auto;width:auto;padding:0 8px">HTML</button>
+          </div>
+          <div id="editorArea" contenteditable="true" style="min-height:260px;border:1px solid var(--border);border-radius:0 0 8px 8px;padding:12px;font-size:13.5px;line-height:1.7;color:var(--text);outline:none">{{ e.body | safe if e.body else '' }}</div>
+          <textarea id="editorHtml" class="in" style="display:none;min-height:260px;font-family:var(--mono);font-size:12px"></textarea>
+          <input type="file" id="imgFile" accept="image/*" hidden>
+        </div>
+      </div>
+    </div></div>
+    {% endif %}
+  </div>
+  {% if new %}{% set e = edit or {} %}
+  <div class="card"><div class="ch"><h3>발행 설정</h3></div><div class="cb">
+    <form method="post" action="/admin/content/save" id="contentForm">{% if edit %}<input type="hidden" name="id" value="{{ e.id }}">{% endif %}<input type="hidden" name="body" id="bodyField"><input type="hidden" name="mode" id="modeField" value="publish">
+      <div class="f"><label>게시판</label><select class="in" name="board" id="boardSel"><option value="notice"{% if e.board == 'notice' %} selected{% endif %}>공지사항</option><option value="info"{% if e.board == 'info' or not e.board %} selected{% endif %}>마케팅 정보</option><option value="series"{% if e.board == 'series' %} selected{% endif %}>입문 시리즈</option></select></div>
+      <div class="f" data-for="notice"><label>분류</label><select class="in" name="category_notice">{% for k, v in notice_categories.items() %}<option value="{{ k }}"{% if e.category == k %} selected{% endif %}>{{ v }}</option>{% endfor %}</select>
+        <select class="in" name="channel" style="margin-top:6px"><option value="">전체 공지</option>{% for k, v in channel_label.items() %}<option value="{{ k }}"{% if e.channel == k %} selected{% endif %}>{{ v }} 공지</option>{% endfor %}</select></div>
+      <div class="f" data-for="info"><label>분류</label><select class="in" name="category_info">{% for k, v in info_categories.items() %}<option value="{{ k }}"{% if e.category == k %} selected{% endif %}>{{ v }}</option>{% endfor %}</select><div class="hint">공지사항 선택 시: 필독 · 업데이트 · 점검 · 이벤트</div></div>
+      <div class="f" data-for="series"><label>편 번호</label><input class="in num" name="series_no" type="number" min="1" value="{{ e.series_no or next_series_no }}"></div>
+      <input type="hidden" name="category" id="categoryField">
+      <div class="f"><label>발행</label><div class="chan-tabs" style="display:flex"><button type="button" class="on" data-when="now" style="flex:1;justify-content:center">지금</button><button type="button" data-when="schedule" style="flex:1;justify-content:center">예약</button></div><input type="hidden" name="when" id="whenField" value="now"><input class="in" name="publish_at" type="datetime-local" id="publishAt" style="display:none;margin-top:6px" value="{{ e.publish_at.strftime('%Y-%m-%dT%H:%M') if e.publish_at else '' }}"></div>
+      <label class="chk{% if e.is_pinned %} on{% endif %}" style="cursor:pointer"><input type="checkbox" name="is_pinned" value="1" hidden{% if e.is_pinned %} checked{% endif %}><i></i>목록 상단 고정</label>
+      <label class="chk{% if e.show_dashboard is not defined or e.show_dashboard %} on{% endif %}" style="cursor:pointer"><input type="checkbox" name="show_dashboard" value="1" hidden{% if e.show_dashboard is not defined or e.show_dashboard %} checked{% endif %}><i></i>대시보드에 노출</label>
+      <label class="chk{% if e.notify %} on{% endif %}" style="cursor:pointer" data-for="notice"><input type="checkbox" name="notify" value="1" hidden{% if e.notify %} checked{% endif %}><i></i>발행 시 회원 알림 (공지만)</label>
+      <div style="border-top:1px solid var(--border);margin:14px 0 12px"></div>
+      <div style="font-size:12.5px;color:var(--text-2);margin-bottom:8px">미리보기</div>
+      <div class="post" style="border:1px solid var(--border);border-radius:8px;padding:12px"><div class="body"><div class="head"><span class="pill p-tool" id="pvCat">분류</span><span>·</span><span>오늘</span></div><h4 style="font-size:13.5px" id="pvTitle">{{ e.title or '제목' }}</h4></div></div>
+      <div style="display:flex;gap:8px;margin-top:14px"><button class="btn pri" style="flex:1" type="submit">발행</button><button class="btn sec" type="submit" id="draftBtn">임시저장</button></div>
+      {% if edit and e.status == 'published' %}<a class="lnk" style="display:block;margin-top:10px;text-align:center" href="{% if e.board == 'notice' %}/notice/{{ e.id }}{% else %}/community/info/{{ e.id }}{% endif %}" target="_blank">발행된 글 보기</a>{% endif %}
+    </form>
+  </div></div>
+  {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/admin.js') }}"></script>{% endblock %}

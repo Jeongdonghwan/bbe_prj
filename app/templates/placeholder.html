@@ -1,0 +1,8 @@
+{% extends "layout/base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="ph"><div><h1>{{ title }}</h1>{% if phase_label %}<p>{{ phase_label }}에서 제공됩니다.</p>{% endif %}</div></div>
+<div class="card"><div class="cb" style="padding-top:16px">
+  <div class="empty"><i data-lucide="construction"></i>준비 중입니다.{% if desc %}<br>{{ desc }}{% endif %}</div>
+</div></div>
+{% endblock %}

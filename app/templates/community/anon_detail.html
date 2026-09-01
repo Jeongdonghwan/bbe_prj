@@ -1,0 +1,21 @@
+{% extends "layout/base.html" %}
+{% block title %}{{ p.title }}{% endblock %}
+{% block content %}
+<div class="ph"><div><h1>익명 게시판</h1></div><div class="act"><a class="btn sec sm" href="/community/anon">목록</a></div></div>
+<div class="cgrid">
+  <div>
+    <div class="card" style="margin-bottom:12px"><div class="post" style="cursor:default;align-items:flex-start">
+      <div class="body">
+        <div class="head"><span class="anon" style="font-family:var(--font);font-weight:600;color:var(--text-2)">{{ p.anon_nick }}</span><span>·</span><span>{{ p.rel }}</span>{% if p.is_blind %}<span class="tag t-must">블라인드</span>{% endif %}</div>
+        <h4 style="font-size:18px">{{ p.title }}</h4>
+        <p style="display:block;-webkit-line-clamp:unset;color:var(--text);font-size:14.5px;line-height:1.8;white-space:pre-wrap;margin-top:10px">{{ p.body }}</p>
+        {% if p.image_url %}<img src="{{ p.image_url }}" alt="" style="max-width:100%;border-radius:8px;margin-top:12px">{% endif %}
+        <div class="foot"><span><i data-lucide="message-circle" class="i i14"></i><span class="c">{{ p.comment_cnt }}</span></span><span>조회 {{ p.views | fmt_num }}</span>
+          {% if current_user and not is_owner %}<form method="post" action="/community/anon/report" style="margin-left:auto"><input type="hidden" name="target_type" value="post"><input type="hidden" name="target_id" value="{{ p.id }}"><input type="hidden" name="back" value="/community/anon"><select name="reason" class="sel-in" style="height:26px;font-size:11.5px"><option>광고·홍보</option><option>욕설·비방</option><option>개인정보 노출</option><option>기타</option></select> <button type="submit" class="thin" style="text-decoration:underline">신고</button></form>{% endif %}</div>
+      </div></div></div>
+    {% set slug = 'anon' %}{% include "community/_comments.html" %}
+  </div>
+  {% include "community/_anon_side.html" %}
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/community.js') }}"></script>{% endblock %}

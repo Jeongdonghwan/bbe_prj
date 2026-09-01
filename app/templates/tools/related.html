@@ -1,0 +1,30 @@
+{% extends "layout/base.html" %}
+{% block title %}연관키워드 조회{% endblock %}
+{% block content %}
+<div class="ph"><div><h1>연관키워드 조회</h1><p>씨앗 키워드 1개로 연관 키워드 최대 100개를 검색량순으로 보여줍니다. 골라서 캠페인에 바로 담을 수 있어요.</p></div>{% if rows %}<div class="act"><a class="btn sec" href="/tools/related?seed={{ seed | urlencode }}&csv=1">CSV 다운로드</a></div>{% endif %}</div>
+{% include "tools/_quota.html" %}
+<div class="card" style="margin-bottom:16px"><div class="cb" style="padding-top:16px">
+  <form method="post" action="/tools/related" style="display:flex;gap:8px;align-items:end;flex-wrap:wrap">
+    <div class="f" style="flex:1;min-width:260px;margin:0"><label>씨앗 키워드</label><input class="in" name="seed" value="{{ seed }}" placeholder="예) 일산 갈비" required></div>
+    <button class="btn pri" type="submit">조회</button>
+  </form>
+</div></div>
+{% if rows %}
+<form method="post" action="/tools/related/pick" id="pickForm"><input type="hidden" name="seed" value="{{ seed }}"><input type="hidden" name="channel" id="pickChannel" value="place">
+<div class="card"><div class="ch"><h3>'{{ seed }}' 연관 키워드 <span class="thin">{{ rows | length }}개{% if source == 'cache' %} · 캐시{% elif source == 'dummy' %} · 예시 데이터{% endif %}</span></h3><span class="thin" style="margin-left:auto" id="pickCount">0개 선택</span><button class="btn pri sm" type="button" id="pickBtn" disabled>캠페인 생성에 담기</button></div>
+  <div class="cb"><div style="margin:0 -18px;overflow-x:auto"><table><thead><tr><th><input type="checkbox" id="pickAll"></th><th>#</th><th>키워드</th><th style="text-align:right">PC</th><th style="text-align:right">모바일</th><th style="text-align:right">합계</th><th style="text-align:right">일 검색량</th></tr></thead><tbody>
+    {% for r in rows %}<tr><td><input type="checkbox" name="kw" value="{{ r.keyword }}" class="pk"></td><td class="num mut">{{ loop.index }}</td><td><b>{{ r.keyword }}</b></td><td class="num" style="text-align:right">{{ r.pc | fmt_num }}</td><td class="num" style="text-align:right">{{ r.mo | fmt_num }}</td><td class="num" style="text-align:right"><b>{{ r.total | fmt_num }}</b></td><td class="num" style="text-align:right">{{ (r.total / 30) | round | int | fmt_num }}</td></tr>{% endfor %}
+  </tbody></table></div><p class="thin" style="margin-top:10px">최대 5개(첫 키워드가 희망 키워드, 나머지는 세팅 키워드)를 선택하세요.</p></div></div>
+</form>
+<div class="modal" id="chanModal"><div class="modal-box"><h3>어느 채널 캠페인에 담을까요?</h3><p class="thin" style="margin:4px 0 12px">선택한 키워드가 생성 화면의 희망·세팅 키워드에 채워집니다.</p>
+  <div style="display:grid;gap:8px">{% for k, v in channels.items() %}<button class="btn sec" type="button" data-ch="{{ k }}"><i class="dot c-{{ k }}" style="width:8px;height:8px;border-radius:50%;display:inline-block"></i>{{ v }} 캠페인</button>{% endfor %}</div>
+  <button class="btn ghost" type="button" data-close style="width:100%;margin-top:8px">취소</button></div></div>
+{% endif %}
+{% endblock %}
+{% block scripts %}<script>
+(function(){var pks=document.querySelectorAll('.pk'),btn=document.getElementById('pickBtn'),cnt=document.getElementById('pickCount'),all=document.getElementById('pickAll'),m=document.getElementById('chanModal');if(!btn)return;
+function refresh(){var n=document.querySelectorAll('.pk:checked').length;cnt.textContent=n+'개 선택'+(n>5?' (최대 5개)':'');btn.disabled=n===0||n>5;}
+pks.forEach(function(p){p.addEventListener('change',refresh);});all.addEventListener('change',function(){var i=0;pks.forEach(function(p){p.checked=all.checked&&i++<5;});refresh();});
+btn.addEventListener('click',function(){m.classList.add('on');});m.addEventListener('click',function(e){if(e.target===m||e.target.closest('[data-close]'))m.classList.remove('on');});
+m.querySelectorAll('[data-ch]').forEach(function(b){b.addEventListener('click',function(){document.getElementById('pickChannel').value=b.dataset.ch;document.getElementById('pickForm').submit();});});})();
+</script>{% endblock %}

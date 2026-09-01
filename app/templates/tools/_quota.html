@@ -1,0 +1,6 @@
+{# Quota strip shared by keyword tools #}
+<div class="infobox" style="margin:0 0 14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+  <span><i data-lucide="gauge" class="i i14"></i> 오늘 조회 <b>{{ quota.used }} / {{ quota.limit }}</b>회</span>
+  <span class="thin">개인당 하루 {{ quota.limit }}회까지 조회할 수 있습니다.</span>
+  <span class="thin" style="margin-left:auto">{% if api_on %}네이버 검색광고 API · 24시간 캐시{% else %}<span style="color:var(--warn)">API 키 없음 · 예시 데이터</span>{% endif %}</span>
+</div>

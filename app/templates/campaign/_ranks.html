@@ -1,0 +1,28 @@
+{# Daily rank sheet modal body. Loaded via fetch into #rankBody. #}
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+  <h3 style="font-size:15px;font-weight:700">순위 보고서</h3>
+  <span class="thin">{{ c.order_no }}</span>
+  <button class="icon-btn" id="rkclose" type="button" style="margin-left:auto"><i data-lucide="x" class="i"></i></button>
+</div>
+{% if channel == 'coupang' %}
+<div class="empty" style="padding:40px 0"><i data-lucide="hourglass"></i>쿠팡 순위 조회 기능은 준비 중입니다.</div>
+{% else %}
+<div class="dgrid" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px">
+  <div><span>키워드</span><b>{{ c.main_keyword }}</b></div>
+  <div><span>금일 순위</span><b class="num">{{ today_rank ~ '위' if today_rank else '-' }}</b></div>
+  <div><span>시작 순위</span><b class="num">{{ c.rank_start ~ '위' if c.rank_start else '순위 밖' }}</b></div>
+  <div><span>시작일 대비</span><b class="num">{% if delta is not none %}{% if delta > 0 %}<span class="up">▲{{ delta }}</span>{% elif delta < 0 %}<span class="dn">▼{{ -delta }}</span>{% else %}—{% endif %}{% else %}-{% endif %}</b></div>
+</div>
+{% if days %}
+<div class="rankgrid">
+  {% for d in days %}
+  <div><span class="d">{{ d.date | fmt_date('%m/%d') }} ({{ wd[d.date.weekday()] }})</span>
+    <b>{% if d.rank %}{{ d.rank }}위{% if c.rank_start and d.rank != c.rank_start %}{% set dd = c.rank_start - d.rank %}<span class="{{ 'up' if dd > 0 else 'dn' }}" style="font-size:11px;margin-left:3px">{{ '▲' ~ dd if dd > 0 else '▼' ~ -dd }}</span>{% endif %}{% else %}<span class="mut">순위 밖</span>{% endif %}</b></div>
+  {% endfor %}
+</div>
+<p class="thin" style="margin-top:10px">* 등락 표시는 시작일 순위 기준 대비 등하락입니다. 순위는 운영팀이 매일 입력합니다.</p>
+{% else %}
+<div class="empty" style="padding:30px 0">구동 시작 전입니다. 구동이 시작되면 일자별 순위가 표시됩니다.</div>
+{% endif %}
+{% endif %}
+<button class="btn sec" type="button" style="width:100%;margin-top:14px" onclick="document.getElementById('rankModal').classList.remove('on')">닫기</button>

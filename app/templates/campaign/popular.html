@@ -1,0 +1,56 @@
+{% extends "layout/base.html" %}
+{% block title %}인기 트래픽{% endblock %}
+{% block content %}
+<div class="ph"><div><h1>인기 트래픽</h1><p>지금 가장 많이 선택되는 매체를 운영팀이 매주 정리합니다.</p></div></div>
+<div class="cattabs">
+  {% for key, label in channels.items() %}<a href="/popular?ch={{ key }}"><button type="button"{% if key == channel %} class="on"{% endif %}>{{ label }}</button></a>{% endfor %}
+</div>
+{% if rows %}
+<div class="card" style="max-width:860px">
+  <div class="ch"><h3>{{ channels[channel] }} 추천 순위</h3><span class="thin">운영팀 주간 선정</span></div>
+  <div class="cb" style="padding-top:0">
+    {% for r in rows %}
+    <div class="popwrap" id="m{{ r.media_id }}">
+      <div class="poprow{% if r.rank == 1 %} top{% endif %}">
+        <span class="popno{% if r.rank == 1 %} g{% elif not r.is_set %} mut{% endif %}">{{ r.rank }}</span>
+        <a class="popbody" href="/campaign/{{ channel }}/new?media={{ r.media_id }}">
+          <b>{{ r.name }}</b><span class="popmeta">{{ r.tagline or '' }}{% if r.tagline %} · {% endif %}{{ r.price | fmt_num }}원</span>
+          {% if r.note %}<p>{{ r.note }}</p>{% endif %}
+        </a>
+        <button type="button" class="popcmt" aria-expanded="{{ 'true' if open_id == r.media_id else 'false' }}"><i data-lucide="message-circle" class="i i14"></i>댓글 <b>{{ counts.get(r.media_id, 0) }}</b></button>
+        <a href="/campaign/{{ channel }}/new?media={{ r.media_id }}" aria-label="캠페인 만들기"><i data-lucide="chevron-right" class="i i16" style="color:var(--text-3)"></i></a>
+      </div>
+      <div class="popdisc"{% if open_id != r.media_id %} hidden{% endif %}>
+        {% for cmt in comments[r.media_id] %}
+        <div class="dc"><span class="dc-nick">{{ cmt.anon_nick }}</span><span class="dc-dt">{{ cmt.created_at | fmt_date('%m.%d %H:%M') }}</span><p>{{ cmt.body }}</p></div>
+        {% else %}
+        <div class="dc-empty">아직 의견이 없어요. 첫 의견을 남겨보세요.</div>
+        {% endfor %}
+        {% if current_user %}
+        <form method="post" action="/popular/comment" class="dc-form">
+          <input type="hidden" name="media_id" value="{{ r.media_id }}"><input type="hidden" name="ch" value="{{ channel }}">
+          <input class="in" name="body" maxlength="300" placeholder="이 매체 어떤가요? 익명 닉네임으로 남겨집니다." required>
+          <button class="btn pri sm" type="submit">등록</button>
+        </form>
+        {% else %}
+        <div class="dc-empty"><a class="lnk" href="/auth/login?next=/popular%3Fch%3D{{ channel }}">로그인</a>하면 익명으로 의견을 남길 수 있어요.</div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+    <p class="thin" style="padding:12px 0 4px">순위는 운영팀이 주간 데이터(접수량·반려율)를 보고 직접 정합니다. 마지막 갱신 {{ meta.updated_at | fmt_date if meta and meta.updated_at else '—' }}</p>
+  </div>
+</div>
+{% else %}
+<div class="card" style="max-width:860px"><div class="cb" style="padding-top:16px"><div class="empty"><i data-lucide="trophy"></i>{{ channels[channel] }} 인기 트래픽은 준비 중입니다.</div></div></div>
+{% endif %}
+{% endblock %}
+{% block scripts %}<script>
+document.querySelectorAll('.popcmt').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var p = b.closest('.popwrap').querySelector('.popdisc');
+    p.hidden = !p.hidden;
+    b.setAttribute('aria-expanded', String(!p.hidden));
+  });
+});
+</script>{% endblock %}

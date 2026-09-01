@@ -1,0 +1,15 @@
+<header class="header">
+  <button class="icon-btn side-toggle" data-side-toggle type="button" aria-label="메뉴"><i data-lucide="menu" class="i"></i></button>
+  <div class="crumb" id="crumb">
+    {% if crumb_parent %}<span>{{ crumb_parent }}</span><i data-lucide="chevron-right" class="i i14"></i>{% endif %}<b>{{ crumb_label }}</b>
+  </div>
+  <div class="hright">
+    <span class="admbadge">관리자 모드</span>
+    {% if current_user %}
+    <a class="icon-btn" href="/notifications" title="알림"><i data-lucide="bell" class="i"></i>{% if unread_count %}<span class="dot"></span>{% endif %}</a>
+    <a class="avatar" href="/my" title="{{ current_user.nickname }}">{{ current_user.nickname[:2] }}</a>
+    {% else %}
+    <a class="btn sec sm" href="/auth/login">로그인</a>
+    {% endif %}
+  </div>
+</header>

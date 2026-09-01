@@ -1,0 +1,11 @@
+{% extends "layout/base.html" %}
+{% block title %}내가 쓴 글{% endblock %}
+{% block content %}
+<div class="ph"><div><h1>내가 쓴 글</h1><p>익명 글 · 질문 · 대행의뢰 · 댓글 {{ comment_cnt }}개</p></div><div class="act"><a class="btn sec sm" href="/my">마이페이지</a></div></div>
+<div class="card" style="margin-bottom:12px"><div class="ch"><h3>글 · 질문</h3></div><div class="cb"><ul class="list">
+  {% for p in posts %}<li><span class="pill p-tool">{{ p.board_name }}</span><a href="/community/{{ p.board_slug }}/{{ p.id }}">{{ p.title }}</a>{% if p.is_blind %}<span class="tag t-must">블라인드</span>{% endif %}<span class="cnt">{{ p.comment_cnt }}</span><span class="dt">{{ p.created_at | fmt_date }}</span></li>{% else %}<li><span class="thin">작성한 글이 없습니다.</span></li>{% endfor %}
+</ul></div></div>
+<div class="card"><div class="ch"><h3>대행의뢰</h3></div><div class="cb"><ul class="list">
+  {% for r in requests %}<li><span class="pill {{ ag_pill[r.status] }}">{{ ag_status[r.status] }}</span><a href="/community/agency/{{ r.id }}">{{ r.industry }}{% if r.region %} · {{ r.region }}{% endif %}</a><span class="cnt">{{ r.proposal_cnt }}</span><span class="dt">{{ r.created_at | fmt_date }}</span></li>{% else %}<li><span class="thin">등록한 의뢰가 없습니다.</span></li>{% endfor %}
+</ul></div></div>
+{% endblock %}

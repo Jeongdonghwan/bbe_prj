@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TRAFFIC HUB — 프로토타입 v3</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<style>
+:root{
+  --sidebar-bg:#111827;--sidebar-text:#9CA3AF;--sidebar-active-bg:rgba(255,255,255,.08);--sidebar-line:rgba(255,255,255,.06);
+  --bg:#F5F6F8;--surface:#fff;--border:#E5E7EB;--text:#111827;--text-2:#6B7280;--text-3:#9CA3AF;
+  --accent:#2563EB;--accent-hover:#1D4ED8;--accent-soft:#EFF4FF;--kakao:#FEE500;
+  --success:#16A34A;--success-soft:#DCFCE7;--warn:#D97706;--warn-soft:#FEF3C7;--danger:#DC2626;--danger-soft:#FEE2E2;
+  --radius:10px;--shadow:0 1px 2px rgba(0,0,0,.04),0 4px 12px rgba(0,0,0,.04);
+  --font:'Pretendard Variable',Pretendard,-apple-system,'Apple SD Gothic Neo',sans-serif;--mono:ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}input,select,textarea{font:inherit;color:inherit}
+svg.i{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.i14{width:14px!important;height:14px!important}.i16{width:16px!important;height:16px!important}
+.num{font-variant-numeric:tabular-nums}.mono{font-family:var(--mono)}
+
+/* layout */
+.app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+.sidebar{background:var(--sidebar-bg);color:var(--sidebar-text);position:sticky;top:0;height:100vh;display:flex;flex-direction:column;padding:20px 12px 16px;overflow-y:auto}
+.logo{display:flex;align-items:center;gap:8px;padding:4px 10px 18px;color:#fff;font-weight:800;font-size:17px;letter-spacing:-.02em}
+.logo b{width:22px;height:22px;border-radius:6px;background:var(--accent);display:grid;place-items:center;font-size:11px}
+.logo small{font-weight:500;color:var(--sidebar-text);font-size:11px;margin-left:auto}
+.kakao-btn{display:flex;align-items:center;justify-content:center;gap:8px;background:var(--kakao);color:#191600;font-weight:700;border-radius:8px;height:42px;margin-bottom:6px}
+.kakao-btn svg{width:18px;height:18px;fill:#191600}
+.point-card{display:none;background:var(--sidebar-active-bg);border-radius:8px;padding:12px 14px;margin-bottom:6px}
+.point-card .lbl{font-size:11px}.point-card .val{color:#fff;font-size:18px;font-weight:700}.point-card .val i{font-style:normal;font-size:12px;color:var(--sidebar-text);margin-left:2px}
+.nav-sec{margin-top:18px}.nav-sec>h6{font-size:11px;font-weight:600;color:#6B7280;letter-spacing:.04em;padding:0 10px;margin-bottom:6px}
+.nav a,.nav button{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border-radius:7px;color:var(--sidebar-text);font-size:13.5px;font-weight:500;text-align:left;transition:.15s}
+.nav a:hover,.nav button:hover,.nav a.on,.nav button.on{background:var(--sidebar-active-bg);color:#fff}
+.nav .ext{margin-left:auto;width:13px;height:13px;opacity:.6}.nav .chev{margin-left:auto;width:14px;height:14px;opacity:.6;transition:transform .2s}.nav .open .chev{transform:rotate(180deg)}
+.sub{display:none;padding:4px 0 4px 20px;border-left:1px solid var(--sidebar-line);margin:2px 0 4px 19px}.open+.sub{display:block}.sub a{padding:7px 10px;font-size:13px}
+.sub a.on{color:#fff;position:relative}.sub a.on::before{content:"";position:absolute;left:-21px;top:50%;width:2px;height:16px;transform:translateY(-50%);background:var(--accent);border-radius:2px}
+.nav .tag{margin-left:auto;font-size:10px;font-weight:700;padding:1px 6px;border-radius:99px;background:var(--accent);color:#fff}
+.side-foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--sidebar-line);display:flex;gap:4px;font-size:12px}.side-foot a{padding:6px 8px;border-radius:6px}.side-foot a:hover{background:var(--sidebar-active-bg);color:#fff}
+.main{min-width:0}
+.header{height:56px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;gap:16px;position:sticky;top:0;z-index:5}
+.crumb{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-2)}.crumb b{color:var(--text);font-weight:600}
+.hright{margin-left:auto;display:flex;align-items:center;gap:8px}
+.icon-btn{width:36px;height:36px;border-radius:8px;display:grid;place-items:center;color:var(--text-2);position:relative}.icon-btn:hover{background:var(--bg);color:var(--text)}
+.icon-btn .dot{position:absolute;top:8px;right:8px;width:7px;height:7px;border-radius:50%;background:var(--danger);border:2px solid #fff}
+.hpoint{display:flex;align-items:center;gap:6px;padding:0 12px;height:34px;border:1px solid var(--border);border-radius:8px;font-weight:600;font-size:13px}.hpoint em{font-style:normal;color:var(--text-3);font-weight:500}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:700;font-size:12px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 14px;border-radius:8px;font-weight:600;font-size:13.5px;transition:.15s;white-space:nowrap}
+.btn.pri{background:var(--accent);color:#fff}.btn.pri:hover{background:var(--accent-hover)}
+.btn.sec{background:var(--surface);border:1px solid var(--border)}.btn.sec:hover{border-color:#CBD5E1;background:#FAFAFA}
+.btn.ghost{color:var(--text-2)}.btn.ghost:hover{background:var(--bg);color:var(--text)}
+.btn.sm{height:30px;padding:0 10px;font-size:12.5px}.btn.lg{height:46px;font-size:15px;width:100%}.btn:disabled{opacity:.45;cursor:not-allowed}
+.page{padding:24px 28px 80px;display:none}.page.on{display:block}
+.ph{display:flex;align-items:center;gap:12px;margin-bottom:18px}.ph h1{font-size:20px;font-weight:700;letter-spacing:-.02em}.ph p{color:var(--text-2);font-size:13px}.ph .act{margin-left:auto;display:flex;gap:8px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.card>.ch{display:flex;align-items:center;gap:8px;padding:16px 18px 12px}.card>.ch h3{font-size:14.5px;font-weight:700;display:flex;align-items:center;gap:8px}
+.card>.ch .more{margin-left:auto;font-size:12.5px;color:var(--text-2);display:flex;align-items:center;gap:2px}.card>.ch .more:hover{color:var(--accent)}
+.card>.cb{padding:0 18px 16px}
+.tag{display:inline-flex;align-items:center;height:20px;padding:0 7px;border-radius:5px;font-size:11px;font-weight:700;flex:none}
+.t-must{background:var(--danger-soft);color:#991B1B}.t-upd{background:var(--accent-soft);color:var(--accent)}.t-mnt{background:#F3F4F6;color:#374151}.t-evt{background:var(--success-soft);color:#166534}.t-pin{background:#111827;color:#fff}
+.st{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600}.st::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.s-wait{color:#6B7280}.s-review{color:#2563EB}.s-appr{color:#0891B2}.s-run{color:#16A34A}.s-rej{color:#DC2626}.s-done{color:#374151}.s-stop{color:#D97706}
+.in{width:100%;height:40px;border:1px solid var(--border);border-radius:8px;padding:0 12px;background:var(--surface);outline:none;transition:.15s}.in:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}.in::placeholder{color:var(--text-3)}
+textarea.in{height:auto;padding:10px 12px;resize:vertical}
+.pager{display:flex;justify-content:center;gap:4px;margin-top:16px}.pager button{width:32px;height:32px;border-radius:7px;font-size:13px;color:var(--text-2)}.pager button.on{background:var(--text);color:#fff;font-weight:600}.pager button:hover:not(.on){background:var(--surface);border:1px solid var(--border)}
+
+/* dashboard */
+.strip{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:18px}
+.strip div{background:var(--surface);padding:14px 18px;display:flex;flex-direction:column;gap:2px}
+.strip .k{font-size:11.5px;color:var(--text-2);display:flex;align-items:center;gap:6px}.strip .k::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--text-3)}
+.strip .live .k::before{background:var(--success);animation:pulse 2s infinite}@keyframes pulse{0%,100%{box-shadow:0 0 0 3px rgba(22,163,74,.15)}50%{box-shadow:0 0 0 5px rgba(22,163,74,.05)}}
+.strip .v{font-size:22px;font-weight:700;letter-spacing:-.02em}.strip .v i{font-style:normal;font-size:12px;color:var(--text-2);font-weight:500;margin-left:4px}.strip .d{font-size:11.5px;color:var(--text-3)}.strip .d.up{color:var(--success)}
+.banner{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+.banner a{border-radius:var(--radius);padding:20px;min-height:104px;color:#fff;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end}
+.banner a small{font-size:11.5px;opacity:.85;margin-bottom:4px}.banner a strong{font-size:16px;line-height:1.3}.banner a::after{content:"";position:absolute;right:-30px;top:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.12)}
+.b1{background:linear-gradient(135deg,#1E3A8A,#2563EB)}.b2{background:linear-gradient(135deg,#0F766E,#14B8A6)}.b3{background:linear-gradient(135deg,#7C2D12,#EA580C)}
+.grid2{display:grid;grid-template-columns:1.2fr 1fr;gap:16px;margin-bottom:16px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.list{list-style:none}.list li{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--border);font-size:13.5px}.list li:first-child{border-top:0}
+.list li a{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.list li a:hover{color:var(--accent)}.list .dt{color:var(--text-3);font-size:12px}.list .cnt{color:var(--accent);font-size:12px;font-weight:600}
+.steps{list-style:none;counter-reset:s}.steps li{display:flex;gap:12px;padding:10px 0;border-top:1px solid var(--border)}.steps li:first-child{border-top:0}
+.steps li::before{counter-increment:s;content:counter(s);width:22px;height:22px;border-radius:6px;background:var(--accent-soft);color:var(--accent);font-size:11.5px;font-weight:700;display:grid;place-items:center;flex:none;margin-top:1px}
+.steps b{display:block;font-size:13.5px}.steps span{font-size:12.5px;color:var(--text-2)}
+.chan{padding:18px;display:flex;flex-direction:column;gap:10px;cursor:pointer;transition:.15s}.chan:hover{border-color:var(--accent);transform:translateY(-1px)}
+.chan .ic{width:36px;height:36px;border-radius:9px;display:grid;place-items:center;color:#fff}.chan h4{font-size:15px}.chan p{font-size:12.5px;color:var(--text-2)}.chan .go{margin-top:auto;font-size:12.5px;color:var(--accent);font-weight:600;display:flex;align-items:center;gap:2px}
+.c-place{background:#0EA5E9}.c-store{background:#8B5CF6}.c-coupang{background:#F97316}
+.faq dt{font-weight:600;font-size:13.5px;padding:9px 0 2px;border-top:1px solid var(--border)}.faq dt:first-child{border-top:0;padding-top:0}.faq dd{font-size:12.5px;color:var(--text-2);padding-bottom:9px}
+.anon{color:var(--text-3);font-size:11.5px;font-weight:500;font-family:var(--mono)}
+
+/* ===== campaign create v2 ===== */
+.chan-tabs{display:inline-flex;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:3px;gap:2px}
+.chan-tabs button{display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:7px;font-size:13px;font-weight:600;color:var(--text-2)}
+.chan-tabs button.on{background:var(--text);color:#fff}
+.chan-tabs button .dot{width:8px;height:8px;border-radius:50%}
+.progress{display:flex;align-items:center;gap:0;margin-bottom:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 18px}
+.progress .p{display:flex;align-items:center;gap:10px;flex:1;color:var(--text-3);font-size:13px;font-weight:500}
+.progress .p b{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--border);display:grid;place-items:center;font-size:11.5px;font-weight:700;flex:none}
+.progress .p.cur{color:var(--text)}.progress .p.cur b{border-color:var(--accent);background:var(--accent);color:#fff}
+.progress .p.ok{color:var(--text)}.progress .p.ok b{border-color:var(--success);background:var(--success);color:#fff}
+.progress .p .sub2{font-size:11.5px;color:var(--text-3);font-weight:400;display:block}
+.progress .p+.p::before{content:"";width:32px;height:1px;background:var(--border);margin-right:14px}
+.cols{display:grid;grid-template-columns:1.2fr .95fr 1.15fr;gap:16px;align-items:start}
+.col{transition:opacity .25s}.col.dim{opacity:.45;pointer-events:none}
+.stepno{width:22px;height:22px;border-radius:6px;background:var(--text);color:#fff;font-size:11.5px;font-weight:700;display:grid;place-items:center}
+.col.done .stepno{background:var(--success)}
+.mfilter{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.mfilter button{font-size:12px;font-weight:600;padding:5px 11px;border-radius:99px;border:1px solid var(--border);color:var(--text-2);background:var(--surface)}
+.mfilter button.on{background:var(--text);color:#fff;border-color:var(--text)}
+.mgrp{margin-bottom:14px}.mgrp>h5{font-size:11.5px;color:var(--text-2);font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px}.mgrp>h5::after{content:"";flex:1;height:1px;background:var(--border)}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mcard{border:1px solid var(--border);border-radius:10px;padding:12px 12px 10px;display:flex;flex-direction:column;gap:8px;cursor:pointer;position:relative;background:var(--surface);transition:.15s}
+.mcard:hover{border-color:#CBD5E1;box-shadow:var(--shadow)}
+.mcard.sel{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.mcard.sel::after{content:"✓";position:absolute;top:10px;right:10px;width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center}
+.mcard .top{display:flex;gap:10px;align-items:center}
+.logo-slot{width:40px;height:40px;border-radius:10px;flex:none;position:relative;overflow:hidden;display:grid;place-items:center;color:#fff;font-weight:800;font-size:15px;background:var(--av,#4B5563)}
+.logo-slot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#fff}
+.logo-slot img[src=""],.logo-slot img:not([src]){display:none}
+.mcard b{font-size:13.5px;display:block;line-height:1.2}.mcard .tl{font-size:11.5px;color:var(--text-2)}
+.mcard .bd{font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;margin-left:4px;vertical-align:1px}
+.bd-sale{background:var(--danger-soft);color:#991B1B}.bd-rec{background:var(--accent-soft);color:var(--accent)}.bd-new{background:var(--success-soft);color:#166534}
+.mcard .meta{display:flex;align-items:center;justify-content:space-between;font-size:11.5px;color:var(--text-2);border-top:1px dashed var(--border);padding-top:8px}
+.mcard .meta b{font-size:12.5px;display:inline;color:var(--text)}.mcard.sel .meta b{color:var(--accent)}
+.mcard .eff-mini{display:flex;align-items:center;gap:5px}.mcard .eff-mini i{width:44px;height:4px;border-radius:99px;background:var(--border);overflow:hidden;display:inline-block}.mcard .eff-mini i::after{content:"";display:block;height:100%;width:var(--e);background:var(--success);border-radius:99px}
+.mcard .strike{text-decoration:line-through;color:var(--text-3);margin-right:4px;font-weight:400}
+.kv{display:flex;justify-content:space-between;padding:9px 0;border-top:1px solid var(--border);font-size:13.5px}.kv:first-child{border-top:0}.kv span{color:var(--text-2)}.kv b{font-weight:600}
+.selhead{display:flex;align-items:center;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--border);margin-bottom:4px}
+.selhead .logo-slot{width:48px;height:48px;border-radius:12px;font-size:18px}
+.selhead b{font-size:16px;display:block}.selhead span{font-size:12px;color:var(--text-2)}
+.eff{margin:10px 0 12px}.eff .bar{height:6px;border-radius:99px;background:var(--border);overflow:hidden}.eff .bar i{display:block;height:100%;background:var(--success);border-radius:99px;width:0;transition:width .4s}
+.eff .lb{display:flex;justify-content:space-between;font-size:11.5px;color:var(--text-2);margin-top:5px}
+.spark{display:flex;align-items:flex-end;gap:3px;height:44px;margin:6px 0 4px}.spark i{flex:1;background:var(--accent-soft);border-radius:3px 3px 0 0;position:relative}.spark i:last-child{background:var(--accent)}
+.spark-lb{display:flex;justify-content:space-between;font-size:11px;color:var(--text-3)}
+.infobox{background:var(--bg);border-radius:8px;padding:12px 14px;font-size:12.5px;margin-top:12px}.infobox h6{font-size:12px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.infobox ul{list-style:none}.infobox li{display:flex;justify-content:space-between;padding:3px 0;color:var(--text-2)}.infobox li b{color:var(--text);font-weight:600}.ok{color:var(--success);font-weight:700}
+.empty{color:var(--text-3);font-size:13px;padding:30px 0;text-align:center}.empty svg{width:28px;height:28px;stroke-width:1.4;margin:0 auto 8px;display:block;color:var(--text-3)}
+.fsec{padding:14px 0;border-top:1px solid var(--border)}.fsec:first-child{border-top:0;padding-top:4px}
+.fsec>h6{font-size:12px;font-weight:700;color:var(--text-2);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.f{margin-bottom:12px}.f:last-child{margin-bottom:0}.f label{display:block;font-size:12.5px;font-weight:600;margin-bottom:6px}.f label small{font-weight:400;color:var(--text-3);margin-left:6px}
+.f .hint{font-size:11.5px;color:var(--text-2);margin-top:5px}.f .hint.warn{color:var(--warn)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.presets{display:flex;gap:4px;margin-top:6px}.presets button{font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:6px;background:var(--bg);color:var(--text-2)}.presets button.on{background:var(--text);color:#fff}
+.stepper{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;height:40px;width:150px}.stepper button{width:40px;color:var(--text-2);font-size:18px}.stepper button:hover{background:var(--bg);color:var(--text)}
+.stepper input{flex:1;border:0;border-left:1px solid var(--border);border-right:1px solid var(--border);text-align:center;font-weight:700;outline:none;width:0}
+.qrow{display:flex;align-items:center;gap:12px}.qrow .qhint{font-size:12px;color:var(--text-2)}
+.toggle{display:flex;align-items:center;gap:8px;margin-left:auto;font-size:12px;color:var(--text-2);cursor:pointer}.toggle i{width:34px;height:20px;border-radius:99px;background:#D1D5DB;position:relative;transition:.2s}
+.toggle i::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s}.toggle.on i{background:var(--accent)}.toggle.on i::after{transform:translateX(14px)}
+.aibox{border:1px dashed #BFD3FF;background:var(--accent-soft);border-radius:8px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start}
+.aibox .ic{width:30px;height:30px;border-radius:8px;background:var(--accent);color:#fff;display:grid;place-items:center;flex:none}.aibox b{font-size:13px;display:block;color:var(--accent)}.aibox span{font-size:11.5px;color:var(--text-2)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.chips i{font-style:normal;font-size:12px;padding:3px 9px;border-radius:99px;background:#fff;border:1px solid #BFD3FF;color:var(--accent);font-weight:500}
+.pay{margin-top:4px}.pay .kv{padding:7px 0;border:0}.pay .kv.total{border-top:1px solid var(--border);margin-top:6px;padding-top:12px;font-size:15px}.pay .kv.total b{font-size:20px;letter-spacing:-.02em}
+.pay .short{color:var(--danger);font-weight:600;font-size:11.5px}
+.sticky{position:sticky;bottom:20px;margin-top:14px}
+.paybar{position:fixed;left:240px;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--border);padding:12px 28px;display:none;align-items:center;gap:20px;z-index:6;box-shadow:0 -4px 16px rgba(0,0,0,.04)}
+.paybar.on{display:flex}.paybar .sum{display:flex;gap:24px;font-size:13px;color:var(--text-2)}.paybar .sum b{display:block;color:var(--text);font-size:15px}
+.paybar .tot{margin-left:auto;text-align:right}.paybar .tot b{font-size:22px;letter-spacing:-.02em}.paybar .tot small{display:block;font-size:11.5px;color:var(--text-2)}
+.paybar .btn{min-width:180px;height:44px}
+
+/* ===== manage v2 ===== */
+.mstat{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.mstat .card{padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.mstat .k{font-size:12px;color:var(--text-2)}.mstat .v{font-size:20px;font-weight:700;letter-spacing:-.02em}.mstat .v i{font-style:normal;font-size:12px;color:var(--text-2);font-weight:500;margin-left:3px}.mstat .d{font-size:11.5px;color:var(--text-3)}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:14px}.tabs button{padding:10px 12px;font-size:13.5px;font-weight:500;color:var(--text-2);border-bottom:2px solid transparent;margin-bottom:-1px;display:flex;align-items:center;gap:6px}
+.tabs button:hover{color:var(--text)}.tabs button.on{color:var(--text);font-weight:700;border-color:var(--text)}.tabs button em{font-style:normal;font-size:11px;background:var(--bg);color:var(--text-2);padding:1px 6px;border-radius:99px;font-weight:600}.tabs button.on em{background:var(--text);color:#fff}
+.tbar{display:flex;gap:8px;margin-bottom:12px;align-items:center}.tbar .in{height:36px;width:auto}.tbar .search{margin-left:auto;position:relative}.tbar .search svg{position:absolute;left:10px;top:9px;width:16px;height:16px;color:var(--text-3)}.tbar .search .in{padding-left:32px;width:240px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-size:11.5px;font-weight:600;color:var(--text-2);text-align:left;padding:10px 12px;background:var(--bg);border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:11px 12px;border-bottom:1px solid var(--border);white-space:nowrap;vertical-align:middle}
+tbody tr{cursor:pointer}tbody tr:hover td{background:#FAFBFC}tbody tr.sel td{background:var(--accent-soft)}
+td.ord{font-family:var(--mono);font-size:12px;color:var(--text-2)}td .mut{color:var(--text-3)}
+.biz{display:flex;align-items:center;gap:10px}.biz .logo-slot{width:30px;height:30px;border-radius:8px;font-size:11px}.biz b{display:block;font-size:13px}.biz span{display:block;font-size:11.5px;color:var(--text-2)}
+.rank{display:inline-flex;align-items:center;gap:4px}.rank .up{color:var(--success);font-weight:700;font-size:11.5px}.rank .dn{color:var(--danger);font-weight:700;font-size:11.5px}
+.prog{width:120px}.prog .lb{display:flex;justify-content:space-between;font-size:11px;color:var(--text-2);margin-bottom:3px}.prog .bar{height:5px;border-radius:99px;background:var(--border);overflow:hidden}.prog .bar i{display:block;height:100%;background:var(--success);border-radius:99px}
+.prog.wait .bar i{background:var(--text-3)}.prog.done .bar i{background:#374151}
+.lnk{color:var(--accent);font-weight:500;font-size:12.5px;text-decoration:underline;text-underline-offset:2px}
+.dots{width:28px;height:28px;border-radius:6px;display:grid;place-items:center;color:var(--text-2)}.dots:hover{background:var(--bg);color:var(--text)}
+.rowact{display:flex;gap:4px;opacity:0;transition:.15s}tr:hover .rowact,tr.sel .rowact{opacity:1}
+.rowact button{font-size:11.5px;font-weight:600;padding:4px 8px;border-radius:6px;color:var(--text-2);border:1px solid var(--border);background:var(--surface)}.rowact button:hover{color:var(--text);border-color:#CBD5E1}
+/* drawer */
+.drawer{position:fixed;top:0;right:0;bottom:0;width:440px;background:var(--surface);border-left:1px solid var(--border);box-shadow:-12px 0 32px rgba(0,0,0,.08);z-index:20;transform:translateX(100%);transition:transform .25s;overflow-y:auto}
+.drawer.on{transform:none}
+.drawer .dh{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;position:sticky;top:0;background:var(--surface)}
+.drawer .dh h3{font-size:16px}.drawer .dh .x{margin-left:auto}
+.drawer .db{padding:18px 22px}
+.dsec{margin-bottom:20px}.dsec>h6{font-size:12px;font-weight:700;color:var(--text-2);margin-bottom:8px}
+.rankchart{height:120px;display:flex;align-items:flex-end;gap:6px;padding:8px 0 0}.rankchart i{flex:1;background:var(--accent-soft);border-radius:4px 4px 0 0;position:relative}
+.rankchart i::after{content:attr(data-r);position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:10.5px;font-weight:600;color:var(--text-2)}
+.rankchart i.now{background:var(--accent)}.rankchart i.now::after{color:var(--accent)}
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.dgrid div{background:var(--bg);border-radius:8px;padding:10px 12px}.dgrid span{font-size:11.5px;color:var(--text-2);display:block}.dgrid b{font-size:14px}
+.timeline{list-style:none;border-left:2px solid var(--border);margin-left:6px;padding-left:16px}.timeline li{position:relative;padding-bottom:12px;font-size:12.5px}
+.timeline li::before{content:"";position:absolute;left:-23px;top:5px;width:10px;height:10px;border-radius:50%;background:var(--border);border:2px solid #fff}
+.timeline li.on::before{background:var(--success)}.timeline li b{display:block}.timeline li span{color:var(--text-3);font-size:11.5px}
+.memo{background:var(--warn-soft);border-radius:8px;padding:10px 12px;font-size:12.5px;color:#92400E}
+
+/* ===== community ===== */
+.cgrid{display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start}
+.boardhead{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.boardhead .sort{display:flex;gap:2px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:3px}
+.boardhead .sort button{padding:5px 12px;border-radius:6px;font-size:12.5px;font-weight:600;color:var(--text-2)}.boardhead .sort button.on{background:var(--text);color:#fff}
+.boardhead .search{margin-left:auto;position:relative}.boardhead .search svg{position:absolute;left:10px;top:10px;width:16px;height:16px;color:var(--text-3)}.boardhead .search .in{padding-left:32px;width:240px;height:36px}
+.write{display:flex;gap:10px;align-items:center;padding:12px 14px;margin-bottom:12px;cursor:text}
+.write .avatar{background:#F3F4F6;color:var(--text-3)}.write .in{border:0;background:transparent;height:auto;padding:0}.write .in:focus{box-shadow:none}
+.write .anonlbl{font-size:11.5px;color:var(--text-3);display:flex;align-items:center;gap:4px;white-space:nowrap}
+.post{display:flex;gap:14px;padding:14px 16px;border-top:1px solid var(--border);cursor:pointer;transition:.12s}.post:first-child{border-top:0}.post:hover{background:#FAFBFC}
+.post .vote{display:flex;flex-direction:column;align-items:center;gap:2px;width:40px;flex:none;color:var(--text-2);font-size:12.5px;font-weight:700;padding-top:2px}.post .vote svg{width:16px;height:16px}
+.post .vote.hot{color:var(--danger)}
+.post .body{flex:1;min-width:0}.post .head{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--text-3);margin-bottom:3px}
+.post h4{font-size:14.5px;font-weight:600;line-height:1.35;margin-bottom:4px}.post h4 em{font-style:normal;color:var(--accent);font-size:12px;font-weight:700;margin-left:6px}
+.post p{font-size:12.5px;color:var(--text-2);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.post .foot{display:flex;gap:14px;font-size:12px;color:var(--text-3);margin-top:8px;align-items:center}.post .foot span{display:flex;align-items:center;gap:4px}.post .foot .c{color:var(--accent);font-weight:600}
+.post .thumb{width:72px;height:72px;border-radius:8px;background:var(--bg);flex:none;display:grid;place-items:center;color:var(--text-3)}
+.pill{font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px}
+.p-hot{background:var(--danger-soft);color:#991B1B}.p-place{background:#E0F2FE;color:#075985}.p-store{background:#EDE9FE;color:#5B21B6}.p-coupang{background:#FFEDD5;color:#9A3412}.p-tool{background:#F3F4F6;color:#374151}.p-solved{background:var(--success-soft);color:#166534}.p-open{background:var(--warn-soft);color:#92400E}.p-bounty{background:#111827;color:#fff}
+.side .card{margin-bottom:12px}
+.rule{font-size:12.5px;color:var(--text-2);line-height:1.6}.rule li{margin-left:16px;margin-bottom:4px}
+.hotlist{list-style:none;counter-reset:h}.hotlist li{display:flex;gap:10px;padding:8px 0;border-top:1px solid var(--border);font-size:13px;align-items:flex-start}.hotlist li:first-child{border-top:0}
+.hotlist li::before{counter-increment:h;content:counter(h);font-size:12px;font-weight:800;color:var(--text-3);width:14px;flex:none;padding-top:1px}.hotlist li:nth-child(-n+3)::before{color:var(--danger)}
+.hotlist a{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hotlist .cnt{color:var(--accent);font-size:11.5px;font-weight:600}
+.online{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-2)}.online i{width:7px;height:7px;border-radius:50%;background:var(--success);display:inline-block}
+.tagcloud{display:flex;flex-wrap:wrap;gap:6px}.tagcloud a{font-size:12px;padding:4px 10px;border-radius:99px;background:var(--bg);color:var(--text-2)}.tagcloud a:hover{background:var(--accent-soft);color:var(--accent)}
+/* qna */
+.qna{padding:16px;border-top:1px solid var(--border);cursor:pointer}.qna:first-child{border-top:0}.qna:hover{background:#FAFBFC}
+.qna .qh{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.qna h4{font-size:15px;font-weight:600;line-height:1.35;margin-bottom:4px}.qna p{font-size:12.5px;color:var(--text-2);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.qna .qf{display:flex;align-items:center;gap:14px;font-size:12px;color:var(--text-3);margin-top:10px}
+.qna .ans{display:flex;align-items:center;gap:6px;margin-left:auto}.qna .ans .n{width:36px;height:36px;border-radius:8px;display:grid;place-items:center;font-weight:800;font-size:14px;background:var(--bg);color:var(--text-2);flex-direction:column;line-height:1}
+.qna .ans .n small{font-size:9.5px;font-weight:600}.qna .ans .n.ok{background:var(--success-soft);color:#166534}.qna .ans .n.zero{border:1px dashed var(--border);background:transparent}
+.bounty{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:700;color:var(--text)}
+.myrank{display:flex;align-items:center;gap:12px}.myrank .big{font-size:26px;font-weight:800;letter-spacing:-.02em}.myrank .big small{font-size:12px;color:var(--text-2);font-weight:500;margin-left:2px}
+.lvl{height:6px;border-radius:99px;background:var(--border);overflow:hidden;margin-top:8px}.lvl i{display:block;height:100%;width:62%;background:var(--accent);border-radius:99px}
+/* info */
+.feat{display:grid;grid-template-columns:1.4fr 1fr;gap:12px;margin-bottom:16px}
+.feat .big{border-radius:var(--radius);padding:24px;min-height:220px;color:#fff;display:flex;flex-direction:column;justify-content:flex-end;position:relative;overflow:hidden;background:linear-gradient(160deg,#0F172A,#1E3A8A)}
+.feat .big::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,rgba(255,255,255,.04) 0 1px,transparent 1px 40px),repeating-linear-gradient(0deg,rgba(255,255,255,.04) 0 1px,transparent 1px 40px)}
+.feat .big *{position:relative}.feat .big small{font-size:12px;opacity:.8}.feat .big h3{font-size:22px;line-height:1.3;margin:6px 0 8px;letter-spacing:-.02em}.feat .big p{font-size:13px;opacity:.85}
+.feat .col2{display:flex;flex-direction:column;gap:12px}
+.feat .mid{border-radius:var(--radius);padding:18px;flex:1;color:#fff;display:flex;flex-direction:column;justify-content:flex-end}.feat .mid small{font-size:11.5px;opacity:.8}.feat .mid h4{font-size:15px;line-height:1.35;margin-top:4px}
+.m1{background:linear-gradient(135deg,#0F766E,#14B8A6)}.m2{background:linear-gradient(135deg,#7C2D12,#EA580C)}
+.arts{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.art{overflow:hidden;cursor:pointer;transition:.15s}.art:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.06)}
+.art .cover{height:120px;display:grid;place-items:center;color:#fff;font-size:34px;font-weight:800;letter-spacing:-.04em;position:relative}
+.art .cover span{position:absolute;left:12px;top:12px}
+.art .ab{padding:14px}.art .ab h4{font-size:14.5px;font-weight:600;line-height:1.35;margin:6px 0 4px}.art .ab p{font-size:12.5px;color:var(--text-2);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.art .af{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--text-3);margin-top:10px}.art .af .by{display:flex;align-items:center;gap:6px;color:var(--text-2);font-weight:500}.art .af .by i{width:18px;height:18px;border-radius:50%;background:var(--text);color:#fff;font-style:normal;font-size:9px;display:grid;place-items:center;font-weight:700}
+.cv1{background:linear-gradient(135deg,#0EA5E9,#2563EB)}.cv2{background:linear-gradient(135deg,#8B5CF6,#6D28D9)}.cv3{background:linear-gradient(135deg,#F97316,#DC2626)}.cv4{background:linear-gradient(135deg,#374151,#111827)}.cv5{background:linear-gradient(135deg,#10B981,#0F766E)}.cv6{background:linear-gradient(135deg,#F59E0B,#B45309)}
+.series{list-style:none}.series li{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--border);font-size:13px}.series li:first-child{border-top:0}
+.series .n{width:22px;height:22px;border-radius:6px;background:var(--bg);color:var(--text-2);font-size:11px;font-weight:700;display:grid;place-items:center;flex:none}.series .n.ok{background:var(--success-soft);color:#166534}
+.series a{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.series .mut{font-size:11.5px;color:var(--text-3)}
+
+
+/* ===== mypage / admin ===== */
+.mp{display:grid;grid-template-columns:300px 1fr;gap:16px;align-items:start}
+.mp .card{margin-bottom:12px}
+.me{display:flex;flex-direction:column;align-items:center;text-align:center;padding:22px 18px 18px}
+.me .avatar{width:64px;height:64px;font-size:20px;margin-bottom:10px}
+.me h3{font-size:17px}.me p{font-size:12.5px;color:var(--text-2)}
+.me .kk{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--text-2);margin-top:8px;padding:3px 9px;border-radius:99px;background:var(--bg)}.me .kk i{width:8px;height:8px;border-radius:50%;background:var(--kakao);display:inline-block}
+.grade{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--border);border-top:1px solid var(--border)}.grade div{background:var(--surface);padding:10px;text-align:center}.grade span{font-size:11px;color:var(--text-2);display:block}.grade b{font-size:15px}
+.mpoint{padding:16px 18px}.mpoint .big{font-size:28px;font-weight:800;letter-spacing:-.02em}.mpoint .big i{font-style:normal;font-size:13px;color:var(--text-2);font-weight:500}.mpoint .rw{display:flex;gap:8px;margin-top:12px}
+.setrow{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--border);font-size:13.5px}.setrow:first-child{border-top:0}.setrow span{color:var(--text-2);font-size:12.5px;display:block}.setrow .toggle{margin-left:auto}
+.txtab{display:flex;gap:2px;margin-bottom:10px}.txtab button{padding:6px 12px;border-radius:6px;font-size:12.5px;font-weight:600;color:var(--text-2)}.txtab button.on{background:var(--bg);color:var(--text)}
+td.plus{color:var(--success);font-weight:600}td.minus{color:var(--text);font-weight:600}
+.mini-camp{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.mini-camp div{background:var(--bg);border-radius:8px;padding:10px 12px}.mini-camp span{font-size:11.5px;color:var(--text-2);display:block}.mini-camp b{font-size:16px}
+/* admin */
+body.admin .nav-user,body.admin #kakaoBtn,body.admin #pointCard{display:none!important}
+.nav-admin{display:none}body.admin .nav-admin{display:block}
+body.admin .sidebar{background:#0B1220}body.admin .logo small{color:#F59E0B;font-weight:700}
+.admbadge{display:none;font-size:11px;font-weight:700;padding:3px 8px;border-radius:5px;background:var(--warn-soft);color:#92400E}body.admin .admbadge{display:inline-flex}
+.queue{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px}
+.queue .card{padding:14px 16px;cursor:pointer;transition:.15s}.queue .card:hover{border-color:var(--accent)}
+.queue .k{font-size:12px;color:var(--text-2)}.queue .v{font-size:24px;font-weight:800;letter-spacing:-.02em}.queue .v.alert{color:var(--danger)}.queue .d{font-size:11.5px;color:var(--text-3)}
+.sel-in{height:30px;border:1px solid var(--border);border-radius:6px;padding:0 8px;font-size:12.5px;background:var(--surface)}
+.rank-in{width:64px;height:30px;border:1px solid var(--border);border-radius:6px;padding:0 8px;font-size:12.5px;text-align:center}
+.bulk{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--accent-soft);border-radius:8px;margin-bottom:12px;font-size:13px;color:var(--accent);font-weight:600}
+.bulk .btn{margin-left:auto}
+.mrow{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--border)}.mrow:first-child{border-top:0}
+.mrow .logo-slot{width:40px;height:40px;border-radius:10px}.mrow b{display:block;font-size:13.5px}.mrow span{font-size:12px;color:var(--text-2)}
+.mrow .cell{width:90px;font-size:12.5px;text-align:right}.mrow .cell small{display:block;color:var(--text-3);font-size:11px}
+.mrow .act2{margin-left:auto;display:flex;gap:4px}
+.upl{border:1px dashed var(--border);border-radius:8px;padding:16px;text-align:center;font-size:12.5px;color:var(--text-2);display:flex;flex-direction:column;align-items:center;gap:6px}
+.upl .logo-slot{width:56px;height:56px;border-radius:14px;font-size:20px}
+.editor{min-height:260px;border:1px solid var(--border);border-radius:8px;padding:12px;font-size:13.5px;line-height:1.7;color:var(--text-2)}
+.editor .tb{display:flex;gap:2px;border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:10px}.editor .tb button{width:28px;height:28px;border-radius:5px;font-size:12px;font-weight:700;color:var(--text-2)}.editor .tb button:hover{background:var(--bg)}
+.form2{display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start}
+.chk{display:flex;align-items:center;gap:8px;font-size:13px;padding:6px 0}.chk i{width:16px;height:16px;border:1.5px solid var(--border);border-radius:4px;display:inline-block}.chk.on i{background:var(--accent);border-color:var(--accent)}
+.thin{font-size:12px;color:var(--text-3)}
+@media (max-width:1180px){.mp,.form2{grid-template-columns:1fr}.queue{grid-template-columns:repeat(2,1fr)}}
+
+/* ===== store hub ===== */
+.snotice{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;background:#EDE9FE;color:#4C1D95;font-size:13px;margin-bottom:16px}
+.snotice b{font-weight:700}.snotice .more{margin-left:auto;font-size:12px;color:#6D28D9;font-weight:600}
+.slot-add{display:grid;grid-template-columns:1fr 1fr 140px auto;gap:8px;align-items:end;padding:14px;background:var(--bg);border-radius:8px;margin-bottom:14px}
+.slot-add .f{margin:0}
+.reco{display:inline-flex;align-items:baseline;gap:3px;font-weight:800;font-size:16px;color:var(--accent)}.reco small{font-size:11px;color:var(--text-2);font-weight:500}
+.vol{display:flex;flex-direction:column;line-height:1.2}.vol small{font-size:11px;color:var(--text-3)}
+.trend{display:flex;align-items:flex-end;gap:2px;height:28px;width:80px}.trend i{flex:1;background:var(--accent-soft);border-radius:2px 2px 0 0}.trend i:last-child{background:var(--accent)}
+.formula{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-2);padding:10px 14px;background:var(--accent-soft);border-radius:8px;margin-top:12px}.formula code{font-family:var(--mono);color:var(--accent);font-weight:600;background:#fff;padding:2px 6px;border-radius:4px}
+.slotchart{height:150px;border:1px solid var(--border);border-radius:8px;padding:14px 14px 8px;position:relative}
+.slotchart svg{width:100%;height:100%}
+
+/* ===== popular ===== */
+.cattabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.cattabs button{padding:7px 14px;border-radius:99px;border:1px solid var(--border);background:var(--surface);font-size:13px;font-weight:600;color:var(--text-2)}
+.cattabs button.on{background:var(--text);color:#fff;border-color:var(--text)}
+.podium{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.pod{padding:18px;position:relative;display:flex;flex-direction:column;gap:10px;cursor:pointer;transition:.15s}.pod:hover{border-color:var(--accent);transform:translateY(-1px)}
+.pod .medal{position:absolute;top:-1px;left:16px;padding:4px 10px 5px;border-radius:0 0 8px 8px;font-size:12px;font-weight:800;color:#fff}
+.pod.r1 .medal{background:#111827}.pod.r2 .medal{background:#4B5563}.pod.r3 .medal{background:#9CA3AF}
+.pod.r1{border-color:#111827;box-shadow:0 0 0 3px rgba(17,24,39,.06)}
+.pod .top{display:flex;gap:12px;align-items:center;margin-top:14px}.pod .logo-slot{width:48px;height:48px;border-radius:12px;font-size:18px}
+.pod b{font-size:16px;display:block}.pod .tl{font-size:12px;color:var(--text-2)}
+.pod .why{font-size:12.5px;color:var(--text-2);background:var(--bg);border-radius:8px;padding:8px 10px}
+.pod .stats{display:flex;justify-content:space-between;font-size:12px;color:var(--text-2)}.pod .stats b{font-size:14px;display:inline;color:var(--text)}
+.pod .stats .eff-mini i{width:44px;height:4px;border-radius:99px;background:var(--border);display:inline-block;overflow:hidden;vertical-align:middle;margin:0 4px}.pod .stats .eff-mini i::after{content:"";display:block;height:100%;width:var(--e);background:var(--success)}
+.rest{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.rest .mrow{border:1px solid var(--border);border-radius:9px;padding:10px 12px}
+.rest .mrow .n{width:22px;font-size:12px;font-weight:800;color:var(--text-3);text-align:center}
+/* admin popular */
+.rankset{display:grid;grid-template-columns:32px 1fr 1fr 60px;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--border)}.rankset:first-child{border-top:0}
+.rankset .n{font-size:12px;font-weight:800;color:var(--text-3);text-align:center}.rankset .n.g{color:#111827}
+.catrow{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--border)}.catrow:first-child{border-top:0}
+.catrow b{width:120px}.catrow .tops{display:flex;gap:6px;flex:1}.catrow .tops span{font-size:12px;padding:3px 8px;border-radius:6px;background:var(--bg)}.catrow .tops span:first-child{background:#111827;color:#fff}
+/* agency */
+.agform{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.agform .f{margin:0}.agform .wide{grid-column:1/-1}
+.ag{padding:14px 16px;border-top:1px solid var(--border);display:flex;gap:14px;align-items:flex-start;cursor:pointer}.ag:first-child{border-top:0}.ag:hover{background:#FAFBFC}
+.ag .bud{width:96px;flex:none;text-align:center;background:var(--bg);border-radius:8px;padding:8px 6px}.ag .bud small{display:block;font-size:10.5px;color:var(--text-2)}.ag .bud b{font-size:14px}
+.ag .body{flex:1;min-width:0}.ag h4{font-size:14.5px;font-weight:600;margin:3px 0 4px}
+.ag .prop{margin-left:auto;text-align:center;flex:none}.ag .prop b{display:block;font-size:18px}.ag .prop small{font-size:11px;color:var(--text-2)}
+.p-recruit{background:var(--success-soft);color:#166534}.p-match{background:var(--accent-soft);color:var(--accent)}.p-close{background:#F3F4F6;color:#374151}
+.proto{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;border-radius:99px;padding:6px;display:flex;gap:4px;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.proto button{padding:7px 13px;border-radius:99px;font-size:12.5px;font-weight:600;color:#9CA3AF}.proto button.on{background:#fff;color:#111827}
+@media (max-width:1180px){.cols{grid-template-columns:1fr}.cgrid{grid-template-columns:1fr}.grid2{grid-template-columns:1fr}.strip,.mstat{grid-template-columns:repeat(2,1fr)}.banner,.feat,.arts{grid-template-columns:1fr}.paybar{left:0}}
+@media (max-width:768px){.app{grid-template-columns:1fr}.sidebar{display:none}.grid3{grid-template-columns:1fr}.drawer{width:100%}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+ <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
+ <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
+ <symbol id="i-card" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></symbol>
+ <symbol id="i-bag" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></symbol>
+ <symbol id="i-box" viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></symbol>
+ <symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></symbol>
+ <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+ <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></symbol>
+ <symbol id="i-mask" viewBox="0 0 24 24"><path d="M12 22c-5 0-9-5-9-11 0-3 1-5 3-7 2 1 4 1 6 0 2 1 4 1 6 0 2 2 3 4 3 7 0 6-4 11-9 11z"/><path d="M8 11h.01M16 11h.01"/><path d="M9 16c1 1 5 1 6 0"/></symbol>
+ <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></symbol>
+ <symbol id="i-trend" viewBox="0 0 24 24"><path d="m22 7-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/></symbol>
+ <symbol id="i-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+ <symbol id="i-ext" viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></symbol>
+ <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+ <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
+ <symbol id="i-spark" viewBox="0 0 24 24"><path d="m12 3 1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></symbol>
+ <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></symbol>
+ <symbol id="i-mega" viewBox="0 0 24 24"><path d="m3 11 18-5v12L3 14z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></symbol>
+ <symbol id="i-cursor" viewBox="0 0 24 24"><path d="M4 4l7.07 17 2.51-7.39L21 11.07z"/></symbol>
+ <symbol id="i-up" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></symbol>
+ <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+ <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></symbol>
+ <symbol id="i-msg" viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.4 8.4 0 0 1 3 11.5a8.4 8.4 0 0 1 8.5-8.5h.5a8.5 8.5 0 0 1 8 8v.5z"/></symbol>
+ <symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+ <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+ <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5h3.5a1.75 1.75 0 0 1 0 3.5H9.5m0 0h4a1.75 1.75 0 0 1 0 3.5H9"/></symbol>
+ <symbol id="i-pen" viewBox="0 0 24 24"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></symbol>
+ <symbol id="i-img" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></symbol>
+ <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+</svg>
+
+<div class="app">
+<aside class="sidebar">
+  <div class="logo"><b>T</b>TRAFFIC HUB <small>beta</small></div>
+  <a class="kakao-btn" id="kakaoBtn" href="#"><svg viewBox="0 0 24 24"><path d="M12 3C6.5 3 2 6.6 2 11c0 2.8 1.8 5.2 4.6 6.6L5.5 21l4.6-2.7c.6.1 1.2.1 1.9.1 5.5 0 10-3.6 10-8S17.5 3 12 3z"/></svg>카카오 3초 회원가입</a>
+  <div class="point-card" id="pointCard"><div class="lbl">내 포인트</div><div class="val num">11,500<i>P</i></div></div>
+  <nav class="nav">
+   <div class="nav-user">
+    <div class="nav-sec"><h6>기본</h6>
+      <a href="#"><svg class="i"><use href="#i-mega"/></svg>공지사항</a>
+      <a href="#"><svg class="i"><use href="#i-chat"/></svg>카카오 바로상담<svg class="ext"><use href="#i-ext"/></svg></a>
+      <a href="#"><svg class="i"><use href="#i-card"/></svg>포인트 충전</a>
+    </div>
+    <div class="nav-sec"><h6>유입관리</h6>
+      <button class="acc"><svg class="i"><use href="#i-bag"/></svg>쇼핑·스토어<svg class="chev"><use href="#i-chev"/></svg></button>
+      <div class="sub"><a href="#" data-go="store" data-nav="store">캠페인 생성</a><a href="#" data-go="manage">캠페인 관리</a><a href="#" data-go="popular">인기 트래픽</a></div>
+      <button class="acc"><svg class="i"><use href="#i-box"/></svg>쿠팡<svg class="chev"><use href="#i-chev"/></svg></button>
+      <div class="sub"><a href="#" data-go="new">캠페인 생성</a><a href="#" data-go="manage">캠페인 관리</a><a href="#" data-go="popular">인기 트래픽</a></div>
+      <button class="acc open"><svg class="i"><use href="#i-pin"/></svg>플레이스<svg class="chev"><use href="#i-chev"/></svg></button>
+      <div class="sub"><a href="#" data-go="new" data-nav="new">캠페인 생성</a><a href="#" data-go="manage" data-nav="manage">캠페인 관리</a><a href="#" data-go="popular" data-nav="popular">인기 트래픽</a></div>
+    </div>
+    <div class="nav-sec"><h6>마케팅도구</h6>
+      <a href="#"><svg class="i"><use href="#i-search"/></svg>키워드 조회</a>
+      <a href="#"><svg class="i"><use href="#i-link"/></svg>연관키워드 조회</a>
+    </div>
+    <div class="nav-sec"><h6>커뮤니티</h6>
+      <a href="#" data-go="anon" data-nav="anon"><svg class="i"><use href="#i-mask"/></svg>익명 게시판<span class="tag">12</span></a>
+      <a href="#" data-go="qna" data-nav="qna"><svg class="i"><use href="#i-help"/></svg>질문답변</a>
+      <a href="#" data-go="info" data-nav="info"><svg class="i"><use href="#i-trend"/></svg>마케팅 정보</a>
+      <a href="#" data-go="agency" data-nav="agency"><svg class="i"><use href="#i-chat"/></svg>대행의뢰<span class="tag" style="background:var(--success)">4</span></a>
+    </div>
+   </div>
+   <div class="nav-admin">
+    <div class="nav-sec"><h6>운영</h6>
+      <a href="#" data-go="adm" data-nav="adm"><svg class="i"><use href="#i-trend"/></svg>운영 현황</a>
+      <a href="#" data-go="adm-orders" data-nav="adm-orders"><svg class="i"><use href="#i-pin"/></svg>주문 관리<span class="tag" style="background:var(--danger)">9</span></a>
+      <a href="#" data-go="adm-charge" data-nav="adm-charge"><svg class="i"><use href="#i-card"/></svg>충전 승인<span class="tag" style="background:var(--danger)">4</span></a>
+    </div>
+    <div class="nav-sec"><h6>설정</h6>
+      <a href="#" data-go="adm-media" data-nav="adm-media"><svg class="i"><use href="#i-box"/></svg>매체사 관리</a>
+      <a href="#" data-go="adm-popular" data-nav="adm-popular"><svg class="i"><use href="#i-trend"/></svg>인기 트래픽 설정</a>
+      <a href="#" data-go="adm-content" data-nav="adm-content"><svg class="i"><use href="#i-pen"/></svg>공지 · 정보글</a>
+      <a href="#"><svg class="i"><use href="#i-img"/></svg>배너 관리</a>
+    </div>
+    <div class="nav-sec"><h6>회원 · 커뮤니티</h6>
+      <a href="#"><svg class="i"><use href="#i-help"/></svg>회원 목록</a>
+      <a href="#"><svg class="i"><use href="#i-chat"/></svg>대행의뢰 · 제안</a>
+      <a href="#"><svg class="i"><use href="#i-mask"/></svg>신고 · 블라인드<span class="tag" style="background:var(--warn)">2</span></a>
+    </div>
+   </div>
+  </nav>
+  <div class="side-foot"><a href="#" data-go="my" data-nav="my">마이페이지</a><a href="#" id="admToggle">관리자</a><a href="#">로그아웃</a></div>
+</aside>
+
+<div class="main">
+  <header class="header">
+    <div class="crumb" id="crumb"><b>대시보드</b></div>
+    <div class="hright">
+      <span class="admbadge">관리자 모드</span>
+      <button class="icon-btn"><svg class="i"><use href="#i-bell"/></svg><span class="dot"></span></button>
+      <div class="hpoint num">11,500 <em>P</em></div>
+      <div class="avatar">JD</div>
+    </div>
+  </header>
+
+  <!-- ===== DASHBOARD (v1 그대로) ===== -->
+  <section class="page on" id="p-dash">
+    <div class="strip">
+      <div class="live"><span class="k">지금 구동 중</span><span class="v num">1,284<i>건</i></span><span class="d">플레이스 812 · 스토어 341 · 쿠팡 131</span></div>
+      <div><span class="k">오늘 접수</span><span class="v num">96<i>건</i></span><span class="d up">▲ 어제보다 14건</span></div>
+      <div><span class="k">당일 접수 마감까지</span><span class="v num" id="cd">02:14:07</span><span class="d">13:30 이전 접수 시 당일 구동</span></div>
+      <div><span class="k">평균 순위 상승</span><span class="v num">+9.4<i>위</i></span><span class="d">최근 7일 완료 캠페인 기준</span></div>
+    </div>
+    <div class="banner">
+      <a href="#" class="b1"><small>신규 가입 혜택</small><strong>카카오로 가입하면<br>바로 10,000P 지급</strong></a>
+      <a href="#" class="b2"><small>플레이스 신규 매체</small><strong>'오로라' 출시 —<br>첫 주 단가 15% 할인</strong></a>
+      <a href="#" class="b3"><small>광고비 환급</small><strong>지난달 사용액의 11%<br>포인트로 돌려받기</strong></a>
+    </div>
+    <div class="grid2">
+      <div class="card"><div class="ch"><h3>공지사항</h3><a class="more" href="#">전체보기<svg class="i i14"><use href="#i-right"/></svg></a></div><div class="cb"><ul class="list">
+        <li><span class="tag t-pin">고정</span><a href="#">주말·공휴일 접수 캠페인의 구동 시작일 안내</a><span class="dt">08.25</span></li>
+        <li><span class="tag t-must">필독</span><a href="#">플레이스 링크는 반드시 모바일(m.place) 주소로 입력해주세요</a><span class="dt">08.27</span></li>
+        <li><span class="tag t-upd">업데이트</span><a href="#">쿠팡 채널 매체사 2종 추가 및 최소 구동일 변경</a><span class="dt">08.26</span></li>
+        <li><span class="tag t-mnt">점검</span><a href="#">9/2(수) 02:00~05:00 서버 점검 — 캠페인 접수 일시 중단</a><span class="dt">08.24</span></li>
+        <li><span class="tag t-evt">이벤트</span><a href="#">친구 초대하면 두 분 모두 5,000P</a><span class="dt">08.20</span></li></ul></div></div>
+      <div class="card"><div class="ch"><h3>이렇게 진행돼요</h3></div><div class="cb"><ol class="steps">
+        <li><div><b>포인트 충전</b><span>무통장 입금 후 10분 내 자동 반영</span></div></li>
+        <li><div><b>채널 선택 → 캠페인 생성</b><span>플레이스 · 쇼핑스토어 · 쿠팡 중 선택</span></div></li>
+        <li><div><b>매체사 · 기간 · 수량 설정</b><span>키워드는 AI가 자동 세팅, 직접 입력도 가능</span></div></li>
+        <li><div><b>결제 → 검수 → 구동</b><span>13:30 이전 접수는 당일 구동, 이후는 익일</span></div></li></ol></div></div>
+    </div>
+    <div class="grid3">
+      <div class="card chan" data-go="new"><div class="ic c-place"><svg class="i"><use href="#i-pin"/></svg></div><h4>플레이스 캠페인</h4><span class="go">캠페인 만들기<svg class="i i14"><use href="#i-right"/></svg></span></div>
+      <div class="card chan" data-go="store"><div class="ic c-store"><svg class="i"><use href="#i-bag"/></svg></div><h4>쇼핑·스토어 캠페인</h4><span class="go">캠페인 만들기<svg class="i i14"><use href="#i-right"/></svg></span></div>
+      <div class="card chan" data-go="new"><div class="ic c-coupang"><svg class="i"><use href="#i-box"/></svg></div><h4>쿠팡 캠페인</h4><span class="go">캠페인 만들기<svg class="i i14"><use href="#i-right"/></svg></span></div>
+    </div>
+    <div class="grid2">
+      <div class="card"><div class="ch"><h3>익명 게시판</h3><a class="more" href="#" data-go="anon">더보기<svg class="i i14"><use href="#i-right"/></svg></a></div><div class="cb"><ul class="list">
+        <li><span class="anon" style="font-family:var(--font);font-weight:600;color:var(--text-2)">꿈꾸는 다람쥐</span><a href="#">플레이스 3일째 돌리는데 순위가 안 움직여요 정상인가요</a><span class="cnt">18</span></li>
+        <li><span class="anon" style="font-family:var(--font);font-weight:600;color:var(--text-2)">조용한 펭귄</span><a href="#">쿠팡 리워드 효율 쓰시는 분 후기 좀</a><span class="cnt">11</span></li>
+        <li><span class="anon" style="font-family:var(--font);font-weight:600;color:var(--text-2)">말없는 고래</span><a href="#">병원 플레이스는 어떤 매체가 나은지 — 3개월 굴려본 결론</a><span class="cnt">42</span></li>
+        <li><span class="anon" style="font-family:var(--font);font-weight:600;color:var(--text-2)">부지런한 두더지</span><a href="#">스토어 신규 매체 '팬텀' 첫날 데이터 공유합니다</a><span class="cnt">7</span></li>
+        <li><span class="anon" style="font-family:var(--font);font-weight:600;color:var(--text-2)">느긋한 수달</span><a href="#">대행사 안 끼고 직접 하니까 월 80 아꼈네요</a><span class="cnt">25</span></li></ul></div></div>
+      <div class="card"><div class="ch"><h3>자주 묻는 질문</h3></div><div class="cb"><dl class="faq">
+        <dt>구동 시작일은 언제로 잡아야 하나요?</dt><dd>주말·공휴일은 접수만 되고 구동은 다음 평일부터 시작됩니다.</dd>
+        <dt>중간에 중단하면 환불되나요?</dt><dd>진행 중 중단 시 남은 일수만큼 포인트로 환불됩니다. 검수 반려는 전액 환불.</dd>
+        <dt>순위는 어디서 확인하나요?</dt><dd>캠페인 관리 → 행 클릭 → 우측 상세에서 일자별 순위 변동을 볼 수 있습니다.</dd></dl></div></div>
+    </div>
+  </section>
+
+  <!-- ===== CAMPAIGN CREATE v2 ===== -->
+  <section class="page" id="p-new">
+    <div class="ph"><div><h1>캠페인 생성</h1><p>채널을 고르고 왼쪽부터 순서대로 진행하세요.</p></div>
+      <div class="act"><div class="chan-tabs"><button class="on"><i class="dot c-place"></i>플레이스</button><button data-go="store"><i class="dot c-store"></i>쇼핑·스토어</button><button><i class="dot c-coupang"></i>쿠팡</button></div></div></div>
+
+    <div class="progress">
+      <div class="p cur" id="pg1"><b>1</b><div>매체사 선택<span class="sub2" id="pg1s">11개 중 선택</span></div></div>
+      <div class="p" id="pg2"><b>2</b><div>구동 정보 확인<span class="sub2">단가 · 효율 · 접수 규칙</span></div></div>
+      <div class="p" id="pg3"><b>3</b><div>캠페인 설정<span class="sub2">기간 · 수량 · 키워드</span></div></div>
+      <div class="p" id="pg4"><b>4</b><div>결제<span class="sub2" id="pg4s">보유 11,500P</span></div></div>
+    </div>
+
+    <div class="cols">
+      <div class="col" id="col1"><div class="card"><div class="ch"><h3><span class="stepno">1</span>매체사 선택</h3><span class="more" style="cursor:default">단가 = 1건당 포인트</span></div><div class="cb">
+        <div class="mfilter"><button class="on">전체</button><button>추천</button><button>세일</button><button>효율순</button><button>단가 낮은순</button></div>
+        <div class="mgrp"><h5>공용</h5><div class="mgrid">
+          <div class="mcard" data-m="올스타" data-p="120" data-o="140" data-e="82" data-l="올" data-av="#2563EB" data-logo=""><div class="top"><div class="logo-slot" style="--av:#2563EB">올<img alt=""></div><div><b>올스타<span class="bd bd-sale">SALE</span></b><span class="tl">1일 단위 구동</span></div></div><div class="meta"><span class="eff-mini">효율 <i style="--e:82%"></i>82%</span><span><span class="strike">140</span><b>120P</b></span></div></div>
+          <div class="mcard" data-m="오로라" data-p="150" data-e="91" data-l="오" data-av="#0891B2" data-logo="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' fill='%23fff'/><path d='M6 30c4-14 10-20 14-20s10 6 14 20' stroke='%230891B2' stroke-width='4' fill='none' stroke-linecap='round'/><path d='M11 30c3-9 6-13 9-13s6 4 9 13' stroke='%2314B8A6' stroke-width='4' fill='none' stroke-linecap='round'/></svg>"><div class="top"><div class="logo-slot" style="--av:#0891B2">오<img alt=""></div><div><b>오로라<span class="bd bd-rec">추천</span></b><span class="tl">신규 오퍼월</span></div></div><div class="meta"><span class="eff-mini">효율 <i style="--e:91%"></i>91%</span><span><b>150P</b></span></div></div>
+          <div class="mcard" data-m="버즈빌" data-p="140" data-e="76" data-l="버" data-av="#7C3AED" data-logo=""><div class="top"><div class="logo-slot" style="--av:#7C3AED">버<img alt=""></div><div><b>버즈빌</b><span class="tl">150+ 채널</span></div></div><div class="meta"><span class="eff-mini">효율 <i style="--e:76%"></i>76%</span><span><b>140P</b></span></div></div>
+          <div class="mcard" data-m="NBT" data-p="130" data-e="71" data-l="N" data-av="#4B5563" data-logo=""><div class="top"><div class="logo-slot" style="--av:#4B5563">N<img alt=""></div><div><b>NBT</b><span class="tl">200+ 채널</span></div></div><div class="meta"><span class="eff-mini">효율 <i style="--e:71%"></i>71%</span><span><b>130P</b></span></div></div>
+          <div class="mcard" data-m="세븐" data-p="110" data-e="64" data-l="세" data-av="#DB2777" data-logo=""><div class="top"><div class="logo-slot" style="--av:#DB2777">세<img alt=""></div><div><b>세븐</b><span class="tl">상세 안내 필독</span></div></div><div class="meta"><span class="eff-mini">효율 <i style="--e:64%"></i>64%</span><span><b>110P</b></span></div></div>
+        </div></div>
+        <div class="mgrp"><h5>맛집 · 카페</h5><div class="mgrid">
+          <div class="mcard" data-m="앤드류" data-p="160" data-e="88" data-l="앤" data-av="#EA580C" data-logo=""><div class="top"><div class="logo-slot" style="--av:#EA580C">앤<img alt=""></div><div><b>앤드류<span class="bd bd-rec">추천</span></b><span class="tl">신규 참여 푸시</span></div></div><div class="meta"><span class="eff-mini">효율 <i style="--e:88%"></i>88%</span><span><b>160P</b></span></div></div>
+          <div class="mcard" data-m="감귤" data-p="135" data-e="79" data-l="감" data-av="#B45309" data-logo=""><div class="top"><div class="logo-slot" style="--av:#B45309">감<img alt=""></div><div><b>감귤</b><span class="tl">맛집 최적화</span></div></div><div class="meta"><span class="eff-mini">효율 <i style="--e:79%"></i>79%</span><span><b>135P</b></span></div></div>
+          <div class="mcard" data-m="프리마" data-p="170" data-e="85" data-l="프" data-av="#059669" data-logo=""><div class="top"><div class="logo-slot" style="--av:#059669">프<img alt=""></div><div><b>프리마</b><span class="tl">IP 다변화</span></div></div><div class="meta"><span class="eff-mini">효율 <i style="--e:85%"></i>85%</span><span><b>170P</b></span></div></div>
+          <div class="mcard" data-m="골든" data-p="125" data-o="145" data-e="73" data-l="골" data-av="#2563EB" data-logo=""><div class="top"><div class="logo-slot" style="--av:#2563EB">골<img alt=""></div><div><b>골든<span class="bd bd-sale">SALE</span></b><span class="tl">신규 로직 세팅</span></div></div><div class="meta"><span class="eff-mini">효율 <i style="--e:73%"></i>73%</span><span><span class="strike">145</span><b>125P</b></span></div></div>
+        </div></div>
+        <div class="mgrp"><h5>일반 키워드</h5><div class="mgrid">
+          <div class="mcard" data-m="퀀텀X" data-p="180" data-e="83" data-l="Q" data-av="#7C3AED" data-logo=""><div class="top"><div class="logo-slot" style="--av:#7C3AED">Q<img alt=""></div><div><b>퀀텀X<span class="bd bd-new">NEW</span></b><span class="tl">11타임 액션</span></div></div><div class="meta"><span class="eff-mini">효율 <i style="--e:83%"></i>83%</span><span><b>180P</b></span></div></div>
+          <div class="mcard" data-m="글렌" data-p="145" data-e="77" data-l="글" data-av="#0891B2" data-logo=""><div class="top"><div class="logo-slot" style="--av:#0891B2">글<img alt=""></div><div><b>글렌</b><span class="tl">N2값 최적화</span></div></div><div class="meta"><span class="eff-mini">효율 <i style="--e:77%"></i>77%</span><span><b>145P</b></span></div></div>
+        </div></div>
+      </div></div></div>
+
+      <div class="col dim" id="col2"><div class="card"><div class="ch"><h3><span class="stepno">2</span>구동 정보</h3></div><div class="cb">
+        <div class="empty" id="c2empty"><svg class="i"><use href="#i-cursor"/></svg>왼쪽에서 매체사를 선택하세요</div>
+        <div id="c2body" style="display:none">
+          <div class="selhead"><div class="logo-slot" id="selAv">오<img alt="" id="selImg"></div><div><b id="selName"></b><span>플레이스 · 100% 실사용자 리워드</span></div></div>
+          <div class="kv"><span>1건당 단가</span><b class="num" id="selPrice"></b></div>
+          <div class="kv"><span>최소 구동 기간</span><b>3일</b></div>
+          <div class="kv"><span>일 작업량 범위</span><b class="num">50 ~ 500건</b></div>
+          <div class="eff"><div style="font-size:12.5px;font-weight:600;margin-bottom:6px">매체 효율</div><div class="bar"><i id="effBar"></i></div><div class="lb"><span>최근 30일 완료 캠페인 순위 상승률</span><b id="effVal"></b></div></div>
+          <div style="font-size:12.5px;font-weight:600;margin-top:12px">최근 7일 이 매체 접수량</div>
+          <div class="spark"><i style="height:40%"></i><i style="height:55%"></i><i style="height:48%"></i><i style="height:70%"></i><i style="height:62%"></i><i style="height:85%"></i><i style="height:100%"></i></div>
+          <div class="spark-lb"><span>8/22</span><span>오늘</span></div>
+          <div class="infobox"><h6><svg class="i i14"><use href="#i-cal"/></svg>접수 · 구동 규칙</h6><ul>
+            <li>당일 접수 마감 <b>13:30</b></li><li>당일 구동 <b class="ok">가능</b></li><li>구동 시작일 <b>평일만</b></li><li>중단 시 환불 <b>잔여일 비례</b></li></ul></div>
+        </div>
+      </div></div></div>
+
+      <div class="col dim" id="col3"><div class="card"><div class="ch"><h3><span class="stepno">3</span>캠페인 설정</h3></div><div class="cb">
+        <div class="fsec"><h6><svg class="i i14"><use href="#i-cal"/></svg>기간 · 수량</h6>
+          <div class="f"><label>작업 기간</label><div class="row2"><input class="in" id="d1" type="date" value="2026-08-31"><input class="in" id="d2" type="date" value="2026-09-09"></div>
+            <div class="presets"><button data-n="3">3일</button><button data-n="5">5일</button><button data-n="7">7일</button><button data-n="10" class="on">10일</button><button data-n="14">14일</button></div>
+            <div class="hint" id="dhint">10일 · 월요일 시작</div></div>
+          <div class="f"><label>일 작업량<small>건 / 일</small></label><div class="qrow"><div class="stepper"><button id="qm">−</button><input id="qty" type="number" value="100" min="50" max="500" step="10"><button id="qp">+</button></div><span class="qhint">이 업종 평균 <b>150건</b></span></div></div>
+        </div>
+        <div class="fsec"><h6><svg class="i i14"><use href="#i-pin"/></svg>플레이스 정보</h6>
+          <div class="f"><label>플레이스명</label><input class="in" placeholder="예) 대박갈비 일산동구점"></div>
+          <div class="f"><label>플레이스 링크<small>모바일 주소</small></label><input class="in" placeholder="https://m.place.naver.com/..."><div class="hint">PC 주소를 넣으면 자동으로 변환됩니다.</div></div>
+        </div>
+        <div class="fsec"><h6><svg class="i i14"><use href="#i-search"/></svg>키워드</h6>
+          <div class="f"><label>순위 상승 희망 키워드</label><input class="in" id="kw" value="일산 갈비"></div>
+          <div class="f"><label style="display:flex;align-items:center">작업 세팅 키워드<span class="toggle" id="tg"><span>직접 입력</span><i></i></span></label>
+            <div class="aibox" id="aibox"><div class="ic"><svg class="i i16"><use href="#i-spark"/></svg></div><div><b>AI 키워드 자동 세팅</b><span>희망 키워드를 기준으로 유입 키워드 5개를 자동 구성합니다</span><div class="chips"><i>일산 갈비</i><i>일산동구 갈비</i><i>일산 갈비맛집</i><i>백석동 갈비</i><i>일산 고기집</i></div></div></div>
+            <input class="in" id="kwman" placeholder="쉼표로 구분해 최대 5개" style="display:none"></div>
+        </div>
+        <div class="fsec"><h6><svg class="i i14"><use href="#i-coin"/></svg>결제</h6>
+          <div class="pay">
+            <div class="kv"><span>보유 포인트</span><b class="num">11,500 P</b></div>
+            <div class="kv"><span>주문 금액 <small style="color:var(--text-3)" id="calc"></small></span><b class="num" id="order">0 P</b></div>
+            <div class="kv"><span>할인 <small style="color:var(--text-3)">30만P 이상 5%</small></span><b class="num" id="disc">−0 P</b></div>
+            <div class="kv total"><span>결제 포인트</span><b class="num" id="total">0 P</b></div>
+            <div class="short" id="short" style="display:none"></div>
+          </div>
+        </div>
+      </div></div></div>
+    </div>
+    <div class="paybar" id="paybar">
+      <div class="sum"><div>매체<b id="pbM">—</b></div><div>기간<b id="pbD">—</b></div><div>일 수량<b id="pbQ">—</b></div><div>세팅 키워드<b>AI 자동 5개</b></div></div>
+      <div class="tot"><small>결제 포인트</small><b class="num" id="pbT">0 P</b></div>
+      <button class="btn pri" id="submit">캠페인 등록</button>
+    </div>
+  </section>
+
+  <!-- ===== CAMPAIGN MANAGE v2 ===== -->
+  <section class="page" id="p-manage">
+    <div class="ph"><div><h1>플레이스 캠페인 관리</h1><p>행을 클릭하면 오른쪽에 상세가 열립니다.</p></div><div class="act"><button class="btn sec">내보내기</button><button class="btn pri" data-go="new">+ 새 캠페인</button></div></div>
+    <div class="mstat">
+      <div class="card"><span class="k">진행 중</span><span class="v num">8<i>건</i></span><span class="d">오늘 소진 예정 96,000P</span></div>
+      <div class="card"><span class="k">검수 · 승인 대기</span><span class="v num">3<i>건</i></span><span class="d">보통 1시간 내 처리</span></div>
+      <div class="card"><span class="k">이번 달 사용 포인트</span><span class="v num">1,412,500<i>P</i></span><span class="d">지난달 대비 +18%</span></div>
+      <div class="card"><span class="k">평균 순위 변동</span><span class="v num" style="color:var(--success)">+13.2<i>위</i></span><span class="d">완료 5건 기준</span></div>
+    </div>
+    <div class="card"><div class="cb" style="padding-top:6px">
+      <div class="tabs"><button class="on">전체<em>24</em></button><button>대기<em>6</em></button><button>검수<em>2</em></button><button>승인<em>1</em></button><button>진행<em>8</em></button><button>반려<em>1</em></button><button>완료<em>5</em></button><button>중단<em>1</em></button></div>
+      <div class="tbar">
+        <select class="in"><option>전체 기간</option><option>이번 달</option><option>지난 달</option></select>
+        <select class="in"><option>모든 매체</option><option>올스타</option><option>오로라</option><option>앤드류</option></select>
+        <div class="search"><svg class="i"><use href="#i-search"/></svg><input class="in" placeholder="주문번호 · 업체명 · 키워드"></div>
+      </div>
+      <div style="overflow-x:auto;margin:0 -18px"><table>
+        <thead><tr><th>주문번호</th><th>상태</th><th>업체 · 키워드</th><th>매체</th><th>진행</th><th>순위</th><th style="text-align:right">일 수량</th><th style="text-align:right">결제 포인트</th><th>등록</th><th></th></tr></thead>
+        <tbody>
+          <tr class="sel" data-open><td class="ord">N581520800</td><td><span class="st s-run">진행</span></td><td><div class="biz"><div class="logo-slot" style="--av:#0891B2">오</div><div><b>대박갈비 일산동구점</b><span>일산 갈비</span></div></div></td><td>오로라</td><td><div class="prog"><div class="lb"><span>5 / 10일</span><span>09.02 종료</span></div><div class="bar"><i style="width:50%"></i></div></div></td><td><span class="rank num">27 → <b>12</b><span class="up">▲15</span></span></td><td class="num" style="text-align:right">200</td><td class="num" style="text-align:right">300,000</td><td class="num"><span class="mut">08.23</span></td><td><div class="rowact"><button>복사</button><button>중단</button></div></td></tr>
+          <tr data-open><td class="ord">N897147939</td><td><span class="st s-run">진행</span></td><td><div class="biz"><div class="logo-slot" style="--av:#EA580C">앤</div><div><b>라온피부과 부평</b><span>부평 피부과</span></div></div></td><td>앤드류</td><td><div class="prog"><div class="lb"><span>4 / 10일</span><span>09.03 종료</span></div><div class="bar"><i style="width:40%"></i></div></div></td><td><span class="rank num">41 → <b>33</b><span class="up">▲8</span></span></td><td class="num" style="text-align:right">300</td><td class="num" style="text-align:right">480,000</td><td class="num"><span class="mut">08.24</span></td><td><div class="rowact"><button>복사</button><button>중단</button></div></td></tr>
+          <tr data-open><td class="ord">N500086339</td><td><span class="st s-review">검수</span></td><td><div class="biz"><div class="logo-slot" style="--av:#2563EB">올</div><div><b>스터디카페 온</b><span>송도 스터디카페</span></div></div></td><td>올스타</td><td><div class="prog wait"><div class="lb"><span>08.31 시작</span><span>10일</span></div><div class="bar"><i style="width:0"></i></div></div></td><td><span class="mut">-</span></td><td class="num" style="text-align:right">100</td><td class="num" style="text-align:right">120,000</td><td class="num"><span class="mut">08.28</span></td><td><div class="rowact"><button>복사</button></div></td></tr>
+          <tr data-open><td class="ord">N213933258</td><td><span class="st s-wait">대기</span></td><td><div class="biz"><div class="logo-slot" style="--av:#0891B2">오</div><div><b>약손 이천점</b><span>이천 마사지</span></div></div></td><td>오로라</td><td><div class="prog wait"><div class="lb"><span>08.31 시작</span><span>5일</span></div><div class="bar"><i style="width:0"></i></div></div></td><td><span class="mut">-</span></td><td class="num" style="text-align:right">150</td><td class="num" style="text-align:right">112,500</td><td class="num"><span class="mut">08.28</span></td><td><div class="rowact"><button>수정</button><button>취소</button></div></td></tr>
+          <tr data-open><td class="ord">N938581480</td><td><span class="st s-rej">반려</span></td><td><div class="biz"><div class="logo-slot" style="--av:#DB2777">세</div><div><b>한솔치과</b><span>구월동 치과</span></div></div></td><td>세븐</td><td><span class="mut" style="font-size:12px">링크 오류 · 전액 환불</span></td><td><span class="mut">-</span></td><td class="num" style="text-align:right">200</td><td class="num" style="text-align:right"><span class="mut">환불됨</span></td><td class="num"><span class="mut">08.26</span></td><td><div class="rowact"><button>수정 후 재접수</button></div></td></tr>
+          <tr data-open><td class="ord">N297044220</td><td><span class="st s-done">완료</span></td><td><div class="biz"><div class="logo-slot" style="--av:#B45309">감</div><div><b>커피볶는집 학익</b><span>학익동 카페</span></div></div></td><td>감귤</td><td><div class="prog done"><div class="lb"><span>10 / 10일</span><span>08.19 종료</span></div><div class="bar"><i style="width:100%"></i></div></div></td><td><span class="rank num">38 → <b>6</b><span class="up">▲32</span></span></td><td class="num" style="text-align:right">100</td><td class="num" style="text-align:right">135,000</td><td class="num"><span class="mut">08.09</span></td><td><div class="rowact"><button>복사</button><button>리포트</button></div></td></tr>
+          <tr data-open><td class="ord">N440913771</td><td><span class="st s-stop">중단</span></td><td><div class="biz"><div class="logo-slot" style="--av:#4B5563">N</div><div><b>필라테스 바디랩</b><span>주안 필라테스</span></div></div></td><td>NBT</td><td><div class="prog done"><div class="lb"><span>6 / 10일</span><span>4일분 환불</span></div><div class="bar"><i style="width:60%"></i></div></div></td><td><span class="rank num">19 → <b>21</b><span class="dn">▼2</span></span></td><td class="num" style="text-align:right">100</td><td class="num" style="text-align:right">130,000</td><td class="num"><span class="mut">08.11</span></td><td><div class="rowact"><button>복사</button></div></td></tr>
+        </tbody></table></div>
+      <div class="pager"><button>‹</button><button class="on">1</button><button>2</button><button>3</button><button>›</button></div>
+    </div></div>
+  </section>
+
+  <!-- ===== ANON BOARD ===== -->
+  <section class="page" id="p-anon">
+    <div class="ph"><div><h1>익명 게시판</h1><p>글마다 랜덤 닉네임이 새로 붙습니다. 같은 글 안에서만 같은 사람인지 알 수 있어요.</p></div><div class="act"></div></div>
+    <div class="cgrid">
+      <div>
+        <div class="card write"><div class="avatar"><svg class="i i16"><use href="#i-mask"/></svg></div><input class="in" placeholder="무엇이든 익명으로 물어보세요"><span class="anonlbl"><svg class="i i14"><use href="#i-lock"/></svg>이 글에서 당신은 <b style="color:var(--text)">졸린 너구리</b></span><button class="btn pri sm">글쓰기</button></div>
+        <div class="boardhead"><div class="sort"><button class="on">최신</button><button>인기</button><button>답변 많은</button></div>
+          <div style="display:flex;gap:6px"><span class="pill p-place">플레이스</span><span class="pill p-store">스토어</span><span class="pill p-coupang">쿠팡</span><span class="pill p-tool">도구</span></div>
+          <div class="search"><svg class="i"><use href="#i-search"/></svg><input class="in" placeholder="검색"></div></div>
+        <div class="card">
+          <div class="post"><div class="vote hot"><svg class="i"><use href="#i-up"/></svg>42</div><div class="body"><div class="head"><span class="anon" style="font-family:var(--font);font-weight:600;color:var(--text-2)">말없는 고래</span><span>·</span><span>2시간 전</span><span class="pill p-place">플레이스</span><span class="pill p-hot">인기</span></div><h4>병원 플레이스는 어떤 매체가 나은지 — 3개월 굴려본 결론</h4><div class="foot"><span><svg class="i i14"><use href="#i-msg"/></svg><span class="c">28</span></span><span><svg class="i i14"><use href="#i-eye"/></svg>1,204</span></div></div></div>
+          <div class="post"><div class="vote">18</div><div class="body"><div class="head"><span class="anon" style="font-family:var(--font);font-weight:600;color:var(--text-2)">꿈꾸는 다람쥐</span><span>·</span><span>4시간 전</span><span class="pill p-place">플레이스</span></div><h4>플레이스 3일째 돌리는데 순위가 안 움직여요 정상인가요 <em>답변 12</em></h4><div class="foot"><span><svg class="i i14"><use href="#i-msg"/></svg><span class="c">12</span></span><span><svg class="i i14"><use href="#i-eye"/></svg>388</span></div></div></div>
+          <div class="post"><div class="vote">25</div><div class="body"><div class="head"><span class="anon" style="font-family:var(--font);font-weight:600;color:var(--text-2)">느긋한 수달</span><span>·</span><span>6시간 전</span><span class="pill p-tool">도구</span></div><h4>대행사 안 끼고 직접 하니까 월 80 아꼈네요</h4><div class="foot"><span><svg class="i i14"><use href="#i-msg"/></svg><span class="c">9</span></span><span><svg class="i i14"><use href="#i-eye"/></svg>762</span></div></div></div>
+          <div class="post"><div class="vote">7</div><div class="body"><div class="head"><span class="anon" style="font-family:var(--font);font-weight:600;color:var(--text-2)">부지런한 두더지</span><span>·</span><span>어제</span><span class="pill p-store">스토어</span></div><h4>스토어 신규 매체 '팬텀' 첫날 데이터 공유합니다</h4><div class="foot"><span><svg class="i i14"><use href="#i-msg"/></svg><span class="c">5</span></span><span><svg class="i i14"><use href="#i-eye"/></svg>210</span></div></div><div class="thumb"><svg class="i"><use href="#i-img"/></svg></div></div>
+          <div class="post"><div class="vote">11</div><div class="body"><div class="head"><span class="anon" style="font-family:var(--font);font-weight:600;color:var(--text-2)">조용한 펭귄</span><span>·</span><span>어제</span><span class="pill p-coupang">쿠팡</span></div><h4>쿠팡 리워드 효율 쓰시는 분 후기 좀</h4><div class="foot"><span><svg class="i i14"><use href="#i-msg"/></svg><span class="c">11</span></span><span><svg class="i i14"><use href="#i-eye"/></svg>301</span></div></div></div>
+          <div class="post"><div class="vote">9</div><div class="body"><div class="head"><span class="anon" style="font-family:var(--font);font-weight:600;color:var(--text-2)">용감한 참새</span><span>·</span><span>2일 전</span><span class="pill p-place">플레이스</span></div><h4>키워드 하나에 몰빵 vs 3개 분산, 어느 쪽이 맞나</h4><div class="foot"><span><svg class="i i14"><use href="#i-msg"/></svg><span class="c">16</span></span><span><svg class="i i14"><use href="#i-eye"/></svg>544</span></div></div></div>
+        </div>
+        <div class="pager"><button>‹</button><button class="on">1</button><button>2</button><button>3</button><button>›</button></div>
+      </div>
+      <div class="side">
+        <div class="card"><div class="ch"><h3>지금 뜨는 글</h3><span style="font-size:11.5px;color:var(--text-3)">24시간</span></div><div class="cb"><ol class="hotlist">
+          <li><a href="#">병원 플레이스는 어떤 매체가 나은지</a><span class="cnt">28</span></li><li><a href="#">키워드 하나에 몰빵 vs 3개 분산</a><span class="cnt">16</span></li><li><a href="#">플레이스 3일째 순위가 안 움직여요</a><span class="cnt">12</span></li><li><a href="#">쿠팡 리워드 효율 후기</a><span class="cnt">11</span></li><li><a href="#">대행사 안 끼고 직접 하니까</a><span class="cnt">9</span></li></ol></div></div>
+        <div class="card"><div class="ch"><h3>익명이 지켜지는 방식</h3></div><div class="cb"><ul class="rule"><li>글마다 "수식어 + 동물" 닉네임이 새로 생성되고, 다른 글과 연결되지 않습니다</li><li>운영진도 글쓴이를 볼 수 없습니다 (신고 3회 누적 시에만 검토)</li><li>업체명·전화번호는 자동으로 가려집니다</li></ul></div></div>
+        <div class="card"><div class="ch"><h3>자주 쓰는 태그</h3></div><div class="cb"><div class="tagcloud"><a href="#">#순위안오름</a><a href="#">#매체추천</a><a href="#">#첫캠페인</a><a href="#">#병원</a><a href="#">#맛집</a><a href="#">#환불</a><a href="#">#키워드</a></div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== QNA ===== -->
+  <section class="page" id="p-qna">
+    <div class="ph"><div><h1>질문답변</h1><p>답변이 채택되면 답변자에게 100P, 현상금이 걸린 질문은 그만큼 더 드립니다.</p></div><div class="act"><button class="btn pri"><svg class="i i16"><use href="#i-pen"/></svg>질문하기</button></div></div>
+    <div class="cgrid">
+      <div>
+        <div class="boardhead"><div class="sort"><button class="on">전체</button><button>미해결</button><button>해결됨</button><button>현상금</button></div><div class="search"><svg class="i"><use href="#i-search"/></svg><input class="in" placeholder="이미 답변된 질문 찾기"></div></div>
+        <div class="card">
+          <div class="qna"><div class="qh"><span class="pill p-bounty">현상금 2,000P</span><span class="pill p-open">미해결</span><span class="pill p-place">플레이스</span></div><h4>순위 20위권에서 10위권으로 올리려면 일 수량을 얼마나 잡아야 하나요?</h4><div class="qf"><span>성실한 여우</span><span>·</span><span>35분 전</span><span><svg class="i i14"><use href="#i-eye"/></svg> 84</span><div class="ans"><div class="n zero">0<small>답변</small></div></div></div></div>
+          <div class="qna"><div class="qh"><span class="pill p-solved">해결됨</span><span class="pill p-store">스토어</span></div><h4>스마트스토어 상품 URL을 넣었는데 '링크 형식 오류'가 떠요</h4><div class="qf"><span>배고픈 곰</span><span>·</span><span>3시간 전</span><span><svg class="i i14"><use href="#i-eye"/></svg> 212</span><div class="ans"><div class="n ok"><svg class="i i16"><use href="#i-check"/></svg></div><div class="n">3<small>답변</small></div></div></div></div>
+          <div class="qna"><div class="qh"><span class="pill p-open">미해결</span><span class="pill p-coupang">쿠팡</span></div><h4>쿠팡 캠페인은 로켓배송 아닌 상품도 효과 있나요?</h4><div class="qf"><span>달리는 토끼</span><span>·</span><span>5시간 전</span><span><svg class="i i14"><use href="#i-eye"/></svg> 96</span><div class="ans"><div class="n">2<small>답변</small></div></div></div></div>
+          <div class="qna"><div class="qh"><span class="pill p-solved">해결됨</span><span class="pill p-tool">도구</span></div><h4>연관키워드 조회에서 나온 키워드를 캠페인에 바로 넣을 수 있나요?</h4><div class="qf"><span>웃는 해달</span><span>·</span><span>어제</span><span><svg class="i i14"><use href="#i-eye"/></svg> 340</span><div class="ans"><div class="n ok"><svg class="i i16"><use href="#i-check"/></svg></div><div class="n">1<small>답변</small></div></div></div></div>
+          <div class="qna"><div class="qh"><span class="pill p-bounty">현상금 500P</span><span class="pill p-open">미해결</span><span class="pill p-place">플레이스</span></div><h4>맛집 전용 매체를 카페에 써도 되나요?</h4><div class="qf"><span>궁금한 고양이</span><span>·</span><span>어제</span><span><svg class="i i14"><use href="#i-eye"/></svg> 158</span><div class="ans"><div class="n">4<small>답변</small></div></div></div></div>
+          <div class="qna"><div class="qh"><span class="pill p-solved">해결됨</span><span class="pill p-tool">도구</span></div><h4>포인트 충전 후 반영이 안 됩니다</h4><div class="qf"><span>침착한 거북이</span><span>·</span><span>2일 전</span><span><svg class="i i14"><use href="#i-eye"/></svg> 421</span><div class="ans"><div class="n ok"><svg class="i i16"><use href="#i-check"/></svg></div><div class="n">2<small>답변</small></div></div></div></div>
+        </div>
+        <div class="pager"><button>‹</button><button class="on">1</button><button>2</button><button>›</button></div>
+      </div>
+      <div class="side">
+        <div class="card"><div class="ch"><h3>내 답변 활동</h3></div><div class="cb"><div class="myrank"><div><div class="big">7<small>채택</small></div><div style="font-size:12px;color:var(--text-2)">답변 23개 · 채택률 30%</div></div><div style="margin-left:auto;text-align:right"><div style="font-size:12px;color:var(--text-2)">받은 포인트</div><b class="num" style="font-size:16px">2,700 P</b></div></div><div class="lvl"><i></i></div><div style="font-size:11.5px;color:var(--text-3);margin-top:5px">채택 3개 더 받으면 <b style="color:var(--text)">답변러 뱃지</b></div></div></div>
+        <div class="card"><div class="ch"><h3>현상금 큰 질문</h3></div><div class="cb"><ol class="hotlist">
+          <li><a href="#">20위권→10위권 일 수량</a><span class="bounty"><svg class="i i14"><use href="#i-coin"/></svg>2,000</span></li><li><a href="#">병원 플레이스 반려 사유가 뭘까요</a><span class="bounty"><svg class="i i14"><use href="#i-coin"/></svg>1,000</span></li><li><a href="#">맛집 매체를 카페에 써도 되나요</a><span class="bounty"><svg class="i i14"><use href="#i-coin"/></svg>500</span></li></ol></div></div>
+        <div class="card"><div class="ch"><h3>이런 질문은 공지에 있어요</h3></div><div class="cb"><ul class="list" style="font-size:13px"><li><a href="#">주말 접수 시 구동 시작일</a></li><li><a href="#">중단·반려 환불 규정</a></li><li><a href="#">모바일 플레이스 링크 만드는 법</a></li></ul></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== INFO ===== -->
+  <section class="page" id="p-info">
+    <div class="ph"><div><h1>마케팅 정보</h1><p>운영팀이 정리해서 올리는 글입니다.</p></div>
+      <div class="act"><div class="sort" style="display:flex;gap:2px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:3px"><button class="on" style="padding:5px 12px;border-radius:6px;font-size:12.5px;font-weight:600;background:var(--text);color:#fff">전체</button><button style="padding:5px 12px;font-size:12.5px;font-weight:600;color:var(--text-2)">가이드</button><button style="padding:5px 12px;font-size:12.5px;font-weight:600;color:var(--text-2)">데이터</button><button style="padding:5px 12px;font-size:12.5px;font-weight:600;color:var(--text-2)">업데이트</button></div></div></div>
+    <div class="cgrid">
+      <div class="card">
+        <div class="post" style="align-items:center"><div class="body"><div class="head"><span class="tag t-pin">고정</span><span class="pill p-tool">가이드</span><span>·</span><span>08.27</span></div><h4>첫 캠페인 세팅 체크리스트 — 반려 없이 통과하는 7가지</h4></div></div>
+        <div class="post" style="align-items:center"><div class="body"><div class="head"><span class="pill p-tool">데이터</span><span>·</span><span>08.26</span></div><h4>플레이스 매체 11종 효율 비교 — 업종별로 이긴 매체가 다르다</h4></div></div>
+        <div class="post" style="align-items:center"><div class="body"><div class="head"><span class="pill p-tool">데이터</span><span>·</span><span>08.24</span></div><h4>순위 상승 후 유지 — 캠페인 종료 뒤 2주 데이터</h4></div></div>
+        <div class="post" style="align-items:center"><div class="body"><div class="head"><span class="pill p-tool">가이드</span><span>·</span><span>08.22</span></div><h4>쇼핑 검색 키워드, 3개 분산이 몰빵보다 나은 조건</h4></div></div>
+        <div class="post" style="align-items:center"><div class="body"><div class="head"><span class="pill p-tool">업데이트</span><span>·</span><span>08.20</span></div><h4>접수 시간대별 구동 시작 지연 — 왜 13:30인가</h4></div></div>
+        <div class="post" style="align-items:center"><div class="body"><div class="head"><span class="pill p-tool">가이드</span><span>·</span><span>08.18</span></div><h4>병원 플레이스 반려 사유 TOP 5</h4></div></div>
+        <div class="post" style="align-items:center"><div class="body"><div class="head"><span class="pill p-tool">가이드</span><span>·</span><span>08.15</span></div><h4>연관키워드 조회로 숨은 키워드 찾는 법</h4></div></div>
+        <div class="pager" style="padding:0 0 16px"><button>‹</button><button class="on">1</button><button>2</button><button>›</button></div>
+      </div>
+      <div class="side">
+        <div class="card"><div class="ch"><h3>처음 시작하는 분께</h3></div><div class="cb"><ol class="series">
+          <li><span class="n ok">1</span><a href="#">플레이스 캠페인이 뭔가요</a><span class="mut">읽음</span></li><li><span class="n ok">2</span><a href="#">매체사 고르는 기준</a><span class="mut">읽음</span></li><li><span class="n">3</span><a href="#">기간·수량 정하기</a><span class="mut">6분</span></li><li><span class="n">4</span><a href="#">키워드 세팅, AI vs 직접</a><span class="mut">5분</span></li><li><span class="n">5</span><a href="#">결과 읽는 법</a><span class="mut">8분</span></li></ol></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== STORE HUB (쇼핑·스토어 캠페인 생성 상단) ===== -->
+  <section class="page" id="p-store">
+    <div class="ph"><div><h1>쇼핑·스토어 캠페인 생성</h1><p>추적 슬롯에 상품 키워드를 등록하면 검색량과 추천 수량을 무료로 계산해줍니다.</p></div>
+      <div class="act"><div class="chan-tabs"><button data-go="new"><i class="dot c-place"></i>플레이스</button><button class="on"><i class="dot c-store"></i>쇼핑·스토어</button><button><i class="dot c-coupang"></i>쿠팡</button></div></div></div>
+
+    <div class="snotice"><svg class="i i16"><use href="#i-mega"/></svg><b>쇼핑 공지</b><span>9/1부터 스토어 매체 '팬텀' 최소 구동일 5일 → 3일로 변경 · 옵션 상품은 옵션 미선택 URL로 등록해주세요</span><a class="more" href="#">쇼핑 공지 4건 →</a></div>
+
+    <div class="grid2" style="grid-template-columns:1.35fr 1fr">
+      <div class="card"><div class="ch"><h3>쇼핑 추적 슬롯</h3><span class="thin">무료 · 최대 10개 · 검색량은 매일 새벽 갱신</span><span class="more" style="cursor:default">3 / 10 사용 중</span></div><div class="cb">
+        <div class="slot-add">
+          <div class="f"><label>상품 키워드</label><input class="in" id="skw" placeholder="예) 아우라 방향제"></div>
+          <div class="f"><label>상품 URL<small>선택</small></label><input class="in" placeholder="smartstore.naver.com/..."></div>
+          <div class="f"><label>월 검색량<small>자동 조회</small></label><input class="in num" id="svol" placeholder="—" readonly style="background:#fff"></div>
+          <button class="btn pri" id="sadd">슬롯 등록</button>
+        </div>
+        <div style="margin:0 -18px"><table id="slots"><thead><tr><th>키워드</th><th>월 검색량</th><th style="text-align:right">일 검색량</th><th style="text-align:right">추천 일 수량</th><th>순위 추이 (7일)</th><th>현재 순위</th><th></th></tr></thead><tbody>
+          <tr><td><b>아우라 방향제</b><br><span class="mut" style="font-size:11.5px">아우라 패딩 스토어</span></td><td><div class="vol"><b class="num">48,300</b><small>PC 9,100 · 모바일 39,200</small></div></td><td class="num" style="text-align:right">1,610</td><td style="text-align:right"><span class="reco num">2<small>건/일</small></span></td><td><div class="trend"><i style="height:30%"></i><i style="height:38%"></i><i style="height:35%"></i><i style="height:52%"></i><i style="height:60%"></i><i style="height:74%"></i><i style="height:100%"></i></div></td><td><span class="rank num">74 → <b>8</b><span class="up">▲66</span></span></td><td><div class="rowact" style="opacity:1"><button style="color:var(--accent)" data-go="new">이 수량으로 캠페인</button><button>삭제</button></div></td></tr>
+          <tr><td><b>차량용 방향제 추천</b></td><td><div class="vol"><b class="num">112,000</b><small>PC 14,000 · 모바일 98,000</small></div></td><td class="num" style="text-align:right">3,733</td><td style="text-align:right"><span class="reco num">6<small>건/일</small></span></td><td><div class="trend"><i style="height:20%"></i><i style="height:22%"></i><i style="height:25%"></i><i style="height:24%"></i><i style="height:30%"></i><i style="height:28%"></i><i style="height:33%"></i></div></td><td><span class="rank num">112 → <b>96</b><span class="up">▲16</span></span></td><td><div class="rowact" style="opacity:1"><button style="color:var(--accent)" data-go="new">이 수량으로 캠페인</button><button>삭제</button></div></td></tr>
+          <tr><td><b>디퓨저 선물세트</b></td><td><div class="vol"><b class="num">9,800</b><small>PC 2,100 · 모바일 7,700</small></div></td><td class="num" style="text-align:right">327</td><td style="text-align:right"><span class="reco num">1<small>건/일</small></span></td><td><div class="trend"><i style="height:50%"></i><i style="height:50%"></i><i style="height:48%"></i><i style="height:55%"></i><i style="height:52%"></i><i style="height:50%"></i><i style="height:54%"></i></div></td><td><span class="mut">미노출</span></td><td><div class="rowact" style="opacity:1"><button style="color:var(--accent)" data-go="new">이 수량으로 캠페인</button><button>삭제</button></div></td></tr>
+        </tbody></table></div>
+        <div class="formula"><svg class="i i14"><use href="#i-spark"/></svg>추천 일 수량 = <code>일 검색량 ÷ 1,000 × 1.5</code><span>· 일 검색량 = 월 검색량 ÷ 30 · 1,000회당 1.5건</span></div>
+      </div></div>
+      <div>
+        <div class="card" style="margin-bottom:16px"><div class="ch"><h3>순위 추이</h3><select class="sel-in" style="margin-left:auto"><option>아우라 방향제 | 아우라 패딩 스토어</option><option>차량용 방향제 추천</option><option>디퓨저 선물세트</option></select></div><div class="cb">
+          <div class="txtab" style="margin-bottom:8px"><button class="on">통합검색</button><button>가격비교</button></div>
+          <div class="slotchart"><svg viewBox="0 0 400 120" preserveAspectRatio="none"><polyline fill="none" stroke="#2563EB" stroke-width="2" points="10,105 60,50 110,75 160,52 210,52 260,48 310,26 360,24 390,8"/><g fill="#fff" stroke="#2563EB" stroke-width="2"><circle cx="10" cy="105" r="3"/><circle cx="60" cy="50" r="3"/><circle cx="110" cy="75" r="3"/><circle cx="160" cy="52" r="3"/><circle cx="210" cy="52" r="3"/><circle cx="260" cy="48" r="3"/><circle cx="310" cy="26" r="3"/><circle cx="360" cy="24" r="3"/><circle cx="390" cy="8" r="3"/></g><g font-size="9" fill="#6B7280" text-anchor="middle"><text x="10" y="118">74</text><text x="60" y="44">35</text><text x="110" y="70">53</text><text x="160" y="46">36</text><text x="210" y="46">36</text><text x="260" y="42">34</text><text x="310" y="20">19</text><text x="360" y="18">16</text><text x="390" y="4" fill="#2563EB" font-weight="700">8</text></g></svg></div>
+          <div class="spark-lb" style="margin-top:6px"><span>10-29</span><span>11-05</span></div>
+          <div class="kv" style="margin-top:10px"><span>캠페인 진행 기간</span><b>10-29 ~ 11-05 · 앤드류 · 2건/일</b></div>
+        </div></div>
+        <div class="card"><div class="ch"><h3>쇼핑 진행 캠페인</h3><a class="more" href="#" data-go="manage">관리<svg class="i i14"><use href="#i-right"/></svg></a></div><div class="cb"><ul class="list">
+          <li><span class="st s-run">진행</span><a href="#">아우라 방향제 · 앤드류 · 3/10일</a><span class="dt num">8위</span></li>
+          <li><span class="st s-review">검수</span><a href="#">차량용 방향제 추천 · 팬텀</a><span class="dt">08.31~</span></li>
+        </ul><button class="btn pri lg" style="margin-top:12px" data-go="new">새 쇼핑 캠페인 만들기</button></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== POPULAR TRAFFIC ===== -->
+  <section class="page" id="p-popular">
+    <div class="ph"><div><h1>플레이스 인기 트래픽</h1><p>업종별로 지금 가장 많이 선택되는 매체를 운영팀이 매주 정리합니다.</p></div>
+      <div class="act"><div class="chan-tabs"><button class="on"><i class="dot c-place"></i>플레이스</button><button><i class="dot c-store"></i>쇼핑·스토어</button><button><i class="dot c-coupang"></i>쿠팡</button></div></div></div>
+    <div class="cattabs"><button class="on">병원 · 의원</button><button>맛집 · 카페</button><button>학원 · 교육</button><button>미용 · 뷰티</button><button>운동 · 필라테스</button><button>숙박 · 펜션</button><button>일반 키워드</button></div>
+    <div class="podium">
+      <div class="card pod r1" data-go="new"><span class="medal">1위</span><div class="top"><div class="logo-slot" style="--av:#0891B2">오</div><div><b>오로라</b><span class="tl">신규 오퍼월 · 150P</span></div></div><div class="why">병원 키워드 반응이 가장 빠름. 피부과·치과 완료 캠페인 평균 +14위.</div><div class="stats"><span>효율 <span class="eff-mini"><i style="--e:91%"></i></span><b>91%</b></span><span>이번 주 <b>128</b>건</span></div></div>
+      <div class="card pod r2" data-go="new"><span class="medal">2위</span><div class="top"><div class="logo-slot" style="--av:#EA580C">앤</div><div><b>앤드류</b><span class="tl">신규 참여 푸시 · 160P</span></div></div><div class="why">유지 캠페인에 강함. 10위권 진입 후 절반 수량으로 유지한 사례 다수.</div><div class="stats"><span>효율 <span class="eff-mini"><i style="--e:88%"></i></span><b>88%</b></span><span>이번 주 <b>96</b>건</span></div></div>
+      <div class="card pod r3" data-go="new"><span class="medal">3위</span><div class="top"><div class="logo-slot" style="--av:#2563EB">올</div><div><b>올스타</b><span class="tl">1일 단위 구동 · 120P</span></div></div><div class="why">단가 대비 무난. 첫 캠페인으로 테스트하기 좋음.</div><div class="stats"><span>효율 <span class="eff-mini"><i style="--e:82%"></i></span><b>82%</b></span><span>이번 주 <b>71</b>건</span></div></div>
+    </div>
+    <div class="card"><div class="ch"><h3>그 외 병원 · 의원에서 쓰는 매체</h3><span class="thin">효율순</span></div><div class="cb"><div class="rest">
+      <div class="mrow"><span class="n">4</span><div class="logo-slot" style="--av:#059669;width:32px;height:32px;border-radius:8px;font-size:12px">프</div><div style="flex:1"><b>프리마</b><span>IP 다변화 · 170P</span></div><span class="thin">85%</span></div>
+      <div class="mrow"><span class="n">5</span><div class="logo-slot" style="--av:#7C3AED;width:32px;height:32px;border-radius:8px;font-size:12px">Q</div><div style="flex:1"><b>퀀텀X</b><span>11타임 액션 · 180P</span></div><span class="thin">83%</span></div>
+      <div class="mrow"><span class="n">6</span><div class="logo-slot" style="--av:#7C3AED;width:32px;height:32px;border-radius:8px;font-size:12px">버</div><div style="flex:1"><b>버즈빌</b><span>150+ 채널 · 140P</span></div><span class="thin">76%</span></div>
+      <div class="mrow"><span class="n">7</span><div class="logo-slot" style="--av:#4B5563;width:32px;height:32px;border-radius:8px;font-size:12px">N</div><div style="flex:1"><b>NBT</b><span>200+ 채널 · 130P</span></div><span class="thin">71%</span></div>
+    </div><p class="thin" style="margin-top:12px">순위는 운영팀이 주간 데이터(효율·접수량·반려율)를 보고 직접 정합니다. 마지막 갱신 08.25</p></div></div>
+  </section>
+
+  <!-- ===== ADMIN POPULAR ===== -->
+  <section class="page" id="p-adm-popular">
+    <div class="ph"><div><h1>인기 트래픽 설정</h1><p>채널 × 카테고리별 1·2·3위와 추천 문구를 정합니다. 저장 즉시 사용자 화면에 반영됩니다.</p></div>
+      <div class="act"><div class="chan-tabs"><button class="on"><i class="dot c-place"></i>플레이스</button><button><i class="dot c-store"></i>쇼핑·스토어</button><button><i class="dot c-coupang"></i>쿠팡</button></div><button class="btn sec">+ 카테고리</button></div></div>
+    <div class="form2">
+      <div class="card"><div class="ch"><h3>플레이스 카테고리</h3></div><div class="cb">
+        <div class="catrow"><b>병원 · 의원</b><div class="tops"><span>오로라</span><span>앤드류</span><span>올스타</span></div><span class="thin">08.25</span><span class="toggle on"><i></i></span><button class="btn sec sm" style="border-color:var(--accent);color:var(--accent)">수정 중</button></div>
+        <div class="catrow"><b>맛집 · 카페</b><div class="tops"><span>앤드류</span><span>감귤</span><span>프리마</span></div><span class="thin">08.25</span><span class="toggle on"><i></i></span><button class="btn sec sm">수정</button></div>
+        <div class="catrow"><b>학원 · 교육</b><div class="tops"><span>올스타</span><span>오로라</span><span>버즈빌</span></div><span class="thin">08.18</span><span class="toggle on"><i></i></span><button class="btn sec sm">수정</button></div>
+        <div class="catrow"><b>미용 · 뷰티</b><div class="tops"><span>오로라</span><span>앤드류</span><span>세븐</span></div><span class="thin">08.18</span><span class="toggle on"><i></i></span><button class="btn sec sm">수정</button></div>
+        <div class="catrow"><b>운동 · 필라테스</b><div class="tops"><span>앤드류</span><span>올스타</span><span>NBT</span></div><span class="thin">08.11</span><span class="toggle on"><i></i></span><button class="btn sec sm">수정</button></div>
+        <div class="catrow"><b>숙박 · 펜션</b><div class="tops"><span class="thin">미설정</span></div><span class="thin">—</span><span class="toggle"><i></i></span><button class="btn sec sm">수정</button></div>
+        <div class="catrow"><b>일반 키워드</b><div class="tops"><span>퀀텀X</span><span>글렌</span><span>올스타</span></div><span class="thin">08.25</span><span class="toggle on"><i></i></span><button class="btn sec sm">수정</button></div>
+      </div></div>
+      <div class="card"><div class="ch"><h3>병원 · 의원 수정</h3></div><div class="cb">
+        <div class="f"><label>카테고리명</label><input class="in" value="병원 · 의원"></div>
+        <div class="f"><label>순위 · 매체 · 추천 문구</label>
+          <div class="rankset"><span class="n g">1</span><select class="in" style="height:36px"><option>오로라</option><option>앤드류</option><option>올스타</option><option>프리마</option></select><input class="in" style="height:36px" value="병원 키워드 반응이 가장 빠름"><button class="btn ghost sm">↓</button></div>
+          <div class="rankset"><span class="n">2</span><select class="in" style="height:36px"><option>앤드류</option><option>오로라</option><option>올스타</option></select><input class="in" style="height:36px" value="유지 캠페인에 강함"><button class="btn ghost sm">↑↓</button></div>
+          <div class="rankset"><span class="n">3</span><select class="in" style="height:36px"><option>올스타</option><option>프리마</option></select><input class="in" style="height:36px" value="단가 대비 무난, 첫 캠페인 테스트용"><button class="btn ghost sm">↑</button></div>
+        </div>
+        <div class="f"><label>4위 이하<small>효율순 자동, 제외할 매체 체크</small></label><div class="chk on"><i></i>프리마</div><div class="chk on"><i></i>퀀텀X</div><div class="chk on"><i></i>버즈빌</div><div class="chk"><i></i>NBT (비노출)</div><div class="chk"><i></i>세븐</div></div>
+        <div class="f"><label>이번 주 접수 수 표시</label><span class="toggle on" style="margin:0"><span>표시</span><i></i></span></div>
+        <div class="chk on"><i></i>사용자 화면 노출</div>
+        <div style="display:flex;gap:8px;margin-top:12px"><button class="btn pri" style="flex:1">저장</button><button class="btn sec">취소</button></div>
+      </div></div>
+    </div>
+  </section>
+
+  <!-- ===== AGENCY REQUEST ===== -->
+  <section class="page" id="p-agency">
+    <div class="ph"><div><h1>대행의뢰</h1><p>직접 세팅이 어려우면 의뢰를 올리세요. 운영팀과 인증 대행사가 제안을 보냅니다. 의뢰는 무료입니다.</p></div></div>
+    <div class="cgrid">
+      <div>
+        <div class="card" style="margin-bottom:12px"><div class="ch"><h3>의뢰 올리기</h3><span class="thin">연락처는 제안을 수락한 곳에만 공개됩니다</span></div><div class="cb"><div class="agform">
+          <div class="f"><label>채널</label><select class="in"><option>플레이스</option><option>쇼핑·스토어</option><option>쿠팡</option><option>복수 채널</option></select></div>
+          <div class="f"><label>업종</label><input class="in" placeholder="예) 피부과"></div>
+          <div class="f"><label>월 예산</label><select class="in"><option>30만 이하</option><option>30~100만</option><option>100~300만</option><option>300만 이상</option><option>미정</option></select></div>
+          <div class="f"><label>지역</label><input class="in" placeholder="예) 인천 부평"></div>
+          <div class="f wide"><label>요청 내용</label><textarea class="in" rows="3" placeholder="현재 상황, 목표 순위, 기간 등을 적어주세요. 업체명은 안 적어도 됩니다."></textarea></div>
+          <div class="f wide" style="display:flex;justify-content:flex-end;gap:8px"><span class="anonlbl" style="margin-right:auto;font-size:11.5px;color:var(--text-3);display:flex;align-items:center;gap:4px"><svg class="i i14"><use href="#i-lock"/></svg>목록에는 <b style="color:var(--text)">부지런한 두더지</b>로 표시</span><button class="btn pri">의뢰 등록</button></div>
+        </div></div></div>
+        <div class="boardhead"><div class="sort"><button class="on">전체</button><button>모집 중</button><button>매칭 완료</button><button>내 의뢰</button></div><div style="display:flex;gap:6px"><span class="pill p-place">플레이스</span><span class="pill p-store">스토어</span><span class="pill p-coupang">쿠팡</span></div></div>
+        <div class="card">
+          <div class="ag"><div class="bud"><small>월 예산</small><b>100~300만</b></div><div class="body"><div class="head" style="display:flex;gap:8px;font-size:11.5px;color:var(--text-3)"><span class="pill p-recruit">모집 중</span><span class="pill p-place">플레이스</span><span>피부과 · 인천 부평</span><span>·</span><span>1시간 전</span></div><h4>개원 3개월, "부평 피부과" 10위권 진입 목표 — 세팅부터 운영까지 맡기고 싶습니다</h4><div class="thin">성실한 여우 · 조회 41</div></div><div class="prop"><b class="num">3</b><small>제안</small></div></div>
+          <div class="ag"><div class="bud"><small>월 예산</small><b>30~100만</b></div><div class="body"><div class="head" style="display:flex;gap:8px;font-size:11.5px;color:var(--text-3)"><span class="pill p-recruit">모집 중</span><span class="pill p-store">스토어</span><span>반려용품 · 온라인</span><span>·</span><span>5시간 전</span></div><h4>강아지매트 스마트스토어, 키워드 3개 순위 관리 대행 문의</h4><div class="thin">달리는 토끼 · 조회 27</div></div><div class="prop"><b class="num">1</b><small>제안</small></div></div>
+          <div class="ag"><div class="bud"><small>월 예산</small><b>300만 이상</b></div><div class="body"><div class="head" style="display:flex;gap:8px;font-size:11.5px;color:var(--text-3)"><span class="pill p-match">매칭 완료</span><span class="pill p-place">플레이스</span><span>치과 · 서울 강남</span><span>·</span><span>어제</span></div><h4>임플란트 키워드 상위 유지, 기존 대행사에서 이전 검토</h4><div class="thin">말없는 고래 · 조회 156</div></div><div class="prop"><b class="num">6</b><small>제안</small></div></div>
+          <div class="ag"><div class="bud"><small>월 예산</small><b>미정</b></div><div class="body"><div class="head" style="display:flex;gap:8px;font-size:11.5px;color:var(--text-3)"><span class="pill p-recruit">모집 중</span><span class="pill p-coupang">쿠팡</span><span>식품 · 온라인</span><span>·</span><span>어제</span></div><h4>쿠팡 신규 입점, 첫 달 노출 전략 상담 원합니다</h4><div class="thin">궁금한 고양이 · 조회 33</div></div><div class="prop"><b class="num">0</b><small>제안</small></div></div>
+          <div class="ag"><div class="bud"><small>월 예산</small><b>30만 이하</b></div><div class="body"><div class="head" style="display:flex;gap:8px;font-size:11.5px;color:var(--text-3)"><span class="pill p-close">마감</span><span class="pill p-place">플레이스</span><span>카페 · 인천 학익</span><span>·</span><span>3일 전</span></div><h4>동네 카페, 소액으로 순위만 조금 올리고 싶어요</h4><div class="thin">느긋한 수달 · 조회 88</div></div><div class="prop"><b class="num">2</b><small>제안</small></div></div>
+        </div>
+        <div class="pager"><button>‹</button><button class="on">1</button><button>2</button><button>›</button></div>
+      </div>
+      <div class="side">
+        <div class="card"><div class="ch"><h3>이렇게 진행돼요</h3></div><div class="cb"><ol class="steps">
+          <li><div><b>의뢰 등록</b><span>업체명·연락처 없이 올려도 됩니다</span></div></li>
+          <li><div><b>제안 받기</b><span>운영팀 · 인증 대행사가 예산안과 계획을 보냄</span></div></li>
+          <li><div><b>제안 수락</b><span>수락한 곳에만 연락처 공개, 이후 카카오로 진행</span></div></li>
+          <li><div><b>플랫폼 포인트로 결제</b><span>대행사가 대신 캠페인을 세팅, 포인트는 내 계정에서 차감</span></div></li></ol></div></div>
+        <div class="card"><div class="ch"><h3>내 의뢰</h3></div><div class="cb"><ul class="list"><li><span class="pill p-recruit">모집 중</span><a href="#">부평 피부과 10위권 진입</a><span class="cnt">3</span></li></ul></div></div>
+        <div class="card"><div class="ch"><h3>대행사로 참여하기</h3></div><div class="cb"><p style="font-size:12.5px;color:var(--text-2)">완료 캠페인 30건 이상 + 사업자 인증 시 의뢰에 제안을 보낼 수 있습니다.</p><button class="btn sec" style="margin-top:10px;width:100%">인증 신청</button></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== MYPAGE ===== -->
+  <section class="page" id="p-my">
+    <div class="ph"><div><h1>마이페이지</h1></div></div>
+    <div class="mp">
+      <div>
+        <div class="card"><div class="me"><div class="avatar">JD</div><h3>JDH</h3><p>010-****-4821</p><span class="kk"><i></i>카카오 계정 연결됨 · 2026.03 가입</span></div>
+          <div class="grade"><div><span>완료 캠페인</span><b class="num">16</b></div><div><span>누적 사용</span><b class="num">4.2M P</b></div><div><span>등급</span><b>실버</b></div></div></div>
+        <div class="card mpoint"><div style="font-size:12px;color:var(--text-2)">보유 포인트</div><div class="big num">11,500<i> P</i></div><div class="thin" style="margin-top:2px">이번 달 사용 1,412,500P · 환급 예정 155,375P (9/5)</div><div class="rw"><button class="btn pri" style="flex:1">충전</button><button class="btn sec" style="flex:1">환급 신청</button></div></div>
+        <div class="card"><div class="ch"><h3>사업자 정보</h3><a class="more" href="#">수정</a></div><div class="cb" style="font-size:13px;line-height:1.7"><div><span class="thin">상호</span> 주식회사 제이디에이치</div><div><span class="thin">사업자번호</span> 123-45-67890</div><div><span class="thin">세금계산서</span> 매월 1일 자동 발행</div></div></div>
+      </div>
+      <div>
+        <div class="card"><div class="ch"><h3>내 캠페인</h3><a class="more" href="#" data-go="manage">전체 관리<svg class="i i14"><use href="#i-right"/></svg></a></div><div class="cb"><div class="mini-camp"><div><span>플레이스</span><b class="num">진행 5 · 대기 2</b></div><div><span>쇼핑·스토어</span><b class="num">진행 2</b></div><div><span>쿠팡</span><b class="num">진행 1 · 검수 1</b></div></div></div></div>
+        <div class="card"><div class="ch"><h3>포인트 내역</h3></div><div class="cb">
+          <div class="txtab"><button class="on">전체</button><button>충전</button><button>사용</button><button>환불</button><button>환급</button></div>
+          <div style="margin:0 -18px"><table><thead><tr><th>일시</th><th>구분</th><th>내용</th><th style="text-align:right">변동</th><th style="text-align:right">잔액</th></tr></thead><tbody>
+            <tr><td class="num"><span class="mut">08.28 13:21</span></td><td><span class="st s-wait">사용</span></td><td>약손 이천점 · 오로라 5일 <span class="mono mut" style="font-size:11.5px">N213933258</span></td><td class="num minus" style="text-align:right">−112,500</td><td class="num" style="text-align:right">11,500</td></tr>
+            <tr><td class="num"><span class="mut">08.27 09:03</span></td><td><span class="st s-run">충전</span></td><td>무통장 입금 · 보너스 +3% 포함</td><td class="num plus" style="text-align:right">+103,000</td><td class="num" style="text-align:right">124,000</td></tr>
+            <tr><td class="num"><span class="mut">08.26 15:40</span></td><td><span class="st s-appr">환불</span></td><td>한솔치과 반려 · 전액</td><td class="num plus" style="text-align:right">+260,000</td><td class="num" style="text-align:right">21,000</td></tr>
+            <tr><td class="num"><span class="mut">08.24 10:12</span></td><td><span class="st s-wait">사용</span></td><td>라온피부과 부평 · 앤드류 10일</td><td class="num minus" style="text-align:right">−480,000</td><td class="num" style="text-align:right">−</td></tr>
+            <tr><td class="num"><span class="mut">08.23 13:21</span></td><td><span class="st s-wait">사용</span></td><td>대박갈비 일산동구점 · 오로라 10일</td><td class="num minus" style="text-align:right">−300,000</td><td class="num" style="text-align:right">−</td></tr>
+            <tr><td class="num"><span class="mut">08.05 09:00</span></td><td><span class="st s-done">환급</span></td><td>7월 사용액 11% 환급</td><td class="num plus" style="text-align:right">+98,450</td><td class="num" style="text-align:right">−</td></tr>
+          </tbody></table></div><div class="pager"><button>‹</button><button class="on">1</button><button>2</button><button>›</button></div></div></div>
+        <div class="card"><div class="ch"><h3>알림 · 설정</h3></div><div class="cb">
+          <div class="setrow"><div>캠페인 상태 변경 알림<span>검수·승인·반려·완료 시 카카오 알림톡</span></div><span class="toggle on"><i></i></span></div>
+          <div class="setrow"><div>내 글 댓글 알림<span>익명 게시판 · 질문답변</span></div><span class="toggle on"><i></i></span></div>
+          <div class="setrow"><div>이벤트 · 신규 매체 소식<span>주 1회 이내</span></div><span class="toggle"><i></i></span></div>
+          <div class="setrow"><div>내가 쓴 글<span>익명 글 4 · 질문 2 · 답변 23</span></div><button class="btn sec sm" style="margin-left:auto">보기</button></div>
+          <div class="setrow"><div>회원 탈퇴<span>진행 중 캠페인이 있으면 탈퇴할 수 없습니다</span></div><button class="btn ghost sm" style="margin-left:auto;color:var(--danger)">탈퇴</button></div>
+        </div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== ADMIN HOME ===== -->
+  <section class="page" id="p-adm">
+    <div class="ph"><div><h1>운영 현황</h1><p>지금 처리해야 할 것부터.</p></div><div class="act"><span class="thin">13:30 접수 마감까지 <b id="cd2" class="num" style="color:var(--text)">—</b></span></div></div>
+    <div class="queue">
+      <div class="card" data-go="adm-orders"><span class="k">검수 대기</span><span class="v alert num">9</span><span class="d">가장 오래된 건 47분</span></div>
+      <div class="card" data-go="adm-charge"><span class="k">충전 확인 대기</span><span class="v alert num">4</span><span class="d">합계 620,000원</span></div>
+      <div class="card" data-go="adm-orders"><span class="k">오늘 순위 미입력</span><span class="v num">23</span><span class="d">진행 중 61건</span></div>
+      <div class="card"><span class="k">신고 누적</span><span class="v num">2</span><span class="d">3회 이상 → 자동 블라인드</span></div>
+      <div class="card"><span class="k">오늘 접수 · 매출</span><span class="v num">96</span><span class="d">14,280,000P</span></div>
+    </div>
+    <div class="grid2">
+      <div class="card"><div class="ch"><h3>검수 대기 큐</h3><a class="more" href="#" data-go="adm-orders">주문 관리<svg class="i i14"><use href="#i-right"/></svg></a></div><div class="cb"><div style="margin:0 -18px"><table><thead><tr><th>주문</th><th>업체 · 키워드</th><th>매체</th><th>접수</th><th></th></tr></thead><tbody>
+        <tr><td class="ord">N500086339</td><td><b>스터디카페 온</b> <span class="mut">송도 스터디카페</span></td><td>올스타</td><td><span class="mut">47분 전</span></td><td><div class="rowact" style="opacity:1"><button style="color:var(--success)">승인</button><button style="color:var(--danger)">반려</button></div></td></tr>
+        <tr><td class="ord">N213933258</td><td><b>약손 이천점</b> <span class="mut">이천 마사지</span></td><td>오로라</td><td><span class="mut">31분 전</span></td><td><div class="rowact" style="opacity:1"><button style="color:var(--success)">승인</button><button style="color:var(--danger)">반려</button></div></td></tr>
+        <tr><td class="ord">N771203955</td><td><b>연세바른치과</b> <span class="mut">치과 임플란트 최저가</span></td><td>세븐</td><td><span class="mut">18분 전</span></td><td><div class="rowact" style="opacity:1"><button style="color:var(--success)">승인</button><button style="color:var(--danger)">반려</button></div></td></tr>
+        <tr><td class="ord">N309412876</td><td><b>구디 필라테스</b> <span class="mut">구로 필라테스</span></td><td>앤드류</td><td><span class="mut">6분 전</span></td><td><div class="rowact" style="opacity:1"><button style="color:var(--success)">승인</button><button style="color:var(--danger)">반려</button></div></td></tr>
+      </tbody></table></div></div></div>
+      <div>
+        <div class="card" style="margin-bottom:16px"><div class="ch"><h3>매체사별 오늘 접수</h3></div><div class="cb">
+          <div class="kv"><span>오로라</span><b class="num">31건 · 4,650,000P</b></div><div class="kv"><span>앤드류</span><b class="num">22건 · 3,520,000P</b></div><div class="kv"><span>올스타</span><b class="num">19건 · 2,280,000P</b></div><div class="kv"><span>감귤</span><b class="num">11건 · 1,485,000P</b></div><div class="kv"><span>기타 7개</span><b class="num">13건 · 2,345,000P</b></div></div></div>
+        <div class="card"><div class="ch"><h3>최근 처리</h3></div><div class="cb"><ul class="timeline" style="margin-top:4px">
+          <li class="on"><b>N897147939 순위 입력 41→33</b><span>3분 전 · 관리자 김</span></li><li class="on"><b>충전 승인 — 이OO 200,000원</b><span>12분 전</span></li><li class="on"><b>N938581480 반려 — 링크 형식 오류</b><span>1시간 전 · 260,000P 환불</span></li><li class="on"><b>공지 발행 — 플레이스 링크 모바일 주소 안내</b><span>어제</span></li></ul></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== ADMIN ORDERS ===== -->
+  <section class="page" id="p-adm-orders">
+    <div class="ph"><div><h1>주문 관리</h1><p>상태 변경과 순위 입력을 표에서 바로 합니다. 반려는 사유가 필수입니다.</p></div><div class="act"><button class="btn sec">엑셀 내보내기</button><button class="btn sec">순위 일괄 업로드</button></div></div>
+    <div class="card"><div class="cb" style="padding-top:6px">
+      <div class="tabs"><button>전체<em>184</em></button><button class="on">검수<em>9</em></button><button>승인<em>3</em></button><button>진행<em>61</em></button><button>반려<em>4</em></button><button>완료<em>102</em></button><button>중단<em>5</em></button></div>
+      <div class="tbar"><select class="in"><option>모든 채널</option><option>플레이스</option><option>쇼핑·스토어</option><option>쿠팡</option></select><select class="in"><option>모든 매체</option></select><select class="in"><option>오늘 접수</option><option>이번 주</option></select><div class="search"><svg class="i"><use href="#i-search"/></svg><input class="in" placeholder="주문번호 · 회원 · 업체명"></div></div>
+      <div class="bulk"><span class="chk on"><i></i></span>3건 선택됨 <button class="btn pri sm" style="margin-left:auto">선택 승인</button><button class="btn sec sm">선택 반려</button></div>
+      <div style="overflow-x:auto;margin:0 -18px"><table><thead><tr><th></th><th>주문</th><th>회원</th><th>채널</th><th>업체 · 키워드</th><th>매체</th><th>기간 · 수량</th><th>링크</th><th>상태</th><th>순위</th><th></th></tr></thead><tbody>
+        <tr><td><span class="chk on"><i></i></span></td><td class="ord">N500086339</td><td>JDH</td><td><span class="pill p-place">플레이스</span></td><td><b>스터디카페 온</b><br><span class="mut">송도 스터디카페</span></td><td>올스타</td><td class="num">08.31~09.09<br><span class="mut">100/일</span></td><td><a class="lnk" href="#">확인</a></td><td><select class="sel-in"><option>검수</option><option>승인</option><option>반려</option></select></td><td><input class="rank-in" placeholder="시작"></td><td><div class="rowact" style="opacity:1"><button style="color:var(--success)">승인</button><button style="color:var(--danger)">반려</button></div></td></tr>
+        <tr><td><span class="chk on"><i></i></span></td><td class="ord">N213933258</td><td>JDH</td><td><span class="pill p-place">플레이스</span></td><td><b>약손 이천점</b><br><span class="mut">이천 마사지</span></td><td>오로라</td><td class="num">08.31~09.04<br><span class="mut">150/일</span></td><td><a class="lnk" href="#">확인</a></td><td><select class="sel-in"><option>검수</option><option>승인</option><option>반려</option></select></td><td><input class="rank-in" placeholder="시작"></td><td><div class="rowact" style="opacity:1"><button style="color:var(--success)">승인</button><button style="color:var(--danger)">반려</button></div></td></tr>
+        <tr style="background:var(--danger-soft)"><td><span class="chk on"><i></i></span></td><td class="ord">N771203955</td><td>박OO</td><td><span class="pill p-place">플레이스</span></td><td><b>연세바른치과</b><br><span style="color:var(--danger);font-size:12px">⚠ 금지 문구 "최저가" 감지</span></td><td>세븐</td><td class="num">08.31~09.09<br><span class="mut">200/일</span></td><td><a class="lnk" href="#">확인</a></td><td><select class="sel-in"><option>검수</option><option>승인</option><option selected>반려</option></select></td><td><input class="rank-in" placeholder="시작"></td><td><div class="rowact" style="opacity:1"><button style="color:var(--danger)">반려 사유 입력</button></div></td></tr>
+        <tr><td><span class="chk"><i></i></span></td><td class="ord">N309412876</td><td>최OO</td><td><span class="pill p-store">스토어</span></td><td><b>구디 필라테스</b><br><span class="mut">구로 필라테스</span></td><td>앤드류</td><td class="num">08.31~09.06<br><span class="mut">120/일</span></td><td><a class="lnk" href="#">확인</a></td><td><select class="sel-in"><option>검수</option><option>승인</option><option>반려</option></select></td><td><input class="rank-in" placeholder="시작"></td><td><div class="rowact" style="opacity:1"><button style="color:var(--success)">승인</button><button style="color:var(--danger)">반려</button></div></td></tr>
+        <tr><td><span class="chk"><i></i></span></td><td class="ord">N581520800</td><td>JDH</td><td><span class="pill p-place">플레이스</span></td><td><b>대박갈비 일산동구점</b><br><span class="mut">일산 갈비</span></td><td>오로라</td><td class="num">08.24~09.02<br><span class="mut">200/일 · 5일차</span></td><td><a class="lnk" href="#">확인</a></td><td><span class="st s-run">진행</span></td><td><span class="num mut">27 →</span> <input class="rank-in" value="12"></td><td><div class="rowact" style="opacity:1"><button>오늘 순위 저장</button></div></td></tr>
+        <tr><td><span class="chk"><i></i></span></td><td class="ord">N897147939</td><td>JDH</td><td><span class="pill p-place">플레이스</span></td><td><b>라온피부과 부평</b><br><span class="mut">부평 피부과</span></td><td>앤드류</td><td class="num">08.25~09.03<br><span class="mut">300/일 · 4일차</span></td><td><a class="lnk" href="#">확인</a></td><td><span class="st s-run">진행</span></td><td><span class="num mut">41 →</span> <input class="rank-in" value="33"></td><td><div class="rowact" style="opacity:1"><button>오늘 순위 저장</button><button style="color:var(--warn)">중단</button></div></td></tr>
+      </tbody></table></div><div class="pager"><button>‹</button><button class="on">1</button><button>2</button><button>3</button><button>›</button></div></div></div>
+  </section>
+
+  <!-- ===== ADMIN CHARGE ===== -->
+  <section class="page" id="p-adm-charge">
+    <div class="ph"><div><h1>충전 승인</h1><p>입금 확인 후 승인하면 즉시 포인트가 반영되고 회원에게 알림톡이 갑니다.</p></div></div>
+    <div class="card"><div class="cb" style="padding-top:6px">
+      <div class="tabs"><button class="on">대기<em>4</em></button><button>완료</button><button>취소</button></div>
+      <div style="overflow-x:auto;margin:0 -18px"><table><thead><tr><th>요청</th><th>회원</th><th>입금자명</th><th style="text-align:right">입금액</th><th style="text-align:right">보너스</th><th style="text-align:right">지급 포인트</th><th>수단</th><th>요청 시각</th><th></th></tr></thead><tbody>
+        <tr><td class="ord">C260828-041</td><td>이OO <span class="mut">010-****-2210</span></td><td><b>이OO</b></td><td class="num" style="text-align:right">300,000</td><td class="num plus" style="text-align:right">+15,000</td><td class="num" style="text-align:right"><b>315,000</b></td><td>무통장</td><td><span class="mut">14분 전</span></td><td><div class="rowact" style="opacity:1"><button style="color:var(--success)">입금 확인 · 승인</button><button style="color:var(--danger)">취소</button></div></td></tr>
+        <tr><td class="ord">C260828-040</td><td>정OO <span class="mut">010-****-8871</span></td><td><b>㈜정담푸드</b> <span class="pill p-open">이름 다름</span></td><td class="num" style="text-align:right">100,000</td><td class="num plus" style="text-align:right">+3,000</td><td class="num" style="text-align:right"><b>103,000</b></td><td>무통장</td><td><span class="mut">52분 전</span></td><td><div class="rowact" style="opacity:1"><button style="color:var(--success)">입금 확인 · 승인</button><button style="color:var(--danger)">취소</button></div></td></tr>
+        <tr><td class="ord">C260828-038</td><td>JDH</td><td><b>제이디에이치</b></td><td class="num" style="text-align:right">200,000</td><td class="num plus" style="text-align:right">+6,000</td><td class="num" style="text-align:right"><b>206,000</b></td><td>무통장</td><td><span class="mut">2시간 전</span></td><td><div class="rowact" style="opacity:1"><button style="color:var(--success)">입금 확인 · 승인</button><button style="color:var(--danger)">취소</button></div></td></tr>
+        <tr><td class="ord">C260827-097</td><td>한OO</td><td><b>한OO</b></td><td class="num" style="text-align:right">20,000</td><td class="num" style="text-align:right"><span class="mut">—</span></td><td class="num" style="text-align:right"><b>20,000</b></td><td>무통장</td><td><span style="color:var(--danger)">어제 · 24시간 경과</span></td><td><div class="rowact" style="opacity:1"><button style="color:var(--success)">입금 확인 · 승인</button><button style="color:var(--danger)">취소</button></div></td></tr>
+      </tbody></table></div></div></div>
+    <div class="card" style="margin-top:16px"><div class="ch"><h3>수동 지급 · 차감</h3></div><div class="cb"><div style="display:grid;grid-template-columns:1fr 160px 1fr auto;gap:8px;align-items:end"><div class="f" style="margin:0"><label>회원</label><input class="in" placeholder="닉네임 · 전화번호"></div><div class="f" style="margin:0"><label>포인트</label><input class="in" placeholder="−10000"></div><div class="f" style="margin:0"><label>사유<small>회원 내역에 표시됩니다</small></label><input class="in" placeholder="예) 이벤트 당첨"></div><button class="btn pri">적용</button></div></div></div>
+  </section>
+
+  <!-- ===== ADMIN MEDIA ===== -->
+  <section class="page" id="p-adm-media">
+    <div class="ph"><div><h1>매체사 관리</h1><p>단가·효율·규칙을 여기서 바꾸면 캠페인 생성 화면에 바로 반영됩니다.</p></div><div class="act"><div class="chan-tabs"><button class="on"><i class="dot c-place"></i>플레이스 11</button><button><i class="dot c-store"></i>쇼핑·스토어 6</button><button><i class="dot c-coupang"></i>쿠팡 3</button></div><button class="btn pri">+ 매체사 추가</button></div></div>
+    <div class="form2">
+      <div class="card"><div class="cb" style="padding-top:14px">
+        <div class="mgrp"><h5>공용</h5>
+          <div class="mrow"><div class="logo-slot" style="--av:#2563EB">올</div><div style="width:150px"><b>올스타 <span class="bd bd-sale">SALE</span></b><span>1일 단위 구동</span></div><div class="cell"><small>단가</small><span class="strike">140</span>120P</div><div class="cell"><small>효율</small>82%</div><div class="cell"><small>최소·범위</small>3일 · 50~500</div><div class="cell"><small>이번 달</small>184건</div><div class="act2"><span class="toggle on" title="노출"><i></i></span><button class="btn sec sm">수정</button></div></div>
+          <div class="mrow"><div class="logo-slot" style="--av:#0891B2">오<img alt="" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' fill='%23fff'/><path d='M6 30c4-14 10-20 14-20s10 6 14 20' stroke='%230891B2' stroke-width='4' fill='none' stroke-linecap='round'/><path d='M11 30c3-9 6-13 9-13s6 4 9 13' stroke='%2314B8A6' stroke-width='4' fill='none' stroke-linecap='round'/></svg>"></div><div style="width:150px"><b>오로라 <span class="bd bd-rec">추천</span></b><span>신규 오퍼월</span></div><div class="cell"><small>단가</small>150P</div><div class="cell"><small>효율</small>91%</div><div class="cell"><small>최소·범위</small>3일 · 50~500</div><div class="cell"><small>이번 달</small>412건</div><div class="act2"><span class="toggle on"><i></i></span><button class="btn sec sm" style="border-color:var(--accent);color:var(--accent)">수정 중</button></div></div>
+          <div class="mrow"><div class="logo-slot" style="--av:#7C3AED">버</div><div style="width:150px"><b>버즈빌</b><span>150+ 채널</span></div><div class="cell"><small>단가</small>140P</div><div class="cell"><small>효율</small>76%</div><div class="cell"><small>최소·범위</small>3일 · 50~300</div><div class="cell"><small>이번 달</small>97건</div><div class="act2"><span class="toggle on"><i></i></span><button class="btn sec sm">수정</button></div></div>
+          <div class="mrow" style="opacity:.5"><div class="logo-slot" style="--av:#4B5563">N</div><div style="width:150px"><b>NBT</b><span>200+ 채널</span></div><div class="cell"><small>단가</small>130P</div><div class="cell"><small>효율</small>71%</div><div class="cell"><small>최소·범위</small>5일 · 100~500</div><div class="cell"><small>이번 달</small>0건</div><div class="act2"><span class="toggle" title="비노출"><i></i></span><button class="btn sec sm">수정</button></div></div>
+        </div>
+        <div class="mgrp"><h5>맛집 · 카페</h5>
+          <div class="mrow"><div class="logo-slot" style="--av:#EA580C">앤</div><div style="width:150px"><b>앤드류 <span class="bd bd-rec">추천</span></b><span>신규 참여 푸시</span></div><div class="cell"><small>단가</small>160P</div><div class="cell"><small>효율</small>88%</div><div class="cell"><small>최소·범위</small>3일 · 50~500</div><div class="cell"><small>이번 달</small>301건</div><div class="act2"><span class="toggle on"><i></i></span><button class="btn sec sm">수정</button></div></div>
+          <div class="mrow"><div class="logo-slot" style="--av:#B45309">감</div><div style="width:150px"><b>감귤</b><span>맛집 최적화</span></div><div class="cell"><small>단가</small>135P</div><div class="cell"><small>효율</small>79%</div><div class="cell"><small>최소·범위</small>3일 · 50~400</div><div class="cell"><small>이번 달</small>156건</div><div class="act2"><span class="toggle on"><i></i></span><button class="btn sec sm">수정</button></div></div>
+        </div>
+        <p class="thin" style="padding:6px 0">효율 = 최근 30일 완료 캠페인 중 순위 상승한 비율. 매일 새벽 자동 계산되며 수동 값을 넣으면 그 값이 우선합니다.</p>
+      </div></div>
+      <div class="card"><div class="ch"><h3>오로라 수정</h3><button class="icon-btn" style="margin-left:auto"><svg class="i"><use href="#i-x"/></svg></button></div><div class="cb">
+        <div class="f"><label>로고<small>정사각 PNG/SVG, 없으면 이니셜 표시</small></label><div class="upl"><div class="logo-slot" style="--av:#0891B2">오<img alt="" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' fill='%23fff'/><path d='M6 30c4-14 10-20 14-20s10 6 14 20' stroke='%230891B2' stroke-width='4' fill='none' stroke-linecap='round'/><path d='M11 30c3-9 6-13 9-13s6 4 9 13' stroke='%2314B8A6' stroke-width='4' fill='none' stroke-linecap='round'/></svg>"></div><span>클릭해서 교체 · <a href="#" style="color:var(--danger)">삭제</a></span></div></div>
+        <div class="row2"><div class="f"><label>이름</label><input class="in" value="오로라"></div><div class="f"><label>그룹</label><select class="in"><option>공용</option><option>맛집 · 카페</option><option>일반 키워드</option></select></div></div>
+        <div class="f"><label>한 줄 설명</label><input class="in" value="신규 오퍼월"></div>
+        <div class="row2"><div class="f"><label>단가<small>P / 건</small></label><input class="in" value="150"></div><div class="f"><label>정가<small>세일 표시용, 비우면 없음</small></label><input class="in" placeholder="—"></div></div>
+        <div class="row2"><div class="f"><label>최소 일수</label><input class="in" value="3"></div><div class="f"><label>일 수량 범위</label><input class="in" value="50 ~ 500"></div></div>
+        <div class="row2"><div class="f"><label>접수 마감</label><input class="in" value="13:30"></div><div class="f"><label>효율 수동값<small>비우면 자동</small></label><input class="in" placeholder="자동 91%"></div></div>
+        <div class="f"><label>뱃지</label><div style="display:flex;gap:6px"><button class="btn sec sm" style="border-color:var(--accent);color:var(--accent)">추천</button><button class="btn sec sm">SALE</button><button class="btn sec sm">NEW</button><button class="btn sec sm">없음</button></div></div>
+        <div class="f"><label>상세 안내<small>서비스 선택 열에 접이식으로 표시</small></label><textarea class="in" rows="3">모든 트래픽은 실사용자 리워드 참여로 발생하며, 구동 시작 후 24시간 내 첫 유입이 반영됩니다.</textarea></div>
+        <div class="chk on"><i></i>캠페인 생성 화면에 노출</div>
+        <div class="chk on"><i></i>당일 구동 가능</div>
+        <div style="display:flex;gap:8px;margin-top:12px"><button class="btn pri" style="flex:1">저장</button><button class="btn sec">취소</button></div>
+      </div></div>
+    </div>
+  </section>
+
+  <!-- ===== ADMIN CONTENT ===== -->
+  <section class="page" id="p-adm-content">
+    <div class="ph"><div><h1>공지 · 정보글</h1><p>공지사항, 마케팅 정보, 입문 시리즈를 한 곳에서 씁니다.</p></div><div class="act"><button class="btn pri"><svg class="i i16"><use href="#i-pen"/></svg>새 글</button></div></div>
+    <div class="form2">
+      <div>
+        <div class="card" style="margin-bottom:16px"><div class="cb" style="padding-top:6px">
+          <div class="tabs"><button class="on">전체<em>41</em></button><button>공지<em>18</em></button><button>마케팅 정보<em>19</em></button><button>입문 시리즈<em>5</em></button><button>임시저장<em>2</em></button></div>
+          <div style="margin:0 -18px"><table><thead><tr><th>게시판</th><th>분류</th><th>제목</th><th>상태</th><th>조회</th><th>일자</th><th></th></tr></thead><tbody>
+            <tr><td>마케팅 정보</td><td><span class="pill p-tool">가이드</span></td><td><b>첫 캠페인 세팅 체크리스트 — 반려 없이 통과하는 7가지</b> <span class="tag t-pin">고정</span></td><td><span class="st s-run">발행</span></td><td class="num">2,144</td><td class="num mut">08.27</td><td><div class="rowact" style="opacity:1"><button>수정</button><button>고정 해제</button></div></td></tr>
+            <tr><td>공지</td><td><span class="tag t-must">필독</span></td><td><b>플레이스 링크는 반드시 모바일(m.place) 주소로 입력해주세요</b></td><td><span class="st s-run">발행</span></td><td class="num">3,020</td><td class="num mut">08.27</td><td><div class="rowact" style="opacity:1"><button>수정</button><button>고정</button></div></td></tr>
+            <tr><td>마케팅 정보</td><td><span class="pill p-tool">데이터</span></td><td><b>플레이스 매체 11종 효율 비교</b></td><td><span class="st s-run">발행</span></td><td class="num">3,412</td><td class="num mut">08.26</td><td><div class="rowact" style="opacity:1"><button>수정</button></div></td></tr>
+            <tr><td>공지</td><td><span class="tag t-mnt">점검</span></td><td><b>9/2(수) 02:00~05:00 서버 점검</b></td><td><span class="st s-appr">예약 09.01 18:00</span></td><td class="num">—</td><td class="num mut">08.24</td><td><div class="rowact" style="opacity:1"><button>수정</button></div></td></tr>
+            <tr><td>입문 시리즈</td><td><span class="mut">3편</span></td><td><b>기간·수량 정하기</b></td><td><span class="st s-run">발행</span></td><td class="num">880</td><td class="num mut">08.10</td><td><div class="rowact" style="opacity:1"><button>수정</button><button>순서</button></div></td></tr>
+            <tr><td>마케팅 정보</td><td><span class="pill p-tool">가이드</span></td><td><b>쿠팡 판매자배송 상품 유입 반응 정리</b></td><td><span class="st s-wait">임시저장</span></td><td class="num">—</td><td class="num mut">08.28</td><td><div class="rowact" style="opacity:1"><button>이어쓰기</button><button style="color:var(--danger)">삭제</button></div></td></tr>
+          </tbody></table></div></div></div>
+        <div class="card"><div class="ch"><h3>새 글</h3></div><div class="cb">
+          <div class="f"><label>제목</label><input class="in" value="쿠팡 판매자배송 상품 유입 반응 정리" style="font-size:15px;font-weight:600"></div>
+                    <div class="f"><label>본문</label><div class="editor"><div class="tb"><button>B</button><button><i>I</i></button><button>H2</button><button>•</button><button>1.</button><button>표</button><button>링크</button><button>이미지</button><button>구분선</button></div>완료 캠페인 38건을 대상으로 시작일부터 14일간 순위를 추적했습니다.<br><br><b>1. 첫 유입까지 걸린 시간</b><br>로켓배송 평균 6시간, 판매자배송 평균 9시간. 차이는 있지만 결과에 결정적이지 않았습니다.<br><br><b>2. 순위 반영</b><br>…</div></div>
+        </div></div>
+      </div>
+      <div class="card"><div class="ch"><h3>발행 설정</h3></div><div class="cb">
+        <div class="f"><label>게시판</label><select class="in"><option>공지사항</option><option selected>마케팅 정보</option><option>입문 시리즈</option></select></div>
+        <div class="f"><label>분류</label><select class="in"><option>가이드</option><option selected>데이터</option><option>업데이트</option></select><div class="hint">공지사항 선택 시: 필독 · 업데이트 · 점검 · 이벤트</div></div>
+        <div class="f"><label>발행</label><div style="display:flex;gap:6px"><button class="btn sec sm" style="border-color:var(--accent);color:var(--accent)">지금</button><button class="btn sec sm">예약</button></div></div>
+        <div class="chk"><i></i>목록 상단 고정</div>
+        <div class="chk on"><i></i>대시보드에 노출</div>
+        <div class="chk"><i></i>발행 시 회원 알림 (공지만)</div>
+        <div style="border-top:1px solid var(--border);margin:14px 0 12px"></div>
+        <div style="font-size:12.5px;color:var(--text-2);margin-bottom:8px">미리보기</div>
+        <div class="post" style="border:1px solid var(--border);border-radius:8px;padding:12px"><div class="body"><div class="head"><span class="pill p-tool">데이터</span><span>·</span><span>오늘</span></div><h4 style="font-size:13.5px">쿠팡 판매자배송 상품 유입 반응 정리</h4></div></div>
+        <div style="display:flex;gap:8px;margin-top:14px"><button class="btn pri" style="flex:1">발행</button><button class="btn sec">임시저장</button></div>
+      </div></div>
+    </div>
+  </section>
+</div>
+</div>
+
+<!-- DRAWER (manage detail) -->
+<div class="drawer" id="drawer">
+  <div class="dh"><div class="logo-slot" style="--av:#0891B2;width:40px;height:40px;border-radius:10px">오</div><div><h3>대박갈비 일산동구점</h3><div style="font-size:12px;color:var(--text-2)" class="mono">N581520800 · 오로라</div></div><button class="icon-btn x" id="dclose"><svg class="i"><use href="#i-x"/></svg></button></div>
+  <div class="db">
+    <div class="dsec"><div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span class="st s-run">진행</span><span style="font-size:12px;color:var(--text-2)">5일차 / 10일 · 09.02 종료</span><button class="btn sec sm" style="margin-left:auto">중단 요청</button></div>
+      <div class="dgrid"><div><span>희망 키워드</span><b>일산 갈비</b></div><div><span>일 작업량</span><b class="num">200건</b></div><div><span>결제 포인트</span><b class="num">300,000 P</b></div><div><span>누적 작업</span><b class="num">987 / 2,000건</b></div></div></div>
+    <div class="dsec"><h6>순위 변동 <span style="font-weight:500;color:var(--text-3)">· 낮을수록 좋음</span></h6>
+      <div class="rankchart"><i data-r="27" style="height:30%"></i><i data-r="25" style="height:36%"></i><i data-r="21" style="height:50%"></i><i data-r="16" style="height:68%"></i><i data-r="12" style="height:85%" class="now"></i></div>
+      <div class="spark-lb"><span>08.24</span><span>08.28</span></div></div>
+    <div class="dsec"><h6>세팅 키워드 · AI 자동</h6><div class="chips" style="margin:0"><i>일산 갈비</i><i>일산동구 갈비</i><i>일산 갈비맛집</i><i>백석동 갈비</i><i>일산 고기집</i></div></div>
+    <div class="dsec"><h6>진행 이력</h6><ul class="timeline">
+      <li class="on"><b>구동 중</b><span>08.24 09:12 — 5일차, 누적 987건</span></li><li class="on"><b>승인</b><span>08.23 15:40 — 운영팀</span></li><li class="on"><b>검수</b><span>08.23 14:02 — 링크·키워드 확인</span></li><li class="on"><b>접수 · 300,000P 차감</b><span>08.23 13:21</span></li></ul></div>
+    <div class="dsec"><h6>운영팀 메모</h6><div class="memo">경쟁 키워드 "일산 갈비맛집" 반응이 좋습니다. 다음 캠페인에서는 메인 키워드로 검토해보세요.</div></div>
+    <div style="display:flex;gap:8px"><button class="btn sec" style="flex:1"><svg class="i i16"><use href="#i-copy"/></svg>같은 설정으로 복사</button><button class="btn sec" style="flex:1">리포트 PDF</button></div>
+  </div>
+</div>
+
+<div class="proto">
+  <button class="on" data-go="dash">대시보드</button><button data-go="new">캠페인 생성</button><button data-go="store">쇼핑 슬롯</button><button data-go="manage">캠페인 관리</button><button data-go="popular">인기</button><button data-go="anon">익명</button><button data-go="qna">질문답변</button><button data-go="info">마케팅 정보</button><button data-go="agency">대행의뢰</button><button data-go="my">마이페이지</button><span style="width:1px;background:#374151;margin:4px 2px"></span><button data-go="adm">어드민</button><button data-go="adm-orders">주문</button><button data-go="adm-charge">충전</button><button data-go="adm-media">매체사</button><button data-go="adm-popular">인기설정</button><button data-go="adm-content">글쓰기</button>
+</div>
+
+<script>
+const R='<svg class="i i14"><use href="#i-right"/></svg>';
+const crumbs={dash:'<b>대시보드</b>',new:'플레이스 '+R+' <b>캠페인 생성</b>',manage:'플레이스 '+R+' <b>캠페인 관리</b>',store:'쇼핑·스토어 '+R+' <b>캠페인 생성</b>',popular:'플레이스 '+R+' <b>인기 트래픽</b>',agency:'커뮤니티 '+R+' <b>대행의뢰</b>','adm-popular':'관리자 '+R+' <b>인기 트래픽 설정</b>',anon:'커뮤니티 '+R+' <b>익명 게시판</b>',qna:'커뮤니티 '+R+' <b>질문답변</b>',info:'커뮤니티 '+R+' <b>마케팅 정보</b>',my:'<b>마이페이지</b>',adm:'관리자 '+R+' <b>운영 현황</b>','adm-orders':'관리자 '+R+' <b>주문 관리</b>','adm-charge':'관리자 '+R+' <b>충전 승인</b>','adm-media':'관리자 '+R+' <b>매체사 관리</b>','adm-content':'관리자 '+R+' <b>공지 · 정보글</b>'};
+function go(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('on',p.id==='p-'+id));
+  document.querySelectorAll('.proto button').forEach(b=>b.classList.toggle('on',b.dataset.go===id));
+  document.querySelectorAll('[data-nav]').forEach(a=>a.classList.toggle('on',a.dataset.nav===id));
+  document.getElementById('crumb').innerHTML=crumbs[id];
+  document.body.classList.toggle('admin',id.startsWith('adm'));
+  document.getElementById('admToggle').textContent=id.startsWith('adm')?'사용자 화면':'관리자';
+  document.getElementById('paybar').classList.toggle('on',id==='new'&&price>0);
+  document.getElementById('drawer').classList.toggle('on',id==='manage'&&drawerOpen);
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('[data-go]').forEach(el=>el.addEventListener('click',e=>{e.preventDefault();go(el.dataset.go)}));
+document.querySelectorAll('.acc').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.acc').forEach(o=>o!==b&&o.classList.remove('open'));b.classList.toggle('open')}));
+document.getElementById('admToggle').addEventListener('click',e=>{e.preventDefault();go(document.body.classList.contains('admin')?'dash':'adm')});
+document.getElementById('kakaoBtn').addEventListener('click',e=>{e.preventDefault();e.currentTarget.style.display='none';document.getElementById('pointCard').style.display='block'});
+(function(){const el=document.getElementById('cd');function t(){const n=new Date(),d=new Date();d.setHours(13,30,0,0);if(d<n)d.setDate(d.getDate()+1);let s=Math.floor((d-n)/1000);const v=`${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor(s%3600/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;el.textContent=v;document.getElementById('cd2').textContent=v}t();setInterval(t,1000)})();
+
+// logo slots: show img when src set, else initial
+document.querySelectorAll('.mcard').forEach(c=>{const img=c.querySelector('img');if(c.dataset.logo){img.src=c.dataset.logo;img.onerror=()=>img.removeAttribute('src')}});
+
+// create
+let price=0,mname='';const HAVE=11500;
+document.querySelectorAll('.mcard').forEach(c=>c.addEventListener('click',()=>{
+  document.querySelectorAll('.mcard').forEach(o=>o.classList.remove('sel'));c.classList.add('sel');
+  price=+c.dataset.p;mname=c.dataset.m;
+  document.getElementById('col1').classList.add('done');['col2','col3'].forEach(i=>document.getElementById(i).classList.remove('dim'));
+  document.getElementById('c2empty').style.display='none';document.getElementById('c2body').style.display='block';
+  const av=document.getElementById('selAv');av.style.setProperty('--av',c.dataset.av);av.firstChild.textContent=c.dataset.l;
+  const si=document.getElementById('selImg');if(c.dataset.logo){si.src=c.dataset.logo}else{si.removeAttribute('src')}
+  document.getElementById('selName').textContent=mname;document.getElementById('selPrice').textContent=price.toLocaleString()+' P';
+  document.getElementById('effBar').style.width=c.dataset.e+'%';document.getElementById('effVal').textContent=c.dataset.e+'%';
+  document.getElementById('pg1').className='p ok';document.getElementById('pg1s').textContent=mname+' · '+price+'P';
+  document.getElementById('pg2').className='p ok';document.getElementById('pg3').className='p cur';
+  document.getElementById('paybar').classList.add('on');calc();
+}));
+const qty=document.getElementById('qty'),d1=document.getElementById('d1'),d2=document.getElementById('d2');
+document.getElementById('qm').onclick=()=>{qty.value=Math.max(50,+qty.value-10);calc()};document.getElementById('qp').onclick=()=>{qty.value=Math.min(500,+qty.value+10);calc()};
+qty.oninput=calc;d1.onchange=()=>{clearPreset();calc()};d2.onchange=()=>{clearPreset();calc()};
+function clearPreset(){document.querySelectorAll('.presets button').forEach(b=>b.classList.remove('on'))}
+document.querySelectorAll('.presets button').forEach(b=>b.onclick=()=>{clearPreset();b.classList.add('on');const a=new Date(d1.value);a.setDate(a.getDate()+(+b.dataset.n)-1);d2.value=a.toISOString().slice(0,10);calc()});
+const DAYS=['일','월','화','수','목','금','토'];
+function calc(){
+  const a=new Date(d1.value),b=new Date(d2.value);const n=Math.max(0,Math.round((b-a)/864e5)+1);const wd=a.getDay();const h=document.getElementById('dhint');
+  if(wd===0||wd===6){h.className='hint warn';h.textContent=`${n}일 · ${DAYS[wd]}요일 시작 — 주말 시작은 다음 평일부터 구동됩니다. 시작일을 평일로 바꿔주세요.`}
+  else if(n<3){h.className='hint warn';h.textContent=`${n}일 — 최소 3일 이상 설정해주세요.`}else{h.className='hint';h.textContent=`${n}일 · ${DAYS[wd]}요일 시작`}
+  const q=+qty.value||0,order=price*q*n,disc=order>=300000?Math.round(order*.05):0,total=order-disc;
+  document.getElementById('calc').textContent=price?`${price}P × ${q}건 × ${n}일`:'';
+  document.getElementById('order').textContent=order.toLocaleString()+' P';document.getElementById('disc').textContent='−'+disc.toLocaleString()+' P';document.getElementById('total').textContent=total.toLocaleString()+' P';
+  document.getElementById('pbM').textContent=mname||'—';document.getElementById('pbD').textContent=price?`${n}일`:'—';document.getElementById('pbQ').textContent=price?`${q}건`:'—';document.getElementById('pbT').textContent=total.toLocaleString()+' P';
+  const sub=document.getElementById('submit'),sh=document.getElementById('short');
+  if(total>HAVE){sub.textContent=`${(total-HAVE).toLocaleString()}P 충전하고 등록`;sh.style.display='block';sh.textContent=`보유 포인트가 ${(total-HAVE).toLocaleString()}P 부족합니다`;document.getElementById('pg4').className='p';document.getElementById('pg4s').textContent=`${(total-HAVE).toLocaleString()}P 부족`}
+  else{sub.textContent='캠페인 등록';sh.style.display='none';if(price){document.getElementById('pg4').className='p cur'}document.getElementById('pg4s').textContent=`보유 11,500P`}
+}
+calc();
+document.getElementById('tg').addEventListener('click',e=>{const t=e.currentTarget;t.classList.toggle('on');const on=t.classList.contains('on');document.getElementById('aibox').style.display=on?'none':'flex';document.getElementById('kwman').style.display=on?'block':'none'});
+
+// store slot: fake volume lookup + reco
+const svol=document.getElementById('svol'),skw=document.getElementById('skw');
+function reco(m){return Math.max(1,Math.round(m/30*1.5/1000))}
+skw.addEventListener('input',()=>{const k=skw.value.trim();if(!k){svol.value='';return}let h=0;for(const c of k)h=(h*31+c.charCodeAt(0))%100000;const m=5000+h;svol.value=m.toLocaleString()+'  → 추천 '+reco(m)+'건/일'});
+document.getElementById('sadd').onclick=()=>{const k=skw.value.trim();if(!k)return;let h=0;for(const c of k)h=(h*31+c.charCodeAt(0))%100000;const m=5000+h,d=Math.round(m/30);const tb=document.querySelector('#slots tbody');const tr=document.createElement('tr');tr.innerHTML=`<td><b>${k}</b></td><td><div class="vol"><b class="num">${m.toLocaleString()}</b><small>PC ${Math.round(m*.2).toLocaleString()} · 모바일 ${Math.round(m*.8).toLocaleString()}</small></div></td><td class="num" style="text-align:right">${d.toLocaleString()}</td><td style="text-align:right"><span class="reco num">${reco(m)}<small>건/일</small></span></td><td><span class="mut" style="font-size:12px">내일부터 수집</span></td><td><span class="mut">-</span></td><td><div class="rowact" style="opacity:1"><button style="color:var(--accent)">이 수량으로 캠페인</button><button>삭제</button></div></td>`;tb.prepend(tr);skw.value='';svol.value=''};
+
+// manage drawer
+let drawerOpen=true;
+document.querySelectorAll('tr[data-open]').forEach(tr=>tr.addEventListener('click',e=>{if(e.target.closest('.rowact'))return;document.querySelectorAll('tr[data-open]').forEach(o=>o.classList.remove('sel'));tr.classList.add('sel');drawerOpen=true;document.getElementById('drawer').classList.add('on')}));
+document.getElementById('dclose').onclick=()=>{drawerOpen=false;document.getElementById('drawer').classList.remove('on');document.querySelectorAll('tr[data-open]').forEach(o=>o.classList.remove('sel'))};
+</script>
+</body>
+</html>

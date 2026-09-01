@@ -1,0 +1,26 @@
+{% extends "layout/base.html" %}
+{% from "macros/pagination.html" import pager %}
+{% block title %}공지사항{% endblock %}
+{% block content %}
+{% set tag_cls = {'must': 't-must', 'update': 't-upd', 'maint': 't-mnt', 'event': 't-evt'} %}
+{% set tag_lbl = {'must': '필독', 'update': '업데이트', 'maint': '점검', 'event': '이벤트'} %}
+<div class="ph"><div><h1>공지사항</h1><p>서비스 운영 · 업데이트 · 점검 안내입니다.</p></div></div>
+<div class="card">
+  <table>
+    <thead><tr><th style="width:90px">분류</th><th>제목</th><th style="width:90px">날짜</th><th style="width:80px;text-align:right">조회</th></tr></thead>
+    <tbody>
+    {% for n in items %}
+      <tr onclick="location.href='/notice/{{ n.id }}'">
+        <td>{% if n.is_pinned %}<span class="tag tq">고정</span> {% endif %}<span class="tag tq">{{ tag_lbl.get(n.category, n.category) }}</span></td>
+        <td style="white-space:normal"><a href="/notice/{{ n.id }}">{{ n.title }}</a></td>
+        <td class="mut num">{{ n.published_at | fmt_date('%Y.%m.%d') }}</td>
+        <td class="num" style="text-align:right">{{ n.views | fmt_num }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="4"><div class="empty">등록된 공지가 없습니다.</div></td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <div style="padding:0 16px 16px">{{ pager(page, total_pages, 'notice.index') }}</div>
+</div>
+{% endblock %}
