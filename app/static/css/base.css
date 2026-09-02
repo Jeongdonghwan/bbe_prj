@@ -141,10 +141,10 @@ a.post,a.qna,a.ag{color:inherit;display:flex}a.qna{display:block}
 
 /* user-controlled sidebar collapse (2026-09-02) */
 .logo img.lmark{display:none;width:44px;height:auto;flex:none}
-#sideToggle{position:fixed;left:266px;top:14px;z-index:40;width:28px;height:28px;border-radius:50%;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow);display:grid;place-items:center;color:var(--text-2);transition:left .22s ease}
-#sideToggle:hover{color:var(--text);border-color:#CBD5E1}
+#sideToggle{position:fixed;left:280px;top:50%;transform:translateY(-50%);z-index:40;width:22px;height:58px;border-radius:0 12px 12px 0;background:var(--surface);border:1px solid var(--border);border-left:0;box-shadow:3px 0 10px rgba(0,0,0,.07);display:grid;place-items:center;color:var(--text-3);transition:left .22s ease,color .15s,width .15s}
+#sideToggle:hover{color:var(--accent);width:26px}
 #sideToggle .i{width:15px;height:15px;transition:transform .22s}
-html.side-min #sideToggle{left:58px}
+html.side-min #sideToggle{left:72px}
 html.side-min #sideToggle .i{transform:rotate(180deg)}
 @media(min-width:768px){
   html.side-min .app{grid-template-columns:72px 1fr}
@@ -159,5 +159,13 @@ html.side-min #sideToggle .i{transform:rotate(180deg)}
   html.side-min .sidebar .kakao-btn{width:44px;margin-left:auto;margin-right:auto;padding:0;justify-content:center}
   html.side-min .paybar{left:72px}
 }
-@media(min-width:768px) and (max-width:1279px){#sideToggle{left:58px}}
+@media(min-width:768px) and (max-width:1279px){#sideToggle{left:72px}}
 @media(max-width:767px){#sideToggle{display:none}}
+
+/* scrollbars: hidden inside the sidebar, slim & subtle elsewhere (2026-09-02) */
+.sidebar{scrollbar-width:none}
+.sidebar::-webkit-scrollbar{width:0;height:0}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#D6DAE1;border-radius:99px;border:2px solid #fff}
+::-webkit-scrollbar-thumb:hover{background:#9CA3AF}
