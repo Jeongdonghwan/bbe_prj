@@ -126,10 +126,10 @@ a.post,a.qna,a.ag{color:inherit;display:flex}a.qna{display:block}
 @media(max-width:767px){.kakao-float{bottom:70px;right:14px;padding:0;width:48px;justify-content:center}.kakao-float span{display:none}}
 
 /* sidebar type scale (2026-09-02 design pass: logo ~2x, menus to match) */
-.logo{font-size:30px;padding:6px 10px 22px;gap:10px}
+.logo{font-size:30px;padding:6px 10px 22px;gap:10px;align-items:center}
 .logo b{width:40px;height:40px;border-radius:10px;font-size:19px}
 .logo .lsym{height:44px;width:auto;display:block;flex:none}
-.logo .ltxt{font-family:Georgia,'Times New Roman',serif;font-size:27px;font-weight:600;color:#fff;letter-spacing:.04em}
+.logo .ltxt{font-family:Georgia,'Times New Roman',serif;font-size:27px;font-weight:600;color:#fff;letter-spacing:.04em;line-height:1;position:relative;top:2px}
 .logo small{font-size:12px}
 .sidebar .nav a,.sidebar .nav button{font-size:17.5px;font-weight:600;padding:11px 12px;gap:12px;border-radius:9px}
 .sidebar .nav .i{width:21px;height:21px;flex:none}
@@ -169,3 +169,24 @@ html.side-min #sideToggle .i{transform:rotate(180deg)}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:#D6DAE1;border-radius:99px;border:2px solid #fff}
 ::-webkit-scrollbar-thumb:hover{background:#9CA3AF}
+
+/* lime sidebar theme trial (2026-09-02) — white type, admin screens keep the dark sidebar */
+body:not(.admin) .sidebar{background:#74E10C;color:#fff}
+body:not(.admin) .logo .ltxt{color:#fff}
+body:not(.admin) .logo small{color:rgba(255,255,255,.75)}
+body:not(.admin) .nav-sec>h6{color:rgba(255,255,255,.75)}
+body:not(.admin) .sidebar .nav a,body:not(.admin) .sidebar .nav button{color:rgba(255,255,255,.95)}
+body:not(.admin) .sidebar .nav a:hover,body:not(.admin) .sidebar .nav button:hover,body:not(.admin) .sidebar .nav a.on,body:not(.admin) .sidebar .nav button.on{background:rgba(0,0,0,.14);color:#fff}
+body:not(.admin) .sidebar .sub{border-left-color:rgba(255,255,255,.35)}
+body:not(.admin) .sidebar .sub a{color:rgba(255,255,255,.85)}
+body:not(.admin) .sidebar .sub a.on{color:#fff}
+body:not(.admin) .sidebar .sub a.on::before{background:#fff}
+body:not(.admin) .side-foot{border-top-color:rgba(255,255,255,.35)}
+body:not(.admin) .side-foot a{color:rgba(255,255,255,.9)}
+body:not(.admin) .side-foot a:hover{background:rgba(0,0,0,.14);color:#fff}
+body:not(.admin) .point-card{background:rgba(0,0,0,.14);color:#fff}
+body:not(.admin) .point-card .lbl{color:rgba(255,255,255,.75)}
+body:not(.admin) .point-card .val{color:#fff}
+body:not(.admin) .point-card .val i{color:rgba(255,255,255,.75)}
+body:not(.admin) .sidebar .kakao-btn{background:#111827;color:#fff}
+body:not(.admin) .sidebar .kakao-btn svg{fill:#fff}
