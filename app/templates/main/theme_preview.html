@@ -3,7 +3,7 @@
 {% block content %}
 <div class="ph"><div><h1>사이드바 컬러 시안</h1><p>배경 4색 × 폰트 화이트/블랙 조합입니다. 마음에 드는 조합 번호를 알려주세요.</p></div></div>
 
-{% macro panel(rgb, hex, font) %}
+{% macro panel(rgb, hex, memo, font) %}
 {% set fg = '#FFFFFF' if font == 'white' else '#111827' %}
 {% set fgsoft = 'rgba(255,255,255,.8)' if font == 'white' else 'rgba(17,24,39,.6)' %}
 {% set ovl = 'rgba(0,0,0,.12)' if font == 'white' else 'rgba(0,0,0,.08)' %}
@@ -20,16 +20,16 @@
     </div>
     {% endfor %}
   </div>
-  <p class="thin" style="text-align:center;margin-top:8px">rgb({{ rgb }}) · {{ '화이트' if font == 'white' else '블랙' }} 폰트</p>
+  <p class="thin" style="text-align:center;margin-top:8px">rgb({{ rgb }}) · {{ '화이트' if font == 'white' else '블랙' }} 폰트{% if memo %}<br><b style="color:var(--accent)">{{ memo }}</b>{% endif %}</p>
 </div>
 {% endmacro %}
 
 <h3 style="font-size:15px;margin:6px 0 10px">화이트 폰트</h3>
-<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:26px">
-  {% for rgb, hex in colors %}{{ panel(rgb, hex, 'white') }}{% endfor %}
+<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:26px">
+  {% for rgb, hex, memo in colors %}{{ panel(rgb, hex, memo, 'white') }}{% endfor %}
 </div>
 <h3 style="font-size:15px;margin:6px 0 10px">블랙 폰트</h3>
-<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
-  {% for rgb, hex in colors %}{{ panel(rgb, hex, 'black') }}{% endfor %}
+<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px">
+  {% for rgb, hex, memo in colors %}{{ panel(rgb, hex, memo, 'black') }}{% endfor %}
 </div>
 {% endblock %}
