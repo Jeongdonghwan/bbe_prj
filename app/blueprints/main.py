@@ -15,6 +15,14 @@ def render_placeholder(title, phase=None, desc=None):
     return render_template("placeholder.html", title=title, phase_label=PHASE_LABEL.get(phase), desc=desc)
 
 
+@bp.route("/design/sidebar")
+def design_sidebar():
+    """Temporary color-scheme comparison page for the customer (2026-09-02)."""
+    colors = [("255,182,193", "#FFB6C1"), ("255,192,203", "#FFC0CB"),
+              ("32,178,170", "#20B2AA"), ("144,238,144", "#90EE90")]
+    return render_template("main/theme_preview.html", colors=colors)
+
+
 @bp.route("/")
 def dashboard():
     grid_banners = banner_model.list_active_banners(8, "grid")

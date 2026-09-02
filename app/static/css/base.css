@@ -128,8 +128,8 @@ a.post,a.qna,a.ag{color:inherit;display:flex}a.qna{display:block}
 /* sidebar type scale (2026-09-02 design pass: logo ~2x, menus to match) */
 .logo{font-size:30px;padding:6px 10px 22px;gap:10px;align-items:center}
 .logo b{width:40px;height:40px;border-radius:10px;font-size:19px}
-.logo .lsym{height:44px;width:auto;display:block;flex:none}
-.logo .ltxt{font-family:Georgia,'Times New Roman',serif;font-size:27px;font-weight:600;color:#fff;letter-spacing:.04em;line-height:1;position:relative;top:2px}
+.logo .lsym{height:30px;width:auto;display:block;flex:none}
+.logo .ltxt{font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:600;color:#fff;letter-spacing:.04em;line-height:1}
 .logo small{font-size:12px}
 .sidebar .nav a,.sidebar .nav button{font-size:17.5px;font-weight:600;padding:11px 12px;gap:12px;border-radius:9px}
 .sidebar .nav .i{width:21px;height:21px;flex:none}

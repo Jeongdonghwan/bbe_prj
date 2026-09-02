@@ -1,0 +1,35 @@
+{% extends "layout/base.html" %}
+{% block title %}사이드바 컬러 시안{% endblock %}
+{% block content %}
+<div class="ph"><div><h1>사이드바 컬러 시안</h1><p>배경 4색 × 폰트 화이트/블랙 조합입니다. 마음에 드는 조합 번호를 알려주세요.</p></div></div>
+
+{% macro panel(rgb, hex, font) %}
+{% set fg = '#FFFFFF' if font == 'white' else '#111827' %}
+{% set fgsoft = 'rgba(255,255,255,.8)' if font == 'white' else 'rgba(17,24,39,.6)' %}
+{% set ovl = 'rgba(0,0,0,.12)' if font == 'white' else 'rgba(0,0,0,.08)' %}
+<div>
+  <div style="background:{{ hex }};border-radius:14px;padding:18px 14px;min-height:380px">
+    <div style="display:flex;align-items:center;gap:9px;padding:2px 6px 16px">
+      <span style="font-family:Georgia,'Times New Roman',serif;font-size:24px;font-weight:600;color:{{ fg }};letter-spacing:.04em;line-height:1">BBene</span>
+      <img src="{{ url_for('static', filename='img/logo-sym.png') }}" alt="" style="height:28px;width:auto{% if font == 'black' %};filter:brightness(0){% endif %}">
+    </div>
+    <div style="font-size:11px;font-weight:600;color:{{ fgsoft }};padding:0 8px;margin-bottom:6px">기본</div>
+    {% for icon, label, on in [('megaphone', '공지사항', false), ('shopping-bag', '쇼핑·스토어', false), ('trending-up', '인기 트래픽', true), ('search', '키워드 조회', false), ('venetian-mask', '익명 게시판', false)] %}
+    <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;color:{{ fg }};font-size:14.5px;font-weight:600{% if on %};background:{{ ovl }}{% endif %}">
+      <i data-lucide="{{ icon }}" class="i" style="width:18px;height:18px"></i>{{ label }}
+    </div>
+    {% endfor %}
+  </div>
+  <p class="thin" style="text-align:center;margin-top:8px">rgb({{ rgb }}) · {{ '화이트' if font == 'white' else '블랙' }} 폰트</p>
+</div>
+{% endmacro %}
+
+<h3 style="font-size:15px;margin:6px 0 10px">화이트 폰트</h3>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:26px">
+  {% for rgb, hex in colors %}{{ panel(rgb, hex, 'white') }}{% endfor %}
+</div>
+<h3 style="font-size:15px;margin:6px 0 10px">블랙 폰트</h3>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+  {% for rgb, hex in colors %}{{ panel(rgb, hex, 'black') }}{% endfor %}
+</div>
+{% endblock %}
