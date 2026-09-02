@@ -26,6 +26,8 @@ if [ "$1" = "--init" ]; then
   python scripts/seed.py --schema
 fi
 
+python scripts/migrate.py
+
 # restart: kill previous instance if any
 pkill -f "scripts/serve_preview.py" 2>/dev/null || true
 sleep 1
