@@ -171,7 +171,7 @@ html.side-min #sideToggle .i{transform:rotate(180deg)}
 ::-webkit-scrollbar-thumb:hover{background:#9CA3AF}
 
 /* pastel green sidebar trial rgb(152,251,152) — dark type for contrast; admin keeps dark sidebar */
-body:not(.admin) .sidebar{background:#98FB98;color:#1F2937}
+body:not(.admin) .sidebar{background:#90EE90;color:#1F2937}
 body:not(.admin) .sidebar .lsym{filter:brightness(0)}
 body:not(.admin) .logo .ltxt{color:#111827}
 body:not(.admin) .logo small{color:rgba(17,24,39,.55)}
