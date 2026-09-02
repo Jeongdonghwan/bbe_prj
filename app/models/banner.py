@@ -2,14 +2,14 @@
 from ..db import query
 
 
-def list_active_banners(limit=3):
+def list_active_banners(limit=8, zone="grid"):
     return query(
         """SELECT id, title, subtitle, link, image_url, sort FROM banners
-           WHERE is_active = 1 AND image_url IS NOT NULL
+           WHERE is_active = 1 AND image_url IS NOT NULL AND zone = %s
              AND (start_at IS NULL OR start_at <= NOW())
              AND (end_at IS NULL OR end_at >= NOW())
            ORDER BY sort ASC, id ASC LIMIT %s""",
-        [limit],
+        [zone, limit],
     )
 
 

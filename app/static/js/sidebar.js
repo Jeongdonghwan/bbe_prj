@@ -7,6 +7,14 @@
     });
   });
 
+  var ts = document.getElementById('topstrip'), tx = document.getElementById('stripX');
+  try { if (ts && sessionStorage.getItem('stripHide')) ts.style.display = 'none'; } catch (e) {}
+  if (tx) tx.addEventListener('click', function (e) {
+    e.preventDefault(); e.stopPropagation();
+    ts.style.display = 'none';
+    try { sessionStorage.setItem('stripHide', '1'); } catch (e2) {}
+  });
+
   var st = document.getElementById('sideToggle');
   if (st) st.addEventListener('click', function () {
     var r = document.documentElement;

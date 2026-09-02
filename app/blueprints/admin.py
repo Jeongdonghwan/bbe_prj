@@ -657,6 +657,7 @@ def banners_save():
     f = request.form
     bid = f.get("id", type=int)
     fields = {"title": (f.get("title") or "").strip()[:120] or "배너",
+              "zone": f.get("zone") if f.get("zone") in ("grid", "slide") else "grid",
               "link": (f.get("link") or "").strip()[:300] or None,
               "sort": f.get("sort", 0, type=int), "is_active": 1 if f.get("is_active") == "1" else 0,
               "start_at": f.get("start_at") or None, "end_at": f.get("end_at") or None}

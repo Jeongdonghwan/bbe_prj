@@ -12,6 +12,12 @@
 {% block head %}{% endblock %}
 </head>
 <body{% if is_admin_path %} class="admin"{% endif %}>
+{% if strip and strip.on and strip.text %}
+<a class="topstrip" id="topstrip" href="{{ strip.link or '#' }}" style="background:{{ strip.bg }}">
+  <b>{{ strip.text }}</b>
+  <button type="button" id="stripX" aria-label="닫기">&times;</button>
+</a>
+{% endif %}
 <div class="app">
 {% include "layout/sidebar.html" %}
 <button class="side-toggle" id="sideToggle" type="button" aria-label="사이드바 접기/펴기"><i data-lucide="chevron-left" class="i"></i></button>

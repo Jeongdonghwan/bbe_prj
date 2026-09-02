@@ -1,8 +1,8 @@
 {% extends "layout/base.html" %}
 {% block title %}배너 관리{% endblock %}
 {% block content %}
-<div class="ph"><div><h1>배너 관리</h1><p>대시보드 최상단에 이미지 배너가 순서대로 노출됩니다. 이미지가 없는 배너는 노출되지 않습니다.</p></div><div class="act"><a class="btn pri" href="/admin/banners?new=1">+ 배너 추가</a></div></div>
-<div class="card" style="margin-bottom:14px"><div class="ch"><h3>띠배너 (대시보드 최상단)</h3></div><div class="cb">
+<div class="ph"><div><h1>배너 관리</h1><p>그리드(2×4)와 슬라이드(6구좌) 배너를 관리합니다. 이미지가 없는 배너는 노출되지 않습니다.</p></div><div class="act"><a class="btn pri" href="/admin/banners?new=1">+ 배너 추가</a></div></div>
+<div class="card" style="margin-bottom:14px"><div class="ch"><h3>띠배너 (켜면 사이트 전체 최상단에 노출)</h3></div><div class="cb">
   <form method="post" action="/admin/banners/strip" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
     <div class="f" style="flex:2;min-width:220px;margin:0"><label>문구</label><input class="in" name="strip_text" value="{{ strip.text }}" maxlength="120" placeholder="예) 마케팅 의뢰하고 비교견적 무료로 받으세요!"></div>
     <div class="f" style="flex:1.4;min-width:180px;margin:0"><label>링크 <small>비우면 이동 없음</small></label><input class="in" name="strip_link" value="{{ strip.link }}" placeholder="/campaign/place/new"></div>
@@ -18,7 +18,7 @@
       <div style="width:120px;height:44px;border-radius:8px;overflow:hidden;background:var(--bg);flex:none;display:grid;place-items:center">
         {% if b.image_url %}<img src="{{ b.image_url }}" alt="" style="width:100%;height:100%;object-fit:cover">{% else %}<span class="thin" style="font-size:11px">이미지 없음</span>{% endif %}
       </div>
-      <div style="flex:1;min-width:0"><b>{{ b.title }}</b><span>{{ b.link or '링크 없음' }}{% if not b.image_url %} · <b style="color:var(--warn)">이미지 없어 미노출</b>{% endif %}</span></div>
+      <div style="flex:1;min-width:0"><b>{{ b.title }}</b><span><b style="color:var(--accent)">{{ '그리드' if b.zone == 'grid' else '슬라이드' }}</b> · {{ b.link or '링크 없음' }}{% if not b.image_url %} · <b style="color:var(--warn)">이미지 없어 미노출</b>{% endif %}</span></div>
       <div class="cell"><small>기간</small>{% if b.start_at or b.end_at %}{{ b.start_at | fmt_date }}~{{ b.end_at | fmt_date }}{% else %}상시{% endif %}</div>
       <div class="cell"><small>순서</small>{{ b.sort }}</div>
       <div class="act2"><form method="post" action="/admin/banners/{{ b.id }}/toggle"><button class="toggle{% if b.is_active %} on{% endif %}" type="submit" title="노출"><i></i></button></form><a href="/admin/banners?edit={{ b.id }}"><button class="btn sec sm" type="button">수정</button></a><form method="post" action="/admin/banners/{{ b.id }}/delete" onsubmit="return confirm('삭제할까요?')"><button class="btn ghost sm" type="submit" style="color:var(--danger)">삭제</button></form></div></div>
@@ -33,6 +33,7 @@
           <span>클릭해서 {% if b.image_url %}교체{% else %}이미지 선택{% endif %}</span>
           <input type="file" name="image" accept=".png,.jpg,.jpeg,.gif,.webp" hidden id="bnFile"{% if not edit %} required{% endif %}>
         </label></div>
+      <div class="f"><label>노출 위치</label><select class="in" name="zone"><option value="grid"{% if (b.zone or 'grid') == 'grid' %} selected{% endif %}>그리드 (2×4 · 8구좌)</option><option value="slide"{% if b.zone == 'slide' %} selected{% endif %}>슬라이드 (하단 · 6구좌)</option></select></div>
       <div class="f"><label>링크 <small>클릭 시 이동, 비우면 이동 없음</small></label><input class="in" name="link" value="{{ b.link or '' }}" placeholder="/campaign/place/new 또는 https://..."></div>
       <div class="f"><label>관리명 <small>어드민 목록 표시용</small></label><input class="in" name="title" value="{{ b.title or '' }}" placeholder="예) 9월 프로모션 배너"></div>
       <div class="row2"><div class="f"><label>시작</label><input class="in" name="start_at" type="datetime-local" value="{{ b.start_at.strftime('%Y-%m-%dT%H:%M') if b.start_at else '' }}"></div><div class="f"><label>종료</label><input class="in" name="end_at" type="datetime-local" value="{{ b.end_at.strftime('%Y-%m-%dT%H:%M') if b.end_at else '' }}"></div></div>

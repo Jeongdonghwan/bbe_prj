@@ -159,8 +159,15 @@ def create_app():
         is_admin_path = path == "/admin" or path.startswith("/admin/")
         active = resolve_active(path)
         user = g.get("user")
+        try:
+            from .models import settings as settings_model
+            sv = settings_model.get_all()
+        except Exception:
+            sv = {}
+        strip = {"on": sv.get("strip_on") == "1", "text": sv.get("strip_text") or "",
+                 "link": sv.get("strip_link") or "", "bg": sv.get("strip_bg") or "#2563EB"}
         return {
-            "APP_NAME": app.config["APP_NAME"],
+            "APP_NAME": app.config["APP_NAME"], "strip": strip,
             "KAKAO_CHAT_URL": app.config["KAKAO_CHAT_URL"],
             "MENU": MENU,
             "current_user": user,

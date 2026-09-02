@@ -3,18 +3,18 @@
 {% block content %}
 {# Prototype #p-dash, reworked 2026-09-02: strip banner + ad slots + icon quick-row. 공지/진행 카드 제거(도움말 팝업으로 이동). #}
 
-{% if strip and strip.on and strip.text %}
-<a class="topstrip" id="topstrip" href="{{ strip.link or '#' }}" style="background:{{ strip.bg }}">
-  <b>{{ strip.text }}</b>
-  <button type="button" id="stripX" aria-label="닫기">&times;</button>
-</a>
+{% if grid_banners %}
+<div class="adgrid">
+  {% for b in grid_banners %}<a href="{{ b.link or '#' }}"><img src="{{ b.image_url }}" alt="{{ b.title }}"></a>{% endfor %}
+</div>
 {% endif %}
 
-{% if banners %}
-<div class="banner-slider"{% if banners | length > 4 %} data-auto="1"{% endif %}>
-  <div class="banner-track">
-    {% for b in banners %}<a class="banner-slide" href="{{ b.link or '#' }}"><img src="{{ b.image_url }}" alt="{{ b.title }}"></a>{% endfor %}
+{% if slide_banners %}
+<div class="slidebn" id="slidebn">
+  <div class="sb-track">
+    {% for b in slide_banners %}<a href="{{ b.link or '#' }}"><img src="{{ b.image_url }}" alt="{{ b.title }}"></a>{% endfor %}
   </div>
+  <div class="sb-dots">{% for b in slide_banners %}<button type="button" data-i="{{ loop.index0 }}"{% if loop.first %} class="on"{% endif %} aria-label="{{ loop.index }}"></button>{% endfor %}</div>
 </div>
 {% endif %}
 
@@ -41,31 +41,19 @@
 {% endblock %}
 {% block scripts %}<script>
 (function () {
-  var st = document.getElementById('topstrip'), x = document.getElementById('stripX');
-  try {
-    if (st && sessionStorage.getItem('stripHide')) st.style.display = 'none';
-  } catch (e) {}
-  if (x) x.addEventListener('click', function (e) {
-    e.preventDefault(); e.stopPropagation();
-    st.style.display = 'none';
-    try { sessionStorage.setItem('stripHide', '1'); } catch (e2) {}
+  var sb = document.getElementById('slidebn');
+  if (!sb) return;
+  var tr = sb.querySelector('.sb-track'), dots = sb.querySelectorAll('.sb-dots button'), n = dots.length, i = 0, t;
+  if (n < 2) return;
+  function go(k) {
+    i = (k + n) % n;
+    tr.style.transform = 'translateX(-' + (i * 100) + '%)';
+    dots.forEach(function (d, j) { d.classList.toggle('on', j === i); });
+  }
+  function auto() { t = setInterval(function () { go(i + 1); }, 4000); }
+  dots.forEach(function (d) {
+    d.addEventListener('click', function (e) { e.preventDefault(); clearInterval(t); go(+d.dataset.i); auto(); });
   });
-
-  var sl = document.querySelector('.banner-slider');
-  if (!sl || !sl.dataset.auto) return;
-  var tr = sl.querySelector('.banner-track');
-  setInterval(function () {
-    var first = tr.children[0];
-    var gap = parseFloat(getComputedStyle(tr).columnGap || getComputedStyle(tr).gap) || 12;
-    var w = first.getBoundingClientRect().width + gap;
-    tr.style.transition = 'transform .55s ease';
-    tr.style.transform = 'translateX(-' + w + 'px)';
-    tr.addEventListener('transitionend', function h() {
-      tr.removeEventListener('transitionend', h);
-      tr.style.transition = 'none';
-      tr.appendChild(first);
-      tr.style.transform = 'translateX(0)';
-    });
-  }, 3000);
+  auto();
 })();
 </script>{% endblock %}

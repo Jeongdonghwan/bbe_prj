@@ -57,7 +57,8 @@ INFO = [(["guide", "data", "update"][i % 3], f"테스트 {i}", 1 if i == 1 else 
 
 SERIES = [f"테스트 {i}" for i in range(1, 6)]
 
-BANNERS = [(f"테스트 {i}", f"테스트 {i}", "/campaign/place/new") for i in range(1, 9)]
+BANNERS = ([(f"테스트 {i}", "grid", f"/static/uploads/banners/t{i}.png") for i in range(1, 9)]
+           + [(f"슬라이드 테스트 {i}", "slide", f"/static/uploads/banners/s{i}.png") for i in range(1, 7)])
 
 MEDIA = {
     "place": [
@@ -297,7 +298,7 @@ def seed_popular(cur):
                                 (media[mname], uid, nick, "테스트"))
     cur.execute("INSERT INTO settings (k, v) VALUES ('bank_due_days','3')")
     cur.executemany("INSERT INTO settings (k, v) VALUES (%s,%s)",
-                    [("strip_on", "1"), ("strip_text", "테스트 띠배너 문구입니다"), ("strip_link", ""), ("strip_bg", "#2563EB")])
+                    [("strip_on", "0"), ("strip_text", "테스트 띠배너 문구입니다"), ("strip_link", ""), ("strip_bg", "#2563EB")])
 
 
 def seed():
@@ -364,8 +365,8 @@ def seed():
 
     # banners
     cur.executemany(
-        "INSERT INTO banners (subtitle, title, link, image_url, sort, is_active) VALUES (%s,%s,%s,%s,%s,1)",
-        [(sub, title, link, f"/static/uploads/banners/t{i + 1}.png", i) for i, (sub, title, link) in enumerate(BANNERS)],
+        "INSERT INTO banners (title, zone, image_url, link, sort, is_active) VALUES (%s,%s,%s,'',%s,1)",
+        [(title, zone, img, i) for i, (title, zone, img) in enumerate(BANNERS)],
     )
 
     # nick words

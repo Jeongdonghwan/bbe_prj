@@ -140,7 +140,7 @@ a.post,a.qna,a.ag{color:inherit;display:flex}a.qna{display:block}
 @media (min-width:768px) and (max-width:1279px){.sidebar:hover .logo img{display:block}}
 
 /* user-controlled sidebar collapse (2026-09-02) */
-.lmark{display:none;width:40px;height:40px;border-radius:10px;background:var(--accent);color:#fff;place-items:center;font-size:18px;font-weight:800;flex:none}
+.logo img.lmark{display:none;width:44px;height:auto;flex:none}
 #sideToggle{position:fixed;left:266px;top:14px;z-index:40;width:28px;height:28px;border-radius:50%;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow);display:grid;place-items:center;color:var(--text-2);transition:left .22s ease}
 #sideToggle:hover{color:var(--text);border-color:#CBD5E1}
 #sideToggle .i{width:15px;height:15px;transition:transform .22s}
@@ -154,7 +154,7 @@ html.side-min #sideToggle .i{transform:rotate(180deg)}
   html.side-min .sidebar .nav-sec>h6,html.side-min .sidebar .nav .lbl,html.side-min .sidebar .nav .ext,
   html.side-min .sidebar .nav .chev,html.side-min .sidebar .nav .tag,html.side-min .sidebar .sub,
   html.side-min .sidebar .side-foot,html.side-min .sidebar .point-card{display:none}
-  html.side-min .sidebar .lmark{display:grid}
+  html.side-min .sidebar .logo img.lmark{display:block}
   html.side-min .sidebar .nav a,html.side-min .sidebar .nav button{justify-content:center;padding:11px 0}
   html.side-min .sidebar .kakao-btn{width:44px;margin-left:auto;margin-right:auto;padding:0;justify-content:center}
   html.side-min .paybar{left:72px}

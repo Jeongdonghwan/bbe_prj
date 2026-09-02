@@ -357,6 +357,7 @@ CREATE TABLE IF NOT EXISTS banners (
   link      VARCHAR(300) NULL,
   title     VARCHAR(120) NOT NULL,
   subtitle  VARCHAR(80) NULL,
+  zone      ENUM('grid','slide') NOT NULL DEFAULT 'grid',
   sort      INT NOT NULL DEFAULT 0,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   start_at  DATETIME NULL,

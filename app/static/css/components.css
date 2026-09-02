@@ -512,8 +512,7 @@ tr:hover .rowact button, tr.sel .rowact button{opacity:1}
 @media(max-width:768px){.rankgrid{grid-template-columns:repeat(4,1fr)}.rankgrid>div:nth-child(-n+7){border-top:1px solid var(--border)}.rankgrid>div:nth-child(-n+4){border-top:0}.rankgrid>div:nth-child(7n+1){border-left:1px solid var(--border)}.rankgrid>div:nth-child(4n+1){border-left:0}}
 
 /* dashboard rework (2026-09-02): text strip banner, icon quick-row, help float */
-.topstrip{display:flex;align-items:center;justify-content:center;gap:10px;position:relative;color:#fff;font-size:15px;font-weight:500;padding:14px 48px;border-radius:0;margin:-24px -28px 20px;text-align:center}
-@media(max-width:768px){.topstrip{margin:-16px -16px 16px}}
+.topstrip{display:flex;align-items:center;justify-content:center;gap:10px;position:relative;color:#fff;font-size:15px;font-weight:500;padding:14px 48px;border-radius:0;margin:0;text-align:center}
 .topstrip b{font-weight:700}
 .topstrip button{position:absolute;right:8px;top:50%;transform:translateY(-50%);color:#fff;font-size:20px;line-height:1;opacity:.8;padding:6px 10px}
 .topstrip button:hover{opacity:1}
@@ -527,3 +526,17 @@ tr:hover .rowact button, tr.sel .rowact button{opacity:1}
 .help-float:hover{transform:translateY(-2px)}
 .help-float .i{width:17px;height:17px;color:var(--accent)}
 @media(max-width:767px){.help-float{bottom:128px;right:14px;padding:0;width:44px;justify-content:center}.help-float span{display:none}}
+
+/* dashboard banner zones (2026-09-02): 2x4 ad grid + single slide banner with dots */
+.adgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+.adgrid a{display:block;border-radius:12px;overflow:hidden;border:1px solid var(--border);background:var(--surface)}
+.adgrid img{width:100%;height:112px;object-fit:cover;display:block}
+@media(max-width:768px){.adgrid{grid-template-columns:1fr 1fr}.adgrid img{height:84px}}
+.slidebn{position:relative;border-radius:16px;overflow:hidden;margin-bottom:6px;box-shadow:var(--shadow)}
+.sb-track{display:flex;transition:transform .5s ease}
+.sb-track a{flex:0 0 100%;display:block}
+.sb-track img{width:100%;height:200px;object-fit:cover;display:block}
+@media(max-width:768px){.sb-track img{height:130px}}
+.sb-dots{position:absolute;left:0;right:0;bottom:10px;display:flex;justify-content:center;gap:6px}
+.sb-dots button{width:8px;height:8px;border-radius:99px;background:rgba(255,255,255,.55);transition:width .2s,background .2s}
+.sb-dots button.on{width:22px;background:#fff}
