@@ -15,7 +15,7 @@
 {% include "layout/sidebar.html" %}
 <div class="side-scrim"></div>
 <div class="main">
-  {% include "layout/header.html" %}
+  {% if request.endpoint != 'main.dashboard' %}{% include "layout/header.html" %}{% endif %}
   <section class="page on">
     {% with msgs = get_flashed_messages() %}{% if msgs %}<div class="flash">{% for m in msgs %}<div>{{ m }}</div>{% endfor %}</div>{% endif %}{% endwith %}
     {% block content %}{% endblock %}

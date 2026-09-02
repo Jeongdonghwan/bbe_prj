@@ -512,7 +512,8 @@ tr:hover .rowact button, tr.sel .rowact button{opacity:1}
 @media(max-width:768px){.rankgrid{grid-template-columns:repeat(4,1fr)}.rankgrid>div:nth-child(-n+7){border-top:1px solid var(--border)}.rankgrid>div:nth-child(-n+4){border-top:0}.rankgrid>div:nth-child(7n+1){border-left:1px solid var(--border)}.rankgrid>div:nth-child(4n+1){border-left:0}}
 
 /* dashboard rework (2026-09-02): text strip banner, icon quick-row, help float */
-.topstrip{display:flex;align-items:center;justify-content:center;gap:10px;position:relative;color:#fff;font-size:14.5px;font-weight:500;padding:12px 48px;border-radius:10px;margin-bottom:16px;text-align:center}
+.topstrip{display:flex;align-items:center;justify-content:center;gap:10px;position:relative;color:#fff;font-size:15px;font-weight:500;padding:14px 48px;border-radius:0;margin:-24px -28px 20px;text-align:center}
+@media(max-width:768px){.topstrip{margin:-16px -16px 16px}}
 .topstrip b{font-weight:700}
 .topstrip button{position:absolute;right:8px;top:50%;transform:translateY(-50%);color:#fff;font-size:20px;line-height:1;opacity:.8;padding:6px 10px}
 .topstrip button:hover{opacity:1}
