@@ -12,7 +12,7 @@
   {% endif %}
 {% endmacro %}
 <aside class="sidebar">
-  <a class="logo" href="/"><img class="lmark" src="{{ url_for('static', filename='img/logo-mark.png') }}" alt=""><img src="{{ url_for('static', filename='img/logo.png') }}" alt="{{ APP_NAME }}">{% if is_admin_path %}<small>admin</small>{% endif %}</a>
+  <a class="logo" href="/"><img class="lsym" src="{{ url_for('static', filename='img/logo-sym.png') }}" alt=""><span class="ltxt">BBene</span>{% if is_admin_path %}<small>admin</small>{% endif %}</a>
   {% if current_user %}
   <a class="point-card" id="pointCard" href="/my" style="display:block"><div class="lbl">로그인 계정</div><div class="val">{{ current_user.nickname }}<i>{% if current_user.role == 'admin' %}관리자{% else %}{{ {'biz': '사업자', 'agency': '대행사', 'master': '총판'}.get(current_user.grade, '사업자') }}{% endif %}</i></div></a>
   {% else %}

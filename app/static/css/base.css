@@ -54,10 +54,10 @@ body.admin .sidebar{background:#0B1220}body.admin .logo small{color:#F59E0B;font
   .sidebar{width:72px;padding:20px 8px 16px;overflow:hidden;transition:width .2s;z-index:10}
   .sidebar:hover{width:280px;padding:20px 12px 16px;box-shadow:var(--shadow);overflow-y:auto}
   .sidebar .logo{justify-content:center;padding-left:0;padding-right:0}
-  .sidebar .logo img,.sidebar .logo span,.sidebar .logo small,.sidebar .kakao-btn span,.sidebar .nav-sec>h6,.sidebar .nav .lbl,.sidebar .nav .ext,.sidebar .nav .chev,.sidebar .nav .tag,.sidebar .sub,.sidebar .side-foot{display:none}
+  .sidebar .logo .lsym,.sidebar .logo .ltxt,.sidebar .logo small,.sidebar .kakao-btn span,.sidebar .nav-sec>h6,.sidebar .nav .lbl,.sidebar .nav .ext,.sidebar .nav .chev,.sidebar .nav .tag,.sidebar .sub,.sidebar .side-foot{display:none}
   .sidebar .nav a,.sidebar .nav button{justify-content:center;padding:9px 0}
   .sidebar:hover .logo{justify-content:flex-start;padding:4px 10px 18px}
-  .sidebar:hover .logo img,.sidebar:hover .logo span,.sidebar:hover .logo small,.sidebar:hover .kakao-btn span,.sidebar:hover .nav-sec>h6,.sidebar:hover .nav .lbl{display:inline}
+  .sidebar:hover .logo .lsym,.sidebar:hover .logo .ltxt,.sidebar:hover .logo small,.sidebar:hover .kakao-btn span,.sidebar:hover .nav-sec>h6,.sidebar:hover .nav .lbl{display:inline}
   .sidebar:hover .nav .ext,.sidebar:hover .nav .chev,.sidebar:hover .nav .tag{display:inline-block}
   .sidebar:hover .open+.sub{display:block}.sidebar:hover .side-foot{display:flex}
   .sidebar:hover .nav a,.sidebar:hover .nav button{justify-content:flex-start;padding:9px 10px}
@@ -128,7 +128,8 @@ a.post,a.qna,a.ag{color:inherit;display:flex}a.qna{display:block}
 /* sidebar type scale (2026-09-02 design pass: logo ~2x, menus to match) */
 .logo{font-size:30px;padding:6px 10px 22px;gap:10px}
 .logo b{width:40px;height:40px;border-radius:10px;font-size:19px}
-.logo img{height:58px;width:auto;display:block}
+.logo .lsym{height:44px;width:auto;display:block;flex:none}
+.logo .ltxt{font-family:Georgia,'Times New Roman',serif;font-size:27px;font-weight:600;color:#fff;letter-spacing:.04em}
 .logo small{font-size:12px}
 .sidebar .nav a,.sidebar .nav button{font-size:17.5px;font-weight:600;padding:11px 12px;gap:12px;border-radius:9px}
 .sidebar .nav .i{width:21px;height:21px;flex:none}
@@ -137,12 +138,11 @@ a.post,a.qna,a.ag{color:inherit;display:flex}a.qna{display:block}
 .side-foot{font-size:14px}
 .kakao-btn{height:48px;font-size:15.5px}
 
-@media (min-width:768px) and (max-width:1279px){.sidebar:hover .logo img{display:block}}
+@media (min-width:768px) and (max-width:1279px){.sidebar:hover .logo .lsym{display:block}}
 
 /* user-controlled sidebar collapse (2026-09-02) */
-.logo img.lmark{display:none;width:44px;height:auto;flex:none}
-#sideToggle{position:fixed;left:280px;top:50%;transform:translateY(-50%);z-index:40;width:22px;height:58px;border-radius:0 12px 12px 0;background:var(--surface);border:1px solid var(--border);border-left:0;box-shadow:3px 0 10px rgba(0,0,0,.07);display:grid;place-items:center;color:var(--text-3);transition:left .22s ease,color .15s,width .15s}
-#sideToggle:hover{color:var(--accent);width:26px}
+#sideToggle{position:fixed;left:280px;top:50%;transform:translateY(-50%);z-index:40;width:24px;height:64px;border-radius:0 13px 13px 0;background:#E8ECF2;border:1px solid #C6CDD8;border-left:0;box-shadow:3px 0 10px rgba(0,0,0,.12);display:grid;place-items:center;color:#334155;transition:left .22s ease,background .15s,color .15s,width .15s}
+#sideToggle:hover{background:var(--accent);border-color:var(--accent);color:#fff;width:30px}
 #sideToggle .i{width:15px;height:15px;transition:transform .22s}
 html.side-min #sideToggle{left:72px}
 html.side-min #sideToggle .i{transform:rotate(180deg)}
@@ -150,11 +150,11 @@ html.side-min #sideToggle .i{transform:rotate(180deg)}
   html.side-min .app{grid-template-columns:72px 1fr}
   html.side-min .sidebar{width:72px;padding:20px 8px 16px;overflow:hidden}
   html.side-min .sidebar .logo{justify-content:center;padding:4px 0 16px}
-  html.side-min .sidebar .logo img,html.side-min .sidebar .logo small,html.side-min .sidebar .kakao-btn span,
+  html.side-min .sidebar .logo .ltxt,html.side-min .sidebar .logo small,html.side-min .sidebar .kakao-btn span,
   html.side-min .sidebar .nav-sec>h6,html.side-min .sidebar .nav .lbl,html.side-min .sidebar .nav .ext,
   html.side-min .sidebar .nav .chev,html.side-min .sidebar .nav .tag,html.side-min .sidebar .sub,
   html.side-min .sidebar .side-foot,html.side-min .sidebar .point-card{display:none}
-  html.side-min .sidebar .logo img.lmark{display:block}
+  html.side-min .sidebar .lsym{display:block;height:34px}
   html.side-min .sidebar .nav a,html.side-min .sidebar .nav button{justify-content:center;padding:11px 0}
   html.side-min .sidebar .kakao-btn{width:44px;margin-left:auto;margin-right:auto;padding:0;justify-content:center}
   html.side-min .paybar{left:72px}
