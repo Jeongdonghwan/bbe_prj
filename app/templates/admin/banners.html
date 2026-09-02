@@ -2,6 +2,15 @@
 {% block title %}배너 관리{% endblock %}
 {% block content %}
 <div class="ph"><div><h1>배너 관리</h1><p>대시보드 최상단에 이미지 배너가 순서대로 노출됩니다. 이미지가 없는 배너는 노출되지 않습니다.</p></div><div class="act"><a class="btn pri" href="/admin/banners?new=1">+ 배너 추가</a></div></div>
+<div class="card" style="margin-bottom:14px"><div class="ch"><h3>띠배너 (대시보드 최상단)</h3></div><div class="cb">
+  <form method="post" action="/admin/banners/strip" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+    <div class="f" style="flex:2;min-width:220px;margin:0"><label>문구</label><input class="in" name="strip_text" value="{{ strip.text }}" maxlength="120" placeholder="예) 마케팅 의뢰하고 비교견적 무료로 받으세요!"></div>
+    <div class="f" style="flex:1.4;min-width:180px;margin:0"><label>링크 <small>비우면 이동 없음</small></label><input class="in" name="strip_link" value="{{ strip.link }}" placeholder="/campaign/place/new"></div>
+    <div class="f" style="margin:0"><label>배경색</label><input class="in" name="strip_bg" type="color" value="{{ strip.bg }}" style="width:64px;padding:4px"></div>
+    <label class="chk{% if strip.on %} on{% endif %}" style="cursor:pointer;margin-bottom:8px"><input type="checkbox" name="strip_on" value="1" hidden{% if strip.on %} checked{% endif %}><i></i>노출</label>
+    <button class="btn pri" type="submit">저장</button>
+  </form>
+</div></div>
 <div class="form2">
   <div class="card"><div class="cb" style="padding-top:14px">
     {% for b in rows %}

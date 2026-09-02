@@ -1,6 +1,7 @@
 """/admin/* — operator screens. Every write is recorded in admin_log."""
 import csv
 import io
+import re
 from datetime import date, datetime
 
 from flask import (Blueprint, abort, current_app, flash, g, jsonify, redirect, render_template, request, send_file,
@@ -595,13 +596,36 @@ def content_upload():
 
 
 # =============================================================== banners
+@bp.route("/banners/strip", methods=["POST"])
+@admin_required
+def banners_strip():
+    from ..models import settings as settings_model
+    f = request.form
+    bg = f.get("strip_bg") or "#2563EB"
+    if not re.match(r"^#[0-9A-Fa-f]{6}$", bg):
+        bg = "#2563EB"
+    settings_model.set_many({
+        "strip_text": (f.get("strip_text") or "").strip()[:120],
+        "strip_link": (f.get("strip_link") or "").strip()[:300],
+        "strip_bg": bg,
+        "strip_on": "1" if f.get("strip_on") == "1" else "0",
+    })
+    _log("strip_save", "settings", 0, "띠배너 설정 저장")
+    flash("띠배너 설정을 저장했습니다.")
+    return redirect(url_for("admin.banners"))
+
+
 @bp.route("/banners")
 @admin_required
 def banners():
     rows = banner_model.list_all()
     edit_id = request.args.get("edit", type=int)
     edit = banner_model.get(edit_id) if edit_id else None
-    return render_template("admin/banners.html", rows=rows, edit=edit, new=request.args.get("new") == "1")
+    from ..models import settings as settings_model
+    s = settings_model.get_all()
+    return render_template("admin/banners.html", rows=rows, edit=edit, new=request.args.get("new") == "1",
+                           strip={"text": s.get("strip_text") or "", "link": s.get("strip_link") or "",
+                                  "bg": s.get("strip_bg") or "#2563EB", "on": s.get("strip_on") == "1"})
 
 
 BANNER_IMG_EXT = {"png", "jpg", "jpeg", "gif", "webp"}

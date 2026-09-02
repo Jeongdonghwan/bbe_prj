@@ -296,6 +296,8 @@ def seed_popular(cur):
                     cur.execute("INSERT INTO media_comments (media_id, user_id, anon_nick, body) VALUES (%s,%s,%s,%s)",
                                 (media[mname], uid, nick, "테스트"))
     cur.execute("INSERT INTO settings (k, v) VALUES ('bank_due_days','3')")
+    cur.executemany("INSERT INTO settings (k, v) VALUES (%s,%s)",
+                    [("strip_on", "1"), ("strip_text", "테스트 띠배너 문구입니다"), ("strip_link", ""), ("strip_bg", "#2563EB")])
 
 
 def seed():

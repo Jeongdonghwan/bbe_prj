@@ -17,7 +17,11 @@ def render_placeholder(title, phase=None, desc=None):
 
 @bp.route("/")
 def dashboard():
+    from ..models import settings as settings_model
+    s = settings_model.get_all()
+    strip = {"on": s.get("strip_on") == "1", "text": s.get("strip_text") or "",
+             "link": s.get("strip_link") or "", "bg": s.get("strip_bg") or "#2563EB"}
     banners = banner_model.list_active_banners(8)
     notices = content_model.dashboard_notices(5)
     anon_posts = post_model.latest_anon_posts(5)
-    return render_template("main/dashboard.html", banners=banners, notices=notices, anon_posts=anon_posts)
+    return render_template("main/dashboard.html", banners=banners, notices=notices, anon_posts=anon_posts, strip=strip)

@@ -1,9 +1,14 @@
 {% extends "layout/base.html" %}
 {% block title %}대시보드{% endblock %}
 {% block content %}
-{# Prototype #p-dash. The realtime ".strip" block is intentionally omitted (spec v3: 실시간 카운트 제거). #}
-{% set tag_cls = {'must': 't-must', 'update': 't-upd', 'maint': 't-mnt', 'event': 't-evt'} %}
-{% set tag_lbl = {'must': '필독', 'update': '업데이트', 'maint': '점검', 'event': '이벤트'} %}
+{# Prototype #p-dash, reworked 2026-09-02: strip banner + ad slots + icon quick-row. 공지/진행 카드 제거(도움말 팝업으로 이동). #}
+
+{% if strip and strip.on and strip.text %}
+<a class="topstrip" id="topstrip" href="{{ strip.link or '#' }}" style="background:{{ strip.bg }}">
+  <b>{{ strip.text }}</b>
+  <button type="button" id="stripX" aria-label="닫기">&times;</button>
+</a>
+{% endif %}
 
 {% if banners %}
 <div class="banner-slider"{% if banners | length > 4 %} data-auto="1"{% endif %}>
@@ -13,26 +18,10 @@
 </div>
 {% endif %}
 
-<div class="grid2">
-  <div class="card"><div class="ch"><h3>공지사항</h3><a class="more" href="/notice">전체보기<i data-lucide="chevron-right" class="i i14"></i></a></div><div class="cb"><ul class="list">
-    {% for n in notices %}
-    <li>{% if n.is_pinned %}<span class="tag tq">고정</span>{% else %}<span class="tag tq">{{ tag_lbl.get(n.category, n.category) }}</span>{% endif %}<a href="/notice/{{ n.id }}">{{ n.title }}</a><span class="dt">{{ n.published_at | fmt_date }}</span></li>
-    {% else %}
-    <li><span class="dt">등록된 공지가 없습니다.</span></li>
-    {% endfor %}
-  </ul></div></div>
-  <div class="card"><div class="ch"><h3>이렇게 진행돼요</h3></div><div class="cb"><ol class="steps">
-    <li><div><b>카카오 3초 회원가입</b><span>닉네임·연락처만 입력하면 끝</span></div></li>
-    <li><div><b>채널 선택 → 캠페인 생성</b><span>플레이스 · 쇼핑스토어 · 쿠팡 중 선택</span></div></li>
-    <li><div><b>매체사 · 기간 · 수량 설정</b><span>키워드는 AI가 자동 세팅, 직접 입력도 가능</span></div></li>
-    <li><div><b>카드 결제 → 검수 → 구동</b><span>13:30 이전 접수는 당일 구동, 이후는 익일</span></div></li>
-  </ol></div></div>
-</div>
-
-<div class="grid3">
-  <a class="card chan" href="/campaign/place/new"><div class="ic c-place"><i data-lucide="map-pin" class="i"></i></div><h4>플레이스 캠페인</h4><span class="go">캠페인 만들기<i data-lucide="chevron-right" class="i i14"></i></span></a>
-  <a class="card chan" href="/campaign/store/new"><div class="ic c-store"><i data-lucide="shopping-bag" class="i"></i></div><h4>쇼핑·스토어 캠페인</h4><span class="go">캠페인 만들기<i data-lucide="chevron-right" class="i i14"></i></span></a>
-  <a class="card chan" href="/campaign/coupang/new"><div class="ic c-coupang"><i data-lucide="package" class="i"></i></div><h4>쿠팡 캠페인</h4><span class="go">캠페인 만들기<i data-lucide="chevron-right" class="i i14"></i></span></a>
+<div class="quickrow">
+  <a href="/campaign/place/new"><span class="qic c-place"><i data-lucide="map-pin" class="i"></i></span><span>플레이스 캠페인</span></a>
+  <a href="/campaign/store/new"><span class="qic c-store"><i data-lucide="shopping-bag" class="i"></i></span><span>쇼핑·스토어 캠페인</span></a>
+  <a href="/campaign/coupang/new"><span class="qic c-coupang"><i data-lucide="package" class="i"></i></span><span>쿠팡 캠페인</span></a>
 </div>
 
 <div class="grid2">
@@ -46,12 +35,22 @@
   <div class="card"><div class="ch"><h3>자주 묻는 질문</h3></div><div class="cb"><dl class="faq">
     <dt>구동 시작일은 언제로 잡아야 하나요?</dt><dd>주말·공휴일은 접수만 되고 구동은 다음 평일부터 시작됩니다.</dd>
     <dt>중간에 중단하면 환불되나요?</dt><dd>진행 중 중단 시 남은 일수만큼 결제 취소(부분 환불)됩니다. 검수 반려는 전액 취소.</dd>
-    <dt>순위는 어디서 확인하나요?</dt><dd>캠페인 관리 → 행 클릭 → 우측 상세에서 일자별 순위 변동을 볼 수 있습니다.</dd>
+    <dt>순위는 어디서 확인하나요?</dt><dd>캠페인 관리 → 순위표 버튼에서 일자별 순위 변동을 볼 수 있습니다.</dd>
   </dl></div></div>
 </div>
 {% endblock %}
 {% block scripts %}<script>
 (function () {
+  var st = document.getElementById('topstrip'), x = document.getElementById('stripX');
+  try {
+    if (st && sessionStorage.getItem('stripHide')) st.style.display = 'none';
+  } catch (e) {}
+  if (x) x.addEventListener('click', function (e) {
+    e.preventDefault(); e.stopPropagation();
+    st.style.display = 'none';
+    try { sessionStorage.setItem('stripHide', '1'); } catch (e2) {}
+  });
+
   var sl = document.querySelector('.banner-slider');
   if (!sl || !sl.dataset.auto) return;
   var tr = sl.querySelector('.banner-track');

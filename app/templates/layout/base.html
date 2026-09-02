@@ -25,6 +25,25 @@
 {% if needs_onboarding %}{% include "auth/_welcome_modal.html" %}{% endif %}
 {% include "layout/bottom_tab.html" %}
 {% if request.endpoint == 'main.dashboard' %}
+<button class="help-float" type="button" id="helpFloat"><i data-lucide="circle-help" class="i"></i><span>도움말</span></button>
+<div class="modal" id="helpModal"><div class="modal-box" style="max-width:460px">
+  <div style="display:flex;align-items:center;margin-bottom:14px"><h3>이렇게 진행돼요</h3><button class="icon-btn" type="button" id="helpX" style="margin-left:auto"><i data-lucide="x" class="i"></i></button></div>
+  <ol class="steps">
+    <li><div><b>카카오 3초 회원가입</b><span>닉네임·연락처만 입력하면 끝</span></div></li>
+    <li><div><b>채널 선택 → 캠페인 생성</b><span>플레이스 · 쇼핑스토어 · 쿠팡 중 선택</span></div></li>
+    <li><div><b>매체사 · 기간 · 수량 설정</b><span>키워드는 직접 입력, 효율은 게이지로 확인</span></div></li>
+    <li><div><b>카드 결제 → 검수 → 구동</b><span>13:30 이전 접수는 당일 구동, 이후는 익일</span></div></li>
+  </ol>
+  <a class="btn pri" href="/campaign/place/new" style="width:100%;margin-top:14px">첫 캠페인 만들기</a>
+</div></div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var m = document.getElementById('helpModal');
+  document.getElementById('helpFloat').addEventListener('click', function () { m.classList.add('on'); });
+  document.getElementById('helpX').addEventListener('click', function () { m.classList.remove('on'); });
+  m.addEventListener('click', function (e) { if (e.target === m) m.classList.remove('on'); });
+});
+</script>
 <a class="kakao-float" href="{{ KAKAO_CHAT_URL }}" target="_blank" rel="noopener" aria-label="카카오톡 바로상담">
   <svg viewBox="0 0 24 24"><path d="M12 3C6.5 3 2 6.6 2 11c0 2.8 1.8 5.2 4.6 6.6L5.5 21l4.6-2.7c.6.1 1.2.1 1.9.1 5.5 0 10-3.6 10-8S17.5 3 12 3z"/></svg>
   <span>바로상담</span>
