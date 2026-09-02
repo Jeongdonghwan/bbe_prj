@@ -554,3 +554,25 @@ tr:hover .rowact button, tr.sel .rowact button{opacity:1}
 .svc-f{display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);padding-top:11px;font-size:13px;font-weight:600;color:var(--text-2)}
 .svc:hover .svc-f{color:var(--accent)}
 @media(max-width:768px){.svcrow{grid-template-columns:1fr 1fr;gap:10px}}
+
+/* dashboard bottom widgets: labeled anon rows + Q-accordion FAQ (2026-09-02) */
+.homelist{list-style:none;padding:4px 0 2px}
+.homelist li{display:flex;align-items:center;gap:10px;padding:9px 0;font-size:14px}
+.homelist a{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.homelist a:hover{color:var(--accent)}
+.hnick{flex:none;font-size:12.5px;color:var(--text-3)}
+.tagchip{flex:none;font-size:12px;font-weight:700;padding:3px 9px;border-radius:6px}
+.tagchip.hp{background:var(--accent-soft);color:var(--accent)}
+.tagchip.hs{background:#F3E8FF;color:#7C3AED}
+.tagchip.hc{background:#FFF7ED;color:#EA580C}
+.tagchip.ht{background:var(--bg);color:var(--text-2)}
+.tagchip.hf{background:var(--success-soft);color:#15803D}
+.homefaq{list-style:none;padding:4px 0 2px}
+.homefaq li{padding:2px 0}
+.hq{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:8px 0;font-size:14px;font-weight:600;color:var(--text)}
+.hq b{color:var(--accent);font-size:15px;flex:none}
+.hq span{flex:1}
+.hq .i{color:var(--text-3);transition:transform .2s}
+.hq.open .i{transform:rotate(180deg)}
+.hq:hover span{color:var(--accent)}
+.ha{font-size:13px;color:var(--text-2);line-height:1.7;padding:0 0 8px 25px}

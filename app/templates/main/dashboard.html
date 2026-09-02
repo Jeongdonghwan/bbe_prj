@@ -46,22 +46,41 @@
 </div>
 
 <div class="grid2">
-  <div class="card"><div class="ch"><h3>익명 게시판</h3><a class="more" href="/community/anon">더보기<i data-lucide="chevron-right" class="i i14"></i></a></div><div class="cb"><ul class="list">
+  <div class="card"><div class="ch"><h3>익명 게시판</h3><a class="more" href="/community/anon">더보기<i data-lucide="chevron-right" class="i i14"></i></a></div><div class="cb">
+    <ul class="homelist">
+    {% set tagmap = {'place': ('플레이스', 'hp'), 'store': ('스토어', 'hs'), 'coupang': ('쿠팡', 'hc'), 'tool': ('도구', 'ht')} %}
     {% for p in anon_posts %}
-    <li><span class="anon" style="font-family:var(--font);font-weight:600;color:var(--text-2)">{{ p.anon_nick }}</span><a href="/community/anon">{{ p.title }}</a><span class="cnt">{{ p.comment_cnt }}</span></li>
+      {% set tg = tagmap.get(p.channel_tag, ('자유', 'hf')) %}
+      <li><span class="tagchip {{ tg[1] }}">{{ tg[0] }}</span><a href="/community/anon/{{ p.id }}">{{ p.title }}</a><span class="hnick">{{ p.anon_nick }}</span></li>
     {% else %}
-    <li><span class="dt">아직 글이 없습니다.</span></li>
+      <li><span class="hnick">아직 글이 없습니다.</span></li>
     {% endfor %}
-  </ul></div></div>
-  <div class="card"><div class="ch"><h3>자주 묻는 질문</h3></div><div class="cb"><dl class="faq">
-    <dt>구동 시작일은 언제로 잡아야 하나요?</dt><dd>주말·공휴일은 접수만 되고 구동은 다음 평일부터 시작됩니다.</dd>
-    <dt>중간에 중단하면 환불되나요?</dt><dd>진행 중 중단 시 남은 일수만큼 결제 취소(부분 환불)됩니다. 검수 반려는 전액 취소.</dd>
-    <dt>순위는 어디서 확인하나요?</dt><dd>캠페인 관리 → 순위표 버튼에서 일자별 순위 변동을 볼 수 있습니다.</dd>
-  </dl></div></div>
+    </ul>
+  </div></div>
+  <div class="card"><div class="ch"><h3>자주 묻는 질문</h3><a class="more" href="/community/qna">더보기<i data-lucide="chevron-right" class="i i14"></i></a></div><div class="cb">
+    <ul class="homefaq">
+      {% for q, a in [
+        ('캠페인 결제는 어떻게 진행되나요?', '카드 결제 또는 무통장입금으로 캠페인 건별 결제됩니다. 선충전 포인트는 없습니다.'),
+        ('캠페인 시작 후 취소·환불이 가능한가요?', '진행 중 중단 시 남은 일수만큼 부분 환불되고, 검수 반려 시에는 전액 환불됩니다.'),
+        ('구동 시작일은 언제로 잡아야 하나요?', '주말·공휴일은 접수만 되고 구동은 다음 평일부터 시작됩니다. 13:30 이전 접수는 당일 구동됩니다.'),
+        ('순위는 어디서 확인하나요?', '캠페인 관리 → 순위표 버튼에서 일자별 순위 변동을 볼 수 있습니다.'),
+        ('키워드 조회는 무료인가요?', '로그인 후 하루 30회까지 무료로 조회할 수 있습니다.'),
+      ] %}
+      <li><button type="button" class="hq"><b>Q</b><span>{{ q }}</span><i data-lucide="chevron-down" class="i i14"></i></button><p class="ha" hidden>{{ a }}</p></li>
+      {% endfor %}
+    </ul>
+  </div></div>
 </div>
 {% endblock %}
 {% block scripts %}<script>
 (function () {
+  document.querySelectorAll('.hq').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var p = b.nextElementSibling;
+      p.hidden = !p.hidden;
+      b.classList.toggle('open', !p.hidden);
+    });
+  });
   var sb = document.getElementById('slidebn');
   if (!sb) return;
   var tr = sb.querySelector('.sb-track'), dots = sb.querySelectorAll('.sb-dots button'), n = dots.length, i = 0, t;
