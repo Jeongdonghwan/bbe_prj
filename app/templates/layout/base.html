@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}{{ crumb_label }}{% endblock %} — {{ APP_NAME }}</title>
+<meta name="description" content="플레이스 · 쇼핑스토어 · 쿠팡 유입 캠페인을 직접 만들고 관리하는 셀프서브 광고 플랫폼. 매체 선택부터 결제, 일자별 순위 확인까지 한 곳에서.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="비베네 BBene — 셀프서브 트래픽 광고 플랫폼">
+<meta property="og:description" content="플레이스 · 쇼핑스토어 · 쿠팡 유입 캠페인을 직접 만들고 관리하세요. 매체 선택부터 결제, 일자별 순위 확인까지 한 곳에서.">
+<meta property="og:image" content="{{ url_for('static', filename='img/og.png', _external=True) }}">
+<meta property="og:site_name" content="{{ APP_NAME }}">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
