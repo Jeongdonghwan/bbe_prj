@@ -1,6 +1,6 @@
 /* Base: reset, layout (sidebar/header/page), admin mode, responsive. Ported from prototype_v3.html. */
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--font);background:#fff;color:var(--text);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
 a{color:inherit;text-decoration:none}button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}input,select,textarea{font:inherit;color:inherit}
 svg.i{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .i14{width:14px!important;height:14px!important}.i16{width:16px!important;height:16px!important}
@@ -170,23 +170,28 @@ html.side-min #sideToggle .i{transform:rotate(180deg)}
 ::-webkit-scrollbar-thumb{background:#D6DAE1;border-radius:99px;border:2px solid #fff}
 ::-webkit-scrollbar-thumb:hover{background:#9CA3AF}
 
-/* lightgreen sidebar rgb(144,238,144) with white type (2026-09-02); admin keeps dark sidebar */
-body:not(.admin) .sidebar{background:#90EE90;color:#fff}
-body:not(.admin) .logo .ltxt{color:#fff}
-body:not(.admin) .logo small{color:rgba(255,255,255,.8)}
-body:not(.admin) .nav-sec>h6{color:rgba(255,255,255,.85)}
-body:not(.admin) .sidebar .nav a,body:not(.admin) .sidebar .nav button{color:#fff}
-body:not(.admin) .sidebar .nav a:hover,body:not(.admin) .sidebar .nav button:hover,body:not(.admin) .sidebar .nav a.on,body:not(.admin) .sidebar .nav button.on{background:rgba(0,0,0,.12);color:#fff}
-body:not(.admin) .sidebar .sub{border-left-color:rgba(255,255,255,.5)}
-body:not(.admin) .sidebar .sub a{color:rgba(255,255,255,.92)}
-body:not(.admin) .sidebar .sub a.on{color:#fff}
+/* violet floating icon-rail sidebar (2026-09-03) */
 body:not(.admin) .sidebar .sub a.on::before{background:#fff}
-body:not(.admin) .side-foot{border-top-color:rgba(255,255,255,.5)}
-body:not(.admin) .side-foot a{color:#fff}
-body:not(.admin) .side-foot a:hover{background:rgba(0,0,0,.12);color:#fff}
-body:not(.admin) .point-card{background:rgba(0,0,0,.12);color:#fff}
-body:not(.admin) .point-card .lbl{color:rgba(255,255,255,.8)}
-body:not(.admin) .point-card .val{color:#fff}
-body:not(.admin) .point-card .val i{color:rgba(255,255,255,.8)}
-body:not(.admin) .sidebar .kakao-btn{background:#111827;color:#fff}
-body:not(.admin) .sidebar .kakao-btn svg{fill:#fff}
+body:not(.admin) .nav a:hover,body:not(.admin) .nav button:hover,body:not(.admin) .nav a.on,body:not(.admin) .nav button.on{color:#fff}
+#sideToggle{display:none}
+@media(min-width:1280px){
+  .app{grid-template-columns:104px 1fr}
+  .sidebar{width:76px;margin:14px 0 14px 14px;top:14px;height:calc(100vh - 28px);border-radius:22px;padding:18px 8px 16px;overflow:hidden;transition:width .22s ease;z-index:20}
+  .sidebar:hover{width:280px;padding:18px 12px 16px;overflow-y:auto;box-shadow:0 18px 44px rgba(76,63,176,.35)}
+  .sidebar .logo{justify-content:center;padding:2px 0 16px}
+  .sidebar .logo .ltxt,.sidebar .logo small,.sidebar .kakao-btn span,.sidebar .nav-sec>h6,.sidebar .nav .lbl,.sidebar .nav .ext,.sidebar .nav .chev,.sidebar .nav .tag,.sidebar .sub,.sidebar .side-foot,.sidebar .point-card{display:none}
+  .sidebar .nav a,.sidebar .nav button{justify-content:center;padding:10px 0}
+  .sidebar .kakao-btn{width:44px;margin-left:auto;margin-right:auto;padding:0;justify-content:center}
+  .sidebar:hover .logo{justify-content:flex-start;padding:4px 10px 18px}
+  .sidebar:hover .logo .ltxt,.sidebar:hover .logo small,.sidebar:hover .kakao-btn span,.sidebar:hover .nav-sec>h6,.sidebar:hover .nav .lbl{display:inline}
+  .sidebar:hover .nav .ext,.sidebar:hover .nav .chev,.sidebar:hover .nav .tag{display:inline-block}
+  .sidebar:hover .open+.sub{display:block}
+  .sidebar:hover .side-foot{display:flex}
+  .sidebar:hover .point-card{display:block}
+  .sidebar:hover .nav a,.sidebar:hover .nav button{justify-content:flex-start;padding:11px 12px}
+  .sidebar:hover .kakao-btn{width:auto;padding:0 14px}
+  .paybar{left:104px}
+}
+@media(min-width:768px){
+  .sidebar:not(:hover) .logo .lsym{display:block;height:28px;margin:0 auto}
+}

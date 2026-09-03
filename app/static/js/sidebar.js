@@ -15,13 +15,6 @@
     try { sessionStorage.setItem('stripHide', '1'); } catch (e2) {}
   });
 
-  var st = document.getElementById('sideToggle');
-  if (st) st.addEventListener('click', function () {
-    var r = document.documentElement;
-    r.classList.toggle('side-min');
-    try { localStorage.setItem('sideMin', r.classList.contains('side-min') ? '1' : '0'); } catch (e) {}
-  });
-
   var sidebar = document.querySelector('.sidebar');
   var scrim = document.querySelector('.side-scrim');
   function closeSide() { if (sidebar) sidebar.classList.remove('open'); }

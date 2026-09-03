@@ -14,50 +14,20 @@
   <div class="sb-track">
     {% for b in slide_banners %}<a href="{{ b.link or '#' }}"><img src="{{ b.image_url }}" alt="{{ b.title }}"></a>{% endfor %}
   </div>
+  <button type="button" class="sb-nav sb-prev" aria-label="이전"><i data-lucide="chevron-left" class="i"></i></button>
+  <button type="button" class="sb-nav sb-next" aria-label="다음"><i data-lucide="chevron-right" class="i"></i></button>
   <div class="sb-dots">{% for b in slide_banners %}<button type="button" data-i="{{ loop.index0 }}"{% if loop.first %} class="on"{% endif %} aria-label="{{ loop.index }}"></button>{% endfor %}</div>
 </div>
 {% endif %}
 
-{# 채널 신청란 A/B 시안 비교 (2026-09-02) — 확정되면 한쪽 삭제 #}
-<p class="thin" style="margin:2px 0 6px">A안</p>
-<div class="quickrow">
-  <a href="/campaign/place/new"><span class="qic c-place"><i data-lucide="map-pin" class="i"></i></span><span>플레이스 캠페인</span></a>
-  <a href="/campaign/store/new"><span class="qic c-store"><i data-lucide="shopping-bag" class="i"></i></span><span>쇼핑·스토어 캠페인</span></a>
-  <a href="/campaign/coupang/new"><span class="qic c-coupang"><i data-lucide="package" class="i"></i></span><span>쿠팡 캠페인</span></a>
-  <a href="/popular"><span class="qic c-pop"><i data-lucide="trending-up" class="i"></i></span><span>인기 트래픽</span></a>
-</div>
-<p class="thin" style="margin:2px 0 6px">B안</p>
-<div class="svcrow">
-  <a class="svc" href="/campaign/place/new">
-    <div class="svc-h"><div><small>네이버 지도 상위노출</small><b>플레이스 캠페인</b></div><span class="qic c-place"><i data-lucide="map-pin" class="i"></i></span></div>
-    <div class="svc-f"><span>캠페인 만들기</span><i data-lucide="chevron-right" class="i i14"></i></div>
-  </a>
-  <a class="svc" href="/campaign/store/new">
-    <div class="svc-h"><div><small>스마트스토어 · 쇼핑검색</small><b>쇼핑·스토어 캠페인</b></div><span class="qic c-store"><i data-lucide="shopping-bag" class="i"></i></span></div>
-    <div class="svc-f"><span>캠페인 만들기</span><i data-lucide="chevron-right" class="i i14"></i></div>
-  </a>
-  <a class="svc" href="/campaign/coupang/new">
-    <div class="svc-h"><div><small>쿠팡 검색 상위노출</small><b>쿠팡 캠페인</b></div><span class="qic c-coupang"><i data-lucide="package" class="i"></i></span></div>
-    <div class="svc-f"><span>캠페인 만들기</span><i data-lucide="chevron-right" class="i i14"></i></div>
-  </a>
-  <a class="svc" href="/popular">
-    <div class="svc-h"><div><small>이번 주 추천 매체 순위</small><b>인기 트래픽</b></div><span class="qic c-pop"><i data-lucide="trending-up" class="i"></i></span></div>
-    <div class="svc-f"><span>순위 보러가기</span><i data-lucide="chevron-right" class="i i14"></i></div>
-  </a>
+<div class="pcards">
+  <a class="pcard" href="/campaign/place/new"><span class="pic"><i data-lucide="map-pin" class="i"></i></span><b>플레이스 캠페인</b><small>네이버 지도 상위노출</small><span class="prow"><em>당일 구동</em><i class="pill-go">캠페인 만들기</i></span></a>
+  <a class="pcard" href="/campaign/store/new"><span class="pic"><i data-lucide="shopping-bag" class="i"></i></span><b>쇼핑·스토어 캠페인</b><small>스마트스토어 · 쇼핑검색</small><span class="prow"><em>당일 구동</em><i class="pill-go">캠페인 만들기</i></span></a>
+  <a class="pcard" href="/campaign/coupang/new"><span class="pic"><i data-lucide="package" class="i"></i></span><b>쿠팡 캠페인</b><small>쿠팡 검색 상위노출</small><span class="prow"><em>당일 구동</em><i class="pill-go">캠페인 만들기</i></span></a>
+  <a class="pcard" href="/popular"><span class="pic"><i data-lucide="trending-up" class="i"></i></span><b>인기 트래픽</b><small>이번 주 추천 매체 순위</small><span class="prow"><em>매주 갱신</em><i class="pill-go">순위 보기</i></span></a>
 </div>
 
 <div class="grid2">
-  <div class="card"><div class="ch"><h3>커뮤니티</h3><a class="more" href="/community/anon">더보기<i data-lucide="chevron-right" class="i i14"></i></a></div><div class="cb">
-    <ul class="homelist">
-    {% set tagmap = {'place': ('플레이스', 'hp'), 'store': ('스토어', 'hs'), 'coupang': ('쿠팡', 'hc'), 'tool': ('도구', 'ht')} %}
-    {% for p in anon_posts %}
-      {% set tg = tagmap.get(p.channel_tag, ('자유', 'hf')) %}
-      <li><span class="tagchip {{ tg[1] }}">{{ tg[0] }}</span><a href="/community/anon/{{ p.id }}">{{ p.title }}</a><span class="hnick">{{ p.anon_nick }}</span></li>
-    {% else %}
-      <li><span class="hnick">아직 글이 없습니다.</span></li>
-    {% endfor %}
-    </ul>
-  </div></div>
   <div class="card"><div class="ch"><h3>자주 묻는 질문</h3><a class="more" href="/community/qna">더보기<i data-lucide="chevron-right" class="i i14"></i></a></div><div class="cb">
     <ul class="homefaq">
       {% for q, a in [
@@ -71,7 +41,18 @@
       {% endfor %}
     </ul>
   </div></div>
-</div>
+<div class="card"><div class="ch"><h3>커뮤니티</h3><a class="more" href="/community/anon">더보기<i data-lucide="chevron-right" class="i i14"></i></a></div><div class="cb">
+    <ul class="homelist">
+    {% set tagmap = {'place': ('플레이스', 'hp'), 'store': ('스토어', 'hs'), 'coupang': ('쿠팡', 'hc'), 'tool': ('도구', 'ht')} %}
+    {% for p in anon_posts %}
+      {% set tg = tagmap.get(p.channel_tag, ('자유', 'hf')) %}
+      <li><span class="tagchip {{ tg[1] }}">{{ tg[0] }}</span><a href="/community/anon/{{ p.id }}">{{ p.title }}</a><span class="hnick">{{ p.anon_nick }}</span></li>
+    {% else %}
+      <li><span class="hnick">아직 글이 없습니다.</span></li>
+    {% endfor %}
+    </ul>
+  </div></div>
+  </div>
 {% endblock %}
 {% block scripts %}<script>
 (function () {
@@ -95,6 +76,8 @@
   dots.forEach(function (d) {
     d.addEventListener('click', function (e) { e.preventDefault(); clearInterval(t); go(+d.dataset.i); auto(); });
   });
+  sb.querySelector('.sb-prev').addEventListener('click', function () { clearInterval(t); go(i - 1); auto(); });
+  sb.querySelector('.sb-next').addEventListener('click', function () { clearInterval(t); go(i + 1); auto(); });
   auto();
 })();
 </script>{% endblock %}
