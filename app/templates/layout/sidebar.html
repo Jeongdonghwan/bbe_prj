@@ -36,11 +36,11 @@
   </nav>
   <div class="side-foot">
     {% if current_user %}
-    <a href="/my">마이페이지</a>
-    {% if current_user.role == 'admin' %}{% if is_admin_path %}<a href="/">사용자 화면</a>{% else %}<a href="/admin">관리자</a>{% endif %}{% endif %}
-    <a href="/auth/logout">로그아웃</a>
+    <a href="/my"><i data-lucide="user" class="i i14"></i>마이페이지</a>
+    {% if current_user.role == 'admin' %}{% if is_admin_path %}<a href="/"><i data-lucide="monitor" class="i i14"></i>사용자 화면</a>{% else %}<a href="/admin"><i data-lucide="shield" class="i i14"></i>관리자</a>{% endif %}{% endif %}
+    <a href="/auth/logout"><i data-lucide="log-out" class="i i14"></i>로그아웃</a>
     {% else %}
-    <a href="/guide">이용가이드</a><a href="/auth/login">로그인</a>
+    <a href="/guide"><i data-lucide="book-open" class="i i14"></i>이용가이드</a><a href="/auth/login"><i data-lucide="log-in" class="i i14"></i>로그인</a>
     {% endif %}
   </div>
 </aside>

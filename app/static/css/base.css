@@ -174,6 +174,9 @@ html.side-min #sideToggle .i{transform:rotate(180deg)}
 
 /* violet floating icon-rail sidebar (2026-09-03) */
 body:not(.admin) .sidebar .sub a.on::before{background:#fff}
+.side-foot{gap:2px}
+.side-foot a{display:inline-flex;align-items:center;gap:7px;font-size:14.5px;font-weight:600;color:#fff;padding:9px 10px;border-radius:8px}
+.side-foot a .i{width:15px;height:15px;opacity:.85}
 body:not(.admin) .nav a:hover,body:not(.admin) .nav button:hover,body:not(.admin) .nav a.on,body:not(.admin) .nav button.on{color:#fff}
 #sideToggle{display:none}
 @media(min-width:1280px){

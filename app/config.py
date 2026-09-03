@@ -20,7 +20,7 @@ class Config:
 
     # Service name is managed in exactly one place (spec 0).
     APP_NAME = os.getenv("APP_NAME", "트래픽")
-    KAKAO_CHAT_URL = os.getenv("KAKAO_CHAT_URL", "https://pf.kakao.com/")
+    KAKAO_CHAT_URL = os.getenv("KAKAO_CHAT_URL", "http://pf.kakao.com/_uuxgxaX/chat")
 
     PER_PAGE = 20
 
