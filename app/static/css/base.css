@@ -15,6 +15,7 @@ svg.i{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 .kakao-btn{display:flex;align-items:center;justify-content:center;gap:8px;background:var(--kakao);color:#191600;font-weight:700;border-radius:8px;height:42px;margin-bottom:6px}
 .kakao-btn svg{width:18px;height:18px;fill:#191600}
 .point-card{display:none;background:var(--sidebar-active-bg);border-radius:8px;padding:12px 14px;margin-bottom:6px}
+.point-card.on{display:block}
 .point-card .lbl{font-size:11px}.point-card .val{color:#fff;font-size:18px;font-weight:700}.point-card .val i{font-style:normal;font-size:12px;color:var(--sidebar-text);margin-left:2px}
 .nav-sec{margin-top:18px}.nav-sec>h6{font-size:11px;font-weight:600;color:#6B7280;letter-spacing:.04em;padding:0 10px;margin-bottom:6px}
 .nav a,.nav button{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border-radius:7px;color:var(--sidebar-text);font-size:13.5px;font-weight:500;text-align:left;transition:.15s}
@@ -54,12 +55,13 @@ body.admin .sidebar{background:#0B1220}body.admin .logo small{color:#F59E0B;font
   .sidebar{width:72px;padding:20px 8px 16px;overflow:hidden;transition:width .2s;z-index:10}
   .sidebar:hover{width:280px;padding:20px 12px 16px;box-shadow:var(--shadow);overflow-y:auto}
   .sidebar .logo{justify-content:center;padding-left:0;padding-right:0}
-  .sidebar .logo .lsym,.sidebar .logo .ltxt,.sidebar .logo small,.sidebar .kakao-btn span,.sidebar .nav-sec>h6,.sidebar .nav .lbl,.sidebar .nav .ext,.sidebar .nav .chev,.sidebar .nav .tag,.sidebar .sub,.sidebar .side-foot{display:none}
+  .sidebar .logo .lsym,.sidebar .logo .ltxt,.sidebar .logo small,.sidebar .kakao-btn span,.sidebar .nav-sec>h6,.sidebar .nav .lbl,.sidebar .nav .ext,.sidebar .nav .chev,.sidebar .nav .tag,.sidebar .sub,.sidebar .side-foot,.sidebar .point-card{display:none}
   .sidebar .nav a,.sidebar .nav button{justify-content:center;padding:9px 0}
   .sidebar:hover .logo{justify-content:flex-start;padding:4px 10px 18px}
   .sidebar:hover .logo .lsym,.sidebar:hover .logo .ltxt,.sidebar:hover .logo small,.sidebar:hover .kakao-btn span,.sidebar:hover .nav-sec>h6,.sidebar:hover .nav .lbl{display:inline}
   .sidebar:hover .nav .ext,.sidebar:hover .nav .chev,.sidebar:hover .nav .tag{display:inline-block}
   .sidebar:hover .open+.sub{display:block}.sidebar:hover .side-foot{display:flex}
+  .sidebar:hover .point-card.on{display:block}
   .sidebar:hover .nav a,.sidebar:hover .nav button{justify-content:flex-start;padding:9px 10px}
 }
 /* <768: sidebar hidden (slide-in via .open), bottom tab bar */
@@ -187,7 +189,7 @@ body:not(.admin) .nav a:hover,body:not(.admin) .nav button:hover,body:not(.admin
   .sidebar:hover .nav .ext,.sidebar:hover .nav .chev,.sidebar:hover .nav .tag{display:inline-block}
   .sidebar:hover .open+.sub{display:block}
   .sidebar:hover .side-foot{display:flex}
-  .sidebar:hover .point-card{display:block}
+  .sidebar:hover .point-card.on{display:block}
   .sidebar:hover .nav a,.sidebar:hover .nav button{justify-content:flex-start;padding:11px 12px}
   .sidebar:hover .kakao-btn{width:auto;padding:0 14px}
   .paybar{left:104px}
