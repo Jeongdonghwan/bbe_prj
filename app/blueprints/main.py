@@ -31,6 +31,6 @@ def dashboard():
     grid_banners = banner_model.list_active_banners(8, "grid")
     slide_banners = banner_model.list_active_banners(6, "slide")
     notices = content_model.dashboard_notices(5)
-    anon_posts = post_model.latest_anon_posts(5)
+    anon_posts = post_model.latest_anon_posts(10)
     return render_template("main/dashboard.html", grid_banners=grid_banners, slide_banners=slide_banners,
                            notices=notices, anon_posts=anon_posts)
