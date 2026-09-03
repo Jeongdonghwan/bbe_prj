@@ -18,6 +18,15 @@
   {% else %}
   <a class="kakao-btn" id="kakaoBtn" href="/auth/login"><svg viewBox="0 0 24 24"><path d="M12 3C6.5 3 2 6.6 2 11c0 2.8 1.8 5.2 4.6 6.6L5.5 21l4.6-2.7c.6.1 1.2.1 1.9.1 5.5 0 10-3.6 10-8S17.5 3 12 3z"/></svg><span>카카오 3초 회원가입</span></a>
   {% endif %}
+  <div class="side-foot">
+    {% if current_user %}
+    <a href="/my"><i data-lucide="user" class="i i14"></i>마이페이지</a>
+    {% if current_user.role == 'admin' %}{% if is_admin_path %}<a href="/"><i data-lucide="monitor" class="i i14"></i>사용자 화면</a>{% else %}<a href="/admin"><i data-lucide="shield" class="i i14"></i>관리자</a>{% endif %}{% endif %}
+    <a href="/auth/logout"><i data-lucide="log-out" class="i i14"></i>로그아웃</a>
+    {% else %}
+    <a href="/guide"><i data-lucide="book-open" class="i i14"></i>이용가이드</a><a href="/auth/login"><i data-lucide="log-in" class="i i14"></i>로그인</a>
+    {% endif %}
+  </div>
   <nav class="nav">
    <div class="nav-user">
     {% for sec in MENU.user %}
@@ -34,13 +43,4 @@
     {% endfor %}
    </div>
   </nav>
-  <div class="side-foot">
-    {% if current_user %}
-    <a href="/my"><i data-lucide="user" class="i i14"></i>마이페이지</a>
-    {% if current_user.role == 'admin' %}{% if is_admin_path %}<a href="/"><i data-lucide="monitor" class="i i14"></i>사용자 화면</a>{% else %}<a href="/admin"><i data-lucide="shield" class="i i14"></i>관리자</a>{% endif %}{% endif %}
-    <a href="/auth/logout"><i data-lucide="log-out" class="i i14"></i>로그아웃</a>
-    {% else %}
-    <a href="/guide"><i data-lucide="book-open" class="i i14"></i>이용가이드</a><a href="/auth/login"><i data-lucide="log-in" class="i i14"></i>로그인</a>
-    {% endif %}
-  </div>
 </aside>
