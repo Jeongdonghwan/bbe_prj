@@ -3,7 +3,7 @@
 {% block content %}
 <div style="max-width:420px;margin:48px auto 0">
   <div class="card" style="padding:36px 32px 28px;text-align:center">
-    <div class="logo" style="justify-content:center;color:var(--text);padding-bottom:6px"><b style="width:28px;height:28px;font-size:13px">{{ APP_NAME[0] }}</b><span style="font-size:20px;font-weight:800;letter-spacing:-.02em">{{ APP_NAME }}</span></div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:9px;padding-bottom:8px"><span style="font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:600;color:var(--text);letter-spacing:.04em;line-height:1">BBene</span><img src="{{ url_for('static', filename='img/logo-sym-violet.png') }}" alt="{{ APP_NAME }}" style="height:28px;width:auto"></div>
     <p class="thin" style="margin-bottom:22px">플레이스 · 쇼핑스토어 · 쿠팡 유입 캠페인을<br>직접 만들고 관리하는 셀프서브 광고 플랫폼</p>
 
     <a class="kakao-btn" href="{{ kakao_url }}" style="height:48px;font-size:15px;margin-bottom:10px"><svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#191600"><path d="M12 3C6.5 3 2 6.6 2 11c0 2.8 1.8 5.2 4.6 6.6L5.5 21l4.6-2.7c.6.1 1.2.1 1.9.1 5.5 0 10-3.6 10-8S17.5 3 12 3z"/></svg>카카오로 3초 만에 시작하기</a>

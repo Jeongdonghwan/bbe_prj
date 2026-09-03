@@ -19,7 +19,7 @@ class Config:
     DB_POOL_SIZE = 5
 
     # Service name is managed in exactly one place (spec 0).
-    APP_NAME = os.getenv("APP_NAME", "트래픽")
+    APP_NAME = os.getenv("APP_NAME", "비베네")
     KAKAO_CHAT_URL = os.getenv("KAKAO_CHAT_URL", "http://pf.kakao.com/_uuxgxaX/chat")
 
     PER_PAGE = 20
