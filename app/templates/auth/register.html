@@ -3,7 +3,7 @@
 {% block content %}
 <div style="max-width:420px;margin:36px auto 0">
   <div class="card" style="padding:30px 32px 26px">
-    <div style="display:flex;align-items:center;justify-content:center;gap:9px;padding-bottom:10px"><span style="font-family:Georgia,'Times New Roman',serif;font-size:24px;font-weight:600;color:var(--text);letter-spacing:.04em;line-height:1">BBene</span><img src="{{ url_for('static', filename='img/logo-sym-violet.png') }}" alt="{{ APP_NAME }}" style="height:26px;width:auto"></div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:9px;padding-bottom:10px"><span style="font-family:'Baloo 2',sans-serif;font-size:24px;font-weight:800;color:var(--text);letter-spacing:.04em;line-height:1">BBene</span><img src="{{ url_for('static', filename='img/logo-sym-violet.png') }}" alt="{{ APP_NAME }}" style="height:26px;width:auto"></div>
     <h1 style="font-size:20px;font-weight:700;text-align:center;margin-bottom:4px">회원가입</h1>
     <p class="thin" style="text-align:center;margin-bottom:18px">이메일로 가입하거나, <a class="lnk" href="/auth/login{% if next_url %}?next={{ next_url | urlencode }}{% endif %}">카카오로 3초 만에</a> 시작할 수 있어요.</p>
     <form method="post" action="/auth/register{% if next_url %}?next={{ next_url | urlencode }}{% endif %}" id="regForm">

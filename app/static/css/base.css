@@ -1,3 +1,4 @@
+@font-face{font-family:'Baloo 2';src:url('/static/fonts/Baloo2.ttf') format('truetype');font-weight:400 800;font-display:swap}
 /* Base: reset, layout (sidebar/header/page), admin mode, responsive. Ported from prototype_v3.html. */
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
@@ -131,7 +132,7 @@ a.post,a.qna,a.ag{color:inherit;display:flex}a.qna{display:block}
 .logo{font-size:30px;padding:6px 10px 22px;gap:10px;align-items:center}
 .logo b{width:40px;height:40px;border-radius:10px;font-size:19px}
 .logo .lsym{height:30px;width:auto;display:block;flex:none}
-.logo .ltxt{font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:600;color:#fff;letter-spacing:.04em;line-height:1}
+.logo .ltxt{font-family:'Baloo 2',var(--font);font-size:30px;font-weight:800;color:#fff;letter-spacing:.01em;line-height:1;padding-top:2px}
 .logo small{font-size:12px}
 .sidebar .nav a,.sidebar .nav button{font-size:17.5px;font-weight:600;padding:11px 12px;gap:12px;border-radius:9px}
 .sidebar .nav .i{width:21px;height:21px;flex:none}
