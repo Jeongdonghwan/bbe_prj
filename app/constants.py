@@ -25,13 +25,13 @@ TRANSITIONS = {
     "running": {"done", "stopped"},
 }
 
-PAY_METHOD_LABEL = {"card": "카드", "bank": "무통장입금"}
+PAY_METHOD_LABEL = {"card": "카드", "bank": "무통장입금", "credit": "크레딧"}
 PAYMENT_STATUS_LABEL = {"pending": "결제 대기", "paid": "결제 완료", "partial_refund": "부분 환불",
                         "refunded": "전액 환불", "cancelled": "취소", "expired": "기한 만료"}
 BANK_DUE_DAYS = 3
 
 CUTOFF_TIME = "13:30"
-DATE_PRESETS = [3, 5, 7, 10, 14]
+DATE_PRESETS = [10, 20, 30]
 
 # Store tracking slots (2-4-1)
 STORE_SLOT_MAX = 10

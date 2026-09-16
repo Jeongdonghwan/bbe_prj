@@ -57,11 +57,11 @@ def query_one(sql, params=None):
         return cur.fetchone()
 
 
-def execute(sql, params=None):
-    """Run a write statement; returns lastrowid. Commit happens at teardown."""
+def execute(sql, params=None, rowcount=False):
+    """Run a write statement; returns lastrowid (or affected rows with rowcount=True). Commit at teardown."""
     with get_db().cursor() as cur:
-        cur.execute(sql, params)
-        return cur.lastrowid
+        n = cur.execute(sql, params)
+        return n if rowcount else cur.lastrowid
 
 
 def init_app(app):

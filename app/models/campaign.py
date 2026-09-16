@@ -41,6 +41,11 @@ def insert(data):
     return execute(f"INSERT INTO campaigns ({cols}) VALUES ({ph})", vals)
 
 
+def delete(campaign_id):
+    """Hard-delete a just-created row when credit spend fails (no logs/payments yet)."""
+    execute("DELETE FROM campaigns WHERE id = %s", [campaign_id])
+
+
 def update(campaign_id, data):
     sets = ", ".join(f"{k} = %s" for k in data)
     vals = [json.dumps(v, ensure_ascii=False) if isinstance(v, (list, dict)) else v for v in data.values()]

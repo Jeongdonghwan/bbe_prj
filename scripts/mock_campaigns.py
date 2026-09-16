@@ -68,18 +68,13 @@ def main():
                main_keyword, sub_keywords, setting_keywords, keyword_mode, extra, start_date, end_date, daily_qty,
                total_qty, unit_price, discount, vat, paid_amount, pay_method, paid_at, refund_amount,
                rank_start, rank_now, created_at)
-               VALUES (%s,%s,%s,%s,'running',%s,%s,%s,%s,%s,%s,'ai',%s,%s,%s,%s,%s,%s,%s,%s,%s,'card',%s,0,%s,%s,%s)""",
+               VALUES (%s,%s,%s,%s,'running',%s,%s,%s,%s,%s,%s,'manual',%s,%s,%s,%s,%s,%s,%s,%s,%s,'credit',%s,0,%s,%s,%s)""",
             (order_no, uid, ch, m["id"], "테스트", "테스트" if ch != "place" else None, URLS[ch], "테스트",
              json.dumps([]), json.dumps(["테스트"], ensure_ascii=False), json.dumps({}),
-             start, end, daily, daily * days, m["unit_price"], q["discount"], q["vat"], q["total"],
+             start, end, daily, daily * days, m["unit_price"], 0, 0, q["order"],
              created, ranks[0], ranks[-1], created))
         cid = cur.lastrowid
-        cur.execute(
-            """INSERT INTO payments (campaign_id, user_id, method, amount, status, pg_provider, pg_tid, paid_at, refund_amount, created_at)
-               VALUES (%s,%s,'card',%s,'paid','mock',%s,%s,0,%s)""",
-            (cid, uid, q["total"], f"MOCK-{uid}-{seq + i:08d}", created, created))
-        logs = [(None, "pay_wait", f"카드 결제 요청 · {q['total']:,}원"),
-                ("pay_wait", "review", f"카드 결제 승인 · {q['total']:,}원"),
+        logs = [(None, "review", f"크레딧 결제 {q['order']:,}원 · 검수 대기"),
                 ("review", "approved", "운영팀 승인 · 링크·키워드 확인"),
                 ("approved", "running", "구동 시작")]
         for k, (fr, to, memo) in enumerate(logs):
@@ -88,7 +83,7 @@ def main():
         for k, r in enumerate(ranks):
             cur.execute("INSERT INTO campaign_daily (campaign_id, date, rank, done_qty) VALUES (%s,%s,%s,%s)",
                         (cid, start + timedelta(days=k), r, daily))
-        print(f"{ch}: {order_no} · {q['total']:,}원 · 진행 중 (campaign {cid})")
+        print(f"{ch}: {order_no} · {q['order']:,}원 · 진행 중 (campaign {cid})")
     conn.close()
     print(f"done — user #{uid} {u['nickname']}")
 

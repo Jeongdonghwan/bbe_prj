@@ -1,0 +1,73 @@
+{% extends "layout/base.html" %}
+{% from "macros/pagination.html" import pager %}
+{% block title %}크레딧 관리{% endblock %}
+{% block content %}
+<div class="ph"><div><h1>크레딧 관리</h1><p>무통장 충전 요청 승인·거절, 회원 크레딧 직접 충전·차감.</p></div></div>
+
+<div class="form2">
+  <div>
+    <div class="card"><div class="cb" style="padding-top:6px">
+      <div class="tabs">
+        {% for key, label in [('', '전체'), ('pending', '대기'), ('approved', '승인'), ('rejected', '거절')] %}
+        <a href="/admin/credits{% if key %}?status={{ key }}{% endif %}"><button type="button"{% if (status or '') == key %} class="on"{% endif %}>{{ label }}{% if key == 'pending' and pending_n %}<em>{{ pending_n }}</em>{% endif %}</button></a>
+        {% endfor %}
+      </div>
+      <div style="overflow-x:auto;margin:0 -18px"><table class="ctable">
+        <thead><tr><th>신청일</th><th>회원</th><th style="text-align:right">충전액</th><th style="text-align:right">입금액</th><th>입금자명</th><th>세금계산서</th><th>상태</th><th>처리</th></tr></thead>
+        <tbody>
+        {% for r in rows %}
+        <tr>
+          <td class="num"><span class="mut">{{ r.created_at | fmt_date('%m.%d %H:%M') }}</span></td>
+          <td><b>{{ r.nickname }}</b><br><span class="mut" style="font-size:11.5px">{{ r.email or '-' }} · 잔액 {{ r.credit_balance | fmt_num }}원</span></td>
+          <td class="num" style="text-align:right">{{ r.amount | fmt_num }}원</td>
+          <td class="num" style="text-align:right"><b>{{ r.total | fmt_num }}원</b></td>
+          <td>{{ r.depositor }}</td>
+          <td>{% if r.tax_invoice %}<span title="{{ r.biz_snapshot or '' }}" style="text-decoration:underline dotted">발행</span>{% else %}-{% endif %}</td>
+          <td>{% set st = {'pending': ('대기중', 's-wait'), 'approved': ('승인됨', 's-run'), 'rejected': ('거절됨', 's-rej')}[r.status] %}<span class="st {{ st[1] }}">{{ st[0] }}</span>{% if r.reject_reason %}<br><span class="mut" style="font-size:11px">{{ r.reject_reason }}</span>{% endif %}</td>
+          <td>{% if r.status == 'pending' %}
+            <div style="display:flex;gap:6px;align-items:center">
+              <form method="post" action="/admin/credits/{{ r.id }}/approve" onsubmit="return confirm('{{ r.nickname }}님에게 {{ r.amount | fmt_num }}원을 충전할까요? (입금 {{ r.total | fmt_num }}원 확인)')"><button class="btn pri sm" type="submit">승인</button></form>
+              <form method="post" action="/admin/credits/{{ r.id }}/reject" style="display:flex;gap:4px"><input class="in" name="reason" placeholder="거절 사유" required style="height:32px;width:130px;font-size:12px"><button class="btn sec sm" type="submit" style="color:var(--danger)">거절</button></form>
+            </div>
+          {% else %}<span class="mut" style="font-size:11.5px">{{ r.processed_at | fmt_date('%m.%d %H:%M') }}</span>{% endif %}</td>
+        </tr>
+        {% else %}<tr><td colspan="8"><div class="empty">충전 요청이 없습니다.</div></td></tr>{% endfor %}
+        </tbody></table></div>
+      {{ pager(page, total_pages, 'admin.credits', status=status) }}
+    </div></div>
+
+    <div class="card" style="margin-top:14px"><div class="ch"><h3>최근 크레딧 변동</h3></div><div class="cb">
+      <div style="overflow-x:auto;margin:0 -18px"><table class="ctable">
+        <thead><tr><th>일시</th><th>회원</th><th>구분</th><th style="text-align:right">금액</th><th style="text-align:right">잔액</th><th>내용</th></tr></thead>
+        <tbody>
+        {% set lg_t = {'charge': '충전', 'spend': '광고비', 'refund': '환불', 'adjust': '조정'} %}
+        {% for l in recent %}
+        <tr><td class="num"><span class="mut">{{ l.created_at | fmt_date('%m.%d %H:%M') }}</span></td>
+          <td>{{ l.nickname }}</td>
+          <td>{{ lg_t.get(l.type, l.type) }}</td>
+          <td class="num" style="text-align:right;color:var({{ '--danger' if l.amount < 0 else '--success' }})">{{ '+' if l.amount > 0 }}{{ l.amount | fmt_num }}원</td>
+          <td class="num" style="text-align:right">{{ l.balance_after | fmt_num }}원</td>
+          <td style="white-space:normal"><span class="mut">{{ l.memo or '-' }}</span></td></tr>
+        {% else %}<tr><td colspan="6"><div class="empty">변동 내역이 없습니다.</div></td></tr>{% endfor %}
+        </tbody></table></div>
+    </div></div>
+  </div>
+
+  <div class="card"><div class="ch"><h3>직접 충전 · 차감</h3></div><div class="cb">
+    <form method="post" action="/admin/credits/adjust">
+      <div class="f"><label>회원</label><select class="in" name="user_id" required>
+        <option value="">선택</option>
+        {% for u in users %}<option value="{{ u.id }}">{{ u.nickname }}{% if u.email %} ({{ u.email }}){% endif %} · 잔액 {{ u.credit_balance | fmt_num }}원</option>{% endfor %}
+      </select></div>
+      <div class="row2">
+        <div class="f"><label>구분</label><select class="in" name="sign"><option value="1">충전 (+)</option><option value="-1">차감 (−)</option></select></div>
+        <div class="f"><label>금액<small>원</small></label><input class="in num" name="amount" type="number" min="1000" step="1000" placeholder="100000" required></div>
+      </div>
+      <div class="f"><label>메모<small>회원 사용 내역에 표시됩니다</small></label><input class="in" name="memo" maxlength="200" placeholder="예) 무통장 입금 확인 · 9/16"></div>
+      <button class="btn pri" type="submit" style="width:100%">적용</button>
+    </form>
+    <p class="thin" style="margin-top:10px">PG 연동 전까지는 이 메뉴에서 입금 확인 후 직접 충전해주세요. 모든 처리는 관리자 로그와 회원 크레딧 내역에 기록됩니다.</p>
+  </div></div>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/admin.js') }}"></script>{% endblock %}

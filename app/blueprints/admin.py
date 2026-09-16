@@ -26,7 +26,7 @@ from .main import render_placeholder
 bp = Blueprint("admin", __name__, url_prefix="/admin")
 
 PAGES = {
-    "": "운영 현황", "orders": "주문 관리", "payments": "결제 내역", "media": "매체사 관리", "popular": "인기 트래픽 설정",
+    "": "운영 현황", "orders": "주문 관리", "payments": "결제 내역", "credits": "크레딧 관리", "media": "매체사 관리", "popular": "인기 트래픽 설정",
     "content": "공지 · 정보글", "banners": "배너 관리", "users": "회원 목록", "agency": "대행의뢰 · 제안", "reports": "신고 · 블라인드",
 }
 
@@ -310,6 +310,72 @@ def payments_settings():
     _log("settings_bank", None, None, f"입금 계좌 설정 변경 {items['bank_name']} {items['bank_account']}")
     flash("입금 계좌 설정을 저장했습니다.")
     return redirect(url_for("admin.payments"))
+
+
+# =============================================================== credits
+@bp.route("/credits")
+@admin_required
+def credits():
+    from ..models import credit as credit_model
+    status = request.args.get("status") if request.args.get("status") in ("pending", "approved", "rejected") else None
+    page, per_page = _page()
+    rows, total = credit_model.list_admin_requests(status, page, per_page)
+    return render_template("admin/credits.html", rows=rows, status=status, page=page,
+                           total_pages=max(1, -(-total // per_page)),
+                           pending_n=credit_model.pending_count(),
+                           users=user_model.list_brief(), recent=credit_model.ledger_recent(20))
+
+
+@bp.route("/credits/<int:req_id>/approve", methods=["POST"])
+@admin_required
+def credits_approve(req_id):
+    from ..models import credit as credit_model
+    from ..services import credit_service
+    try:
+        credit_service.approve_request(req_id, g.user["id"])
+    except credit_service.CreditError as e:
+        flash(str(e))
+        return redirect(url_for("admin.credits"))
+    r = credit_model.get_request(req_id)
+    _log("credit_approve", "charge_request", req_id, f"충전 승인 · #{req_id} {r['amount']:,}원 (입금 {r['total']:,}원)")
+    flash("충전을 승인했습니다.")
+    return redirect(url_for("admin.credits"))
+
+
+@bp.route("/credits/<int:req_id>/reject", methods=["POST"])
+@admin_required
+def credits_reject(req_id):
+    from ..services import credit_service
+    reason = (request.form.get("reason") or "").strip()[:200] or "사유 미기재"
+    try:
+        credit_service.reject_request(req_id, g.user["id"], reason)
+    except credit_service.CreditError as e:
+        flash(str(e))
+        return redirect(url_for("admin.credits"))
+    _log("credit_reject", "charge_request", req_id, f"충전 거절 · #{req_id} · {reason}")
+    flash("충전 요청을 거절했습니다.")
+    return redirect(url_for("admin.credits"))
+
+
+@bp.route("/credits/adjust", methods=["POST"])
+@admin_required
+def credits_adjust():
+    from ..services import credit_service
+    user_id = request.form.get("user_id", type=int)
+    amount = (request.form.get("amount", type=int) or 0) * (request.form.get("sign", type=int) or 1)
+    memo = (request.form.get("memo") or "").strip()
+    target = user_model.get_by_id(user_id) if user_id else None
+    if not target:
+        flash("회원을 선택해주세요.")
+        return redirect(url_for("admin.credits"))
+    try:
+        bal = credit_service.adjust(user_id, amount, g.user["id"], memo)
+    except credit_service.CreditError as e:
+        flash(str(e))
+        return redirect(url_for("admin.credits"))
+    _log("credit_adjust", "user", user_id, f"{target['nickname']} 크레딧 {'충전' if amount > 0 else '차감'} {abs(amount):,}원 → 잔액 {bal:,}원")
+    flash(f"{target['nickname']}님 크레딧을 {'충전' if amount > 0 else '차감'}했습니다. (잔액 {bal:,}원)")
+    return redirect(url_for("admin.credits"))
 
 
 # =============================================================== media

@@ -13,6 +13,7 @@ MENU = {
             "title": "기본",
             "items": [
                 {"label": "공지사항", "icon": "megaphone", "href": "/notice"},
+                {"label": "크레딧 충전", "icon": "wallet", "href": "/credit/charge"},
                 {"label": "카카오 바로상담", "icon": "message-circle", "href": Config.KAKAO_CHAT_URL, "external": True},
             ],
         },
@@ -67,6 +68,7 @@ MENU = {
                 {"label": "운영 현황", "icon": "trending-up", "href": "/admin"},
                 {"label": "주문 관리", "icon": "map-pin", "href": "/admin/orders"},
                 {"label": "결제 내역", "icon": "credit-card", "href": "/admin/payments"},
+                {"label": "크레딧 관리", "icon": "wallet", "href": "/admin/credits"},
             ],
         },
         {
@@ -147,8 +149,8 @@ def create_app():
     from .services import notify_service
     db.init_app(app)
 
-    from .blueprints import main, auth, notice, campaign, tools, community, my, admin
-    for bp in (main.bp, auth.bp, notice.bp, campaign.bp, campaign.api, campaign.pop, tools.bp, community.bp, community.notif_bp, my.bp, admin.bp):
+    from .blueprints import main, auth, notice, campaign, credit, tools, community, my, admin
+    for bp in (main.bp, auth.bp, notice.bp, campaign.bp, campaign.api, campaign.pop, credit.bp, tools.bp, community.bp, community.notif_bp, my.bp, admin.bp):
         app.register_blueprint(bp)
 
     app.before_request(auth.load_current_user)

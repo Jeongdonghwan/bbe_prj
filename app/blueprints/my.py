@@ -5,6 +5,7 @@ from flask import Blueprint, current_app, flash, g, jsonify, redirect, render_te
 
 from ..constants import CHANNEL_LABEL, GRADE_LABEL, STATUS_CLASS, STATUS_LABEL
 from ..models import agency as agency_model
+from ..models import credit as credit_model
 from ..models import campaign as campaign_model
 from ..models import user as user_model
 from .auth import login_required
@@ -36,7 +37,13 @@ def index():
     page = max(1, request.args.get("page", 1, type=int))
     per_page = current_app.config["PER_PAGE"]
     paid_total = campaign_model.total_paid(uid)
-    total = campaign_model.count_payments(uid)
+    ct = request.args.get("ct", "charge")
+    cf = request.args.get("cf") if request.args.get("cf") in ("approved", "pending", "rejected") else None
+    if ct == "usage":
+        credit_rows, ctotal = credit_model.ledger(uid, page, per_page)
+    else:
+        ct = "charge"
+        credit_rows, ctotal = credit_model.list_user_requests(uid, cf, page, per_page)
     from ..models import post as post_model
     return render_template(
         "my/index.html", post_counts=post_model.count_by_user(uid), comment_cnt=post_model.count_comments_by_user(uid),
@@ -46,8 +53,8 @@ def index():
         month_paid=campaign_model.month_paid(uid),
         grade_label=GRADE_LABEL.get(user["grade"], "사업자"), my_apply=agency_model.my_apply(uid),
         summary=campaign_model.summary_by_channel(uid), channel_label=CHANNEL_LABEL,
-        rows=campaign_model.list_payments(uid, page, per_page), page=page,
-        total_pages=max(1, -(-total // per_page)),
+        ct=ct, cf=cf, credit_rows=credit_rows, page=page,
+        total_pages=max(1, -(-ctotal // per_page)),
         status_label=STATUS_LABEL, status_class=STATUS_CLASS,
     )
 

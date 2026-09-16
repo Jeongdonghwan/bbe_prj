@@ -120,9 +120,19 @@ def new(channel):
     if not pre.get("start_date"):
         pre["start_date"] = start
         pre["end_date"] = start + timedelta(days=9)
+    pre_days = 10
+    if pre.get("start_date") and pre.get("end_date"):
+        try:
+            sd = pre["start_date"] if isinstance(pre["start_date"], date) else date.fromisoformat(str(pre["start_date"]))
+            ed = pre["end_date"] if isinstance(pre["end_date"], date) else date.fromisoformat(str(pre["end_date"]))
+            d = campaign_service.days_between(sd, ed)
+            pre_days = d if d in DATE_PRESETS else 10
+        except (ValueError, TypeError):
+            pre_days = 10
     return render_template(
         "campaign/new.html", channel=channel, channels=CHANNELS, sections=sections,
-        pre=pre, editing=editing, presets=DATE_PRESETS, place_categories=PLACE_CATEGORIES,
+        pre=pre, editing=editing, presets=DATE_PRESETS, pre_days=pre_days, start=start,
+        balance=g.user["credit_balance"], place_categories=PLACE_CATEGORIES,
         media_json=json.dumps({m["id"]: {"name": m["name"], "price": m["unit_price"], "list": m["list_price"],
                                          "min_days": m["min_days"], "min_daily": m["min_daily"], "max_daily": m["max_daily"],
                                          "tagline": m["tagline"], "eff": m["eff_level"], "eff_note": m["eff_note"] or "",
@@ -188,35 +198,42 @@ def _parse_form(channel, media, form):
 
 
 def _create(channel):
+    """Credit model (2026-09-16): wizard posts media/days/qty; server derives dates, spends credit, no card/bank."""
     media_id = request.form.get("media_id", type=int)
     media = media_model.get(media_id) if media_id else None
     if not media or media["channel"] != channel or not media["is_active"]:
-        flash("매체사를 선택해주세요.")
+        flash("광고 유형(매체)을 선택해주세요.")
         return redirect(url_for("campaign.new", channel=channel))
-    data, err = _parse_form(channel, media, request.form)
+    days = request.form.get("days", type=int)
+    if days not in DATE_PRESETS:
+        flash("광고 기간을 선택해주세요.")
+        return redirect(url_for("campaign.new", channel=channel))
+    now = datetime.now()
+    same_day_ok = media["same_day"] and now.strftime("%H:%M") < str(media["cutoff_time"])[:5]
+    start = _next_weekday(now.date() + (timedelta(days=0) if same_day_ok else timedelta(days=1)))
+    form = request.form.to_dict()
+    form["start_date"] = start.isoformat()
+    form["end_date"] = (start + timedelta(days=days - 1)).isoformat()
+    data, err = _parse_form(channel, media, form)
     if err:
         flash(err)
-        session["campaign_prefill"] = {k: v for k, v in request.form.items() if k not in ("csrf",)}
+        session["campaign_prefill"] = {k: v for k, v in request.form.items() if k != "csrf"}
         session["campaign_prefill"]["media_id"] = media_id
-        return redirect(url_for("campaign.new", channel=channel, edit=request.form.get("edit_id") or None))
-    method = "bank" if request.form.get("pay_method") == "bank" else "card"
-    depositor = request.form.get("depositor")
-    edit_id = request.form.get("edit_id", type=int)
-    try:
-        if edit_id:
-            c = campaign_service.update_pending(_own(channel, edit_id), media, data, depositor)
-            flash("주문을 수정했습니다.")
-            return redirect(url_for("campaign.bank" if c["pay_method"] == "bank" else "campaign.pay", channel=channel, campaign_id=c["id"]))
-        c = campaign_service.create(g.user, media, data, method, depositor)
-    except (campaign_service.CampaignError, payment_service.PaymentError) as e:
-        flash(str(e))
         return redirect(url_for("campaign.new", channel=channel))
-    if method == "bank":
-        return redirect(url_for("campaign.bank", channel=channel, campaign_id=c["id"]))
-    return redirect(url_for("campaign.pay", channel=channel, campaign_id=c["id"]))
+    note = (request.form.get("request_note") or "").strip()[:200]
+    if note:
+        data["extra"]["request_note"] = note
+    try:
+        c = campaign_service.create_with_credit(g.user, media, data)
+    except campaign_service.CampaignError as e:
+        flash(str(e))
+        session["campaign_prefill"] = {k: v for k, v in request.form.items() if k != "csrf"}
+        session["campaign_prefill"]["media_id"] = media_id
+        return redirect(url_for("campaign.new", channel=channel))
+    flash(f"광고가 접수되었습니다. 검수 후 구동이 시작됩니다. (주문번호 {c['order_no']})")
+    return redirect(url_for("campaign.manage", channel=channel, open=c["id"]))
 
 
-# =============================================================== payment pages
 @bp.route("/<channel>/<int:campaign_id>/pay")
 @login_required
 def pay(channel, campaign_id):

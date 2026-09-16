@@ -94,7 +94,20 @@ def confirm_bank(campaign, admin_id, memo=None):
 
 
 def refund(campaign, amount, actor_id, reason):
-    """Refund `amount` (<= remaining). Returns updated payment."""
+    """Refund `amount` (<= remaining). Credit-paid campaigns are refunded to the balance."""
+    if campaign["pay_method"] == "credit":
+        from . import credit_service
+        amount = int(amount)
+        remaining = campaign["paid_amount"] - campaign["refund_amount"]
+        if amount <= 0 or amount > remaining:
+            raise PaymentError(f"환불 금액이 올바르지 않습니다 (가능 {remaining:,}원)")
+        credit_service.refund(campaign["user_id"], amount, campaign["id"], reason)
+        new_refund = campaign["refund_amount"] + amount
+        campaign_model.update(campaign["id"], {"refund_amount": new_refund})
+        kind = "전액 환불" if new_refund >= campaign["paid_amount"] else "부분 환불"
+        campaign_model.add_log(campaign["id"], campaign["status"], campaign["status"], actor_id,
+                               f"{kind} {amount:,}원 (크레딧 반환) · {reason}")
+        return None
     payment = payment_model.get_for_campaign(campaign["id"], for_update=True)
     if not payment or payment["status"] not in ("paid", "partial_refund"):
         raise PaymentError("환불 가능한 결제가 없습니다.")

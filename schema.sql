@@ -1,5 +1,6 @@
 -- TRAFFIC HUB schema (PROJECT_SPEC_v3 §4). MariaDB 10.6, utf8mb4.
--- Contains every table for all phases. No prepaid point tables: campaigns are paid per order via PG (v3.1).
+-- Contains every table for all phases. v3.3 (2026-09-16): prepaid CREDIT model — users charge via bank transfer
+-- (charge_requests -> admin approval -> credit_ledger/users.credit_balance); campaigns spend credit (no card).
 
 CREATE DATABASE IF NOT EXISTS traffic_hub CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE traffic_hub;
@@ -15,6 +16,7 @@ CREATE TABLE IF NOT EXISTS users (
   nickname        VARCHAR(30) NOT NULL,
   phone           VARCHAR(20),
   role            ENUM('user','admin') NOT NULL DEFAULT 'user',
+  credit_balance    INT NOT NULL DEFAULT 0,
   grade           ENUM('biz','agency','master') NOT NULL DEFAULT 'biz',
   biz_name        VARCHAR(60) NULL,
   biz_no          VARCHAR(20) NULL,
@@ -79,7 +81,7 @@ CREATE TABLE IF NOT EXISTS campaigns (
   discount         INT NOT NULL DEFAULT 0,
   vat              INT NOT NULL DEFAULT 0,
   paid_amount      INT NOT NULL,
-  pay_method       ENUM('card','bank') NOT NULL DEFAULT 'card',
+  pay_method       ENUM('card','bank','credit') NOT NULL DEFAULT 'credit',
   paid_at          DATETIME NULL,
   refund_amount    INT NOT NULL DEFAULT 0,
   warn_words       VARCHAR(300) NULL,
@@ -93,6 +95,38 @@ CREATE TABLE IF NOT EXISTS campaigns (
   INDEX idx_campaign_status (status, created_at),
   FOREIGN KEY (user_id) REFERENCES users(id),
   FOREIGN KEY (media_id) REFERENCES media(id)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS credit_ledger (
+  id            INT AUTO_INCREMENT PRIMARY KEY,
+  user_id       INT NOT NULL,
+  type          ENUM('charge','spend','refund','adjust') NOT NULL,
+  amount        INT NOT NULL,
+  balance_after INT NOT NULL,
+  ref_type      VARCHAR(20) NULL,
+  ref_id        INT NULL,
+  memo          VARCHAR(200) NULL,
+  actor_id      INT NULL,
+  created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_credit_user (user_id, created_at)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS charge_requests (
+  id            INT AUTO_INCREMENT PRIMARY KEY,
+  user_id       INT NOT NULL,
+  amount        INT NOT NULL,
+  vat           INT NOT NULL,
+  total         INT NOT NULL,
+  depositor     VARCHAR(40) NOT NULL,
+  tax_invoice   TINYINT(1) NOT NULL DEFAULT 0,
+  biz_snapshot  VARCHAR(200) NULL,
+  status        ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+  reject_reason VARCHAR(200) NULL,
+  processed_by  INT NULL,
+  processed_at  DATETIME NULL,
+  created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_charge_user (user_id),
+  INDEX idx_charge_status (status)
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS payments (

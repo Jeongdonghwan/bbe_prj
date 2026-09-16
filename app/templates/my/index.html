@@ -8,7 +8,9 @@
   <div>
     <div class="card"><div class="me"><div class="avatar">{{ u.nickname[:2] }}</div><h3>{{ u.nickname }}</h3><p>{{ masked_phone }}</p><span class="kk">{% if u.kakao_id %}<i></i>카카오 계정 연결됨{% else %}{{ u.email }}{% endif %} · {{ u.created_at | fmt_date('%Y.%m') }} 가입</span></div>
       <div class="grade"><div><span>완료 캠페인</span><b class="num">{{ done_count }}</b></div><div><span>누적 결제</span><b class="num">{{ paid_total_fmt }}</b></div><div><span>등급</span><b>{{ grade_label }}</b></div></div></div>
-    <div class="card mpoint"><div style="font-size:12px;color:var(--text-2)">이번 달 결제</div><div class="big num">{{ month_paid | fmt_num }}<i> 원</i></div><div class="thin" style="margin-top:2px">캠페인 주문 시 카드·계좌이체로 건별 결제됩니다</div><div class="rw"><a class="btn pri" href="/campaign/place/new" style="flex:1">새 캠페인</a><a class="btn sec" href="/campaign/place" style="flex:1">캠페인 관리</a></div></div>
+    <div class="mycredit"><div class="mc-top"><span><i data-lucide="wallet" class="i i16"></i> My 크레딧</span><small id="mcDate"></small></div>
+      <div class="amt num">₩{{ u.credit_balance | fmt_num }}</div>
+      <a class="chg" href="/credit/charge">크레딧 충전 <i data-lucide="chevron-right" class="i i14"></i></a></div>
     <div class="card"><div class="ch"><h3>사업자 정보</h3><a class="more" href="#" data-modal="bizModal">수정</a></div><div class="cb" style="font-size:13px;line-height:1.7">
       <div><span class="thin">상호</span> {{ u.biz_name or '미등록' }}</div>
       <div><span class="thin">사업자번호</span> {{ u.biz_no or '미등록' }}</div>
@@ -40,17 +42,42 @@
       {% endfor %}
     </div></div></div>
 
-    <div class="card"><div class="ch"><h3>결제 내역</h3></div><div class="cb">
-      <div style="margin:0 -18px"><table><thead><tr><th>일시</th><th>주문번호</th><th>내용</th><th>상태</th><th style="text-align:right">결제금액</th></tr></thead><tbody>
-        {% for r in rows %}
+    <div class="card"><div class="ch">
+      <div class="tabs" style="border-bottom:0;margin:0">
+        <a href="/my?ct=charge"><button type="button"{% if ct == 'charge' %} class="on"{% endif %}>충전 요청 내역</button></a>
+        <a href="/my?ct=usage"><button type="button"{% if ct == 'usage' %} class="on"{% endif %}>광고비 사용 내역</button></a>
+      </div></div><div class="cb">
+      {% if ct == 'charge' %}
+      <div class="cat-tabs" style="margin-bottom:10px">
+        {% for key, label in [('', '전체'), ('approved', '승인됨'), ('pending', '대기중'), ('rejected', '거절됨')] %}
+        <a href="/my?ct=charge{% if key %}&cf={{ key }}{% endif %}"{% if (cf or '') == key %} class="on"{% endif %}>{{ label }}</a>
+        {% endfor %}
+      </div>
+      <div style="margin:0 -18px"><table><thead><tr><th>신청일</th><th style="text-align:right">충전액</th><th style="text-align:right">입금액</th><th>입금자명</th><th>세금계산서</th><th>상태</th></tr></thead><tbody>
+        {% set cr_st = {'pending': ('대기중', 's-wait'), 'approved': ('승인됨', 's-run'), 'rejected': ('거절됨', 's-rej')} %}
+        {% for r in credit_rows %}
         <tr><td class="num"><span class="mut">{{ r.created_at | fmt_date('%m.%d %H:%M') }}</span></td>
-          <td class="ord"><a href="/campaign/{{ r.channel }}?open={{ r.id }}">{{ r.order_no }}</a></td>
-          <td style="white-space:normal">{{ r.biz_name }} · {{ r.media_name }} <span class="mut">{{ r.main_keyword }}</span></td>
-          <td><span class="st {{ status_class.get(r.status, 's-wait') }}">{{ status_label.get(r.status, r.status) }}</span></td>
-          <td class="num" style="text-align:right">{{ r.paid_amount | fmt_num }}원{% if r.refund_amount %} <span class="mut">(−{{ r.refund_amount | fmt_num }})</span>{% endif %}</td></tr>
-        {% else %}<tr><td colspan="5"><div class="empty">결제 내역이 없습니다. 첫 캠페인을 만들어보세요.</div></td></tr>{% endfor %}
+          <td class="num" style="text-align:right">{{ r.amount | fmt_num }}원</td>
+          <td class="num" style="text-align:right">{{ r.total | fmt_num }}원</td>
+          <td>{{ r.depositor }}</td>
+          <td>{{ '발행' if r.tax_invoice else '-' }}</td>
+          <td><span class="st {{ cr_st[r.status][1] }}">{{ cr_st[r.status][0] }}</span>{% if r.reject_reason %} <span class="mut" style="font-size:11.5px">{{ r.reject_reason }}</span>{% endif %}</td></tr>
+        {% else %}<tr><td colspan="6"><div class="empty">충전 요청 내역이 없습니다.</div></td></tr>{% endfor %}
       </tbody></table></div>
-      {{ pager(page, total_pages, 'my.index') }}
+      {{ pager(page, total_pages, 'my.index', ct='charge', cf=cf) }}
+      {% else %}
+      <div style="margin:0 -18px"><table><thead><tr><th>일시</th><th>구분</th><th style="text-align:right">금액</th><th style="text-align:right">잔액</th><th>내용</th></tr></thead><tbody>
+        {% set lg_t = {'charge': '충전', 'spend': '광고비', 'refund': '환불', 'adjust': '조정'} %}
+        {% for r in credit_rows %}
+        <tr><td class="num"><span class="mut">{{ r.created_at | fmt_date('%m.%d %H:%M') }}</span></td>
+          <td>{{ lg_t.get(r.type, r.type) }}</td>
+          <td class="num" style="text-align:right{% if r.amount < 0 %};color:var(--danger){% else %};color:var(--success){% endif %}">{{ '+' if r.amount > 0 }}{{ r.amount | fmt_num }}원</td>
+          <td class="num" style="text-align:right">{{ r.balance_after | fmt_num }}원</td>
+          <td style="white-space:normal"><span class="mut">{{ r.memo or '-' }}</span></td></tr>
+        {% else %}<tr><td colspan="5"><div class="empty">사용 내역이 없습니다.</div></td></tr>{% endfor %}
+      </tbody></table></div>
+      {{ pager(page, total_pages, 'my.index', ct='usage') }}
+      {% endif %}
     </div></div>
 
     <div class="card"><div class="ch"><h3>설정</h3></div><div class="cb">

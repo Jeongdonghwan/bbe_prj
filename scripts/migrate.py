@@ -115,6 +115,35 @@ def main():
                         (f"슬라이드 테스트 {i}", f"/static/uploads/banners/s{i}.png", i))
         done.append("slide banner rows x6")
 
+    # -- prepaid credit system (2026-09-16) --------------------------------
+    if not col("users", "credit_balance"):
+        cur.execute("ALTER TABLE users ADD COLUMN credit_balance INT NOT NULL DEFAULT 0 AFTER biz_email")
+        done.append("users.credit_balance")
+    c = col("campaigns", "pay_method")
+    if c and "credit" not in str(c[1]):
+        cur.execute("ALTER TABLE campaigns MODIFY pay_method ENUM('card','bank','credit') NOT NULL DEFAULT 'credit'")
+        done.append("campaigns.pay_method +credit")
+    if not table("credit_ledger"):
+        cur.execute("""CREATE TABLE credit_ledger (
+            id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL,
+            type ENUM('charge','spend','refund','adjust') NOT NULL,
+            amount INT NOT NULL, balance_after INT NOT NULL,
+            ref_type VARCHAR(20) NULL, ref_id INT NULL, memo VARCHAR(200) NULL, actor_id INT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_credit_user (user_id, created_at)) ENGINE=InnoDB""")
+        done.append("credit_ledger")
+    if not table("charge_requests"):
+        cur.execute("""CREATE TABLE charge_requests (
+            id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL,
+            amount INT NOT NULL, vat INT NOT NULL, total INT NOT NULL,
+            depositor VARCHAR(40) NOT NULL, tax_invoice TINYINT(1) NOT NULL DEFAULT 0,
+            biz_snapshot VARCHAR(200) NULL,
+            status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+            reject_reason VARCHAR(200) NULL, processed_by INT NULL, processed_at DATETIME NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_charge_user (user_id), INDEX idx_charge_status (status)) ENGINE=InnoDB""")
+        done.append("charge_requests")
+
     # -- strip banner settings (2026-09-02, default OFF) -------------------
     for k, v in (("strip_on", "0"), ("strip_text", "테스트 띠배너 문구입니다"), ("strip_link", ""), ("strip_bg", "#2563EB")):
         cur.execute("INSERT IGNORE INTO settings (k, v) VALUES (%s,%s)", (k, v))

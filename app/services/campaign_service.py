@@ -62,6 +62,33 @@ def create(user, media, form, method, depositor=None):
     return campaign
 
 
+def create_with_credit(user, media, form):
+    """Credit model (2026-09-16): cost = 단가×일수량×일수, VAT 없음(충전 시 부과).
+    Spends credit atomically, then creates the campaign already in review."""
+    from . import credit_service
+    days = days_between(form["start_date"], form["end_date"])
+    cost = int(media["unit_price"]) * int(form["daily_qty"]) * days
+    cid = campaign_model.insert({
+        "order_no": new_order_no(), "user_id": user["id"], "channel": media["channel"], "media_id": media["id"],
+        "status": "review",
+        "biz_name": form["biz_name"], "product_name": form.get("product_name"), "target_url": form["target_url"],
+        "main_keyword": form["main_keyword"], "sub_keywords": form.get("sub_keywords") or [],
+        "setting_keywords": form.get("setting_keywords") or [], "keyword_mode": form.get("keyword_mode", "manual"),
+        "extra": form.get("extra") or {},
+        "start_date": form["start_date"], "end_date": form["end_date"],
+        "daily_qty": form["daily_qty"], "total_qty": form["daily_qty"] * days,
+        "unit_price": media["unit_price"], "discount": 0, "vat": 0, "paid_amount": cost,
+        "pay_method": "credit", "paid_at": datetime.now(), "warn_words": form.get("warn_words"),
+    })
+    try:
+        credit_service.spend(user["id"], cost, cid, f"광고비 · {media['name']} {days}일")
+    except credit_service.CreditError:
+        campaign_model.delete(cid)
+        raise CampaignError("크레딧 잔액이 부족합니다. 충전 후 다시 시도해주세요.")
+    campaign_model.add_log(cid, None, "review", user["id"], f"크레딧 결제 {cost:,}원 · 검수 대기")
+    return campaign_model.get(cid)
+
+
 def update_pending(campaign, media, form, depositor=None):
     """Edit an unpaid (pay_wait) order in place; recomputes amount and payment."""
     from ..models import payment as payment_model

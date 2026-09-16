@@ -1,5 +1,5 @@
 """users table."""
-from ..db import execute, query_one
+from ..db import execute, query, query_one
 
 
 def get_by_id(user_id):
@@ -26,6 +26,11 @@ def create_local(email, password_hash, nickname, phone, notify_event=False):
 
 def update_profile(user_id, nickname, phone):
     execute("UPDATE users SET nickname = %s, phone = %s WHERE id = %s", [nickname, phone, user_id])
+
+
+def list_brief():
+    """id/nickname/email/balance for admin dropdowns (active users)."""
+    return query("SELECT id, nickname, email, credit_balance FROM users WHERE status = 'active' ORDER BY id")
 
 
 def update_biz(user_id, biz_name, biz_no, biz_type, biz_item, biz_email):

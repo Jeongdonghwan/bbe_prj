@@ -1,0 +1,143 @@
+{% extends "layout/base.html" %}
+{% block title %}크레딧 충전{% endblock %}
+{% block content %}
+<form method="post" id="chargeForm" class="wiz" autocomplete="off">
+  <div class="wiz-head"><div><h1>크레딧 충전</h1><p>충전하고 셀프 마케팅을 시작하세요 😎🔥</p></div><a class="icon-btn" style="margin-left:auto" href="/my"><i data-lucide="x" class="i"></i></a></div>
+  <div class="wiz-side">
+    <div class="wstep cur" data-s="1"><i class="no">1</i><div><b>충전 정보 입력</b><span>입금 계좌 정보를 확인하세요</span></div></div>
+    <div class="wstep" data-s="2"><i class="no">2</i><div><b>세금계산서 발행</b><span>사업자 정보를 선택하세요</span></div></div>
+    <div class="wstep" data-s="3"><i class="no">3</i><div><b>최종 확인</b><span>입력한 정보를 확인하세요</span></div></div>
+    <a class="wiz-kakao" href="{{ KAKAO_CHAT_URL }}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M12 3C6.5 3 2 6.6 2 11c0 2.8 1.8 5.2 4.6 6.6L5.5 21l4.6-2.7c.6.1 1.2.1 1.9.1 5.5 0 10-3.6 10-8S17.5 3 12 3z"/></svg>카카오 문의</a>
+  </div>
+  <div class="wiz-main">
+    <div class="wiz-body">
+
+      <div class="wpane" data-p="1">
+        <h4 class="wt"><i data-lucide="wallet" class="i i16"></i>충전 금액</h4>
+        <p class="thin">부가세(VAT) 10%가 자동으로 추가됩니다</p>
+        <div class="amtbox">
+          <input class="amt-in num" id="amt" name="amount" type="number" value="10000" min="{{ min_charge }}" step="1000" required><span class="amt-won">원</span>
+          <div class="amt-kr" id="amtKr">1만원</div>
+        </div>
+        <div class="amt-quick">
+          <button type="button" data-add="10000">+1만</button>
+          <button type="button" data-add="100000">+10만</button>
+          <button type="button" data-add="1000000">+100만</button>
+        </div>
+        <p class="thin" style="margin-top:8px">입금 예정액 <b id="amtVat" class="num" style="color:var(--accent)">11,000원</b> <span class="mut">(VAT 10% 포함)</span></p>
+
+        <h4 class="wt" style="margin-top:26px"><i data-lucide="user" class="i i16"></i>입금자명</h4>
+        <p class="thin">신청한 입금자명과 실제 입금자명이 일치해야 합니다</p>
+        <input class="in" name="depositor" id="depositor" placeholder="입금자명을 입력하세요" maxlength="40" style="max-width:360px" required>
+      </div>
+
+      <div class="wpane" data-p="2" hidden>
+        <h4 class="wt"><i data-lucide="building-2" class="i i16"></i>사업자 정보 선택</h4>
+        <p class="thin">세금계산서가 필요한 경우 사업자 정보를 선택하세요</p>
+        <label class="wsel"><input type="radio" name="tax_invoice" value="0" checked hidden><span>선택안함</span><i data-lucide="check" class="i i16"></i></label>
+        <label class="wsel"><input type="radio" name="tax_invoice" value="1" hidden><span>세금계산서 발행{% if current_user.biz_name %} <small class="mut">· {{ current_user.biz_name }} ({{ current_user.biz_no or '사업자번호 미등록' }})</small>{% endif %}</span><i data-lucide="check" class="i i16"></i></label>
+        <div id="bizForm" hidden style="margin-top:14px;max-width:420px">
+          <div class="f"><label>상호</label><input class="in" name="biz_name" value="{{ current_user.biz_name or '' }}" maxlength="60"></div>
+          <div class="row2">
+            <div class="f"><label>사업자번호</label><input class="in" name="biz_no" value="{{ current_user.biz_no or '' }}" placeholder="123-45-67890" maxlength="20"></div>
+            <div class="f"><label>세금계산서 이메일</label><input class="in" name="biz_email" value="{{ current_user.biz_email or '' }}" maxlength="120"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="wpane" data-p="3" hidden>
+        <h4 class="wt"><i data-lucide="clipboard-check" class="i i16"></i>최종 확인</h4>
+        <div class="dgrid" style="grid-template-columns:1fr 1fr;max-width:560px;margin-top:12px">
+          <div><span>충전 금액 (크레딧 적립)</span><b class="num" id="cfAmt">-</b></div>
+          <div><span>부가세 (10%)</span><b class="num" id="cfVat">-</b></div>
+          <div><span>입금자명</span><b id="cfDep">-</b></div>
+          <div><span>세금계산서</span><b id="cfTax">선택안함</b></div>
+        </div>
+        <div class="paybox" style="max-width:560px">
+          <div class="kv"><span>입금하실 금액</span><b class="num" id="cfTotal" style="font-size:22px;color:var(--accent)">-</b></div>
+          <div class="kv"><span>입금 계좌</span><b>{{ bank.bank }} {{ bank.account }} ({{ bank.holder }})</b></div>
+        </div>
+        <p class="thin" style="max-width:560px">입금 확인 후 영업시간 기준 순차적으로 크레딧이 지급됩니다. 입금자명이 다르면 확인이 지연될 수 있습니다.</p>
+      </div>
+
+    </div>
+    <div class="wiz-foot">
+      <button type="button" class="btn sec" id="wPrev" disabled>이전</button>
+      <button type="button" class="btn pri" id="wNext">다음</button>
+      <button type="submit" class="btn pri" id="wSubmit" hidden>충전 요청하기</button>
+    </div>
+  </div>
+</form>
+{% endblock %}
+{% block scripts %}<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var step = 1, MAX = 3;
+  var amt = $('amt');
+
+  function krw(n) {
+    if (n >= 100000000) return Math.floor(n / 100000000) + '억' + (n % 100000000 ? ' ' + krw(n % 100000000) : '원');
+    if (n >= 10000) return Math.floor(n / 10000) + '만' + (n % 10000 ? ' ' + krw(n % 10000) : '원');
+    return n ? n.toLocaleString() + '원' : '';
+  }
+  function calc() {
+    var a = +amt.value || 0, vat = Math.round(a * 0.1);
+    $('amtKr').textContent = krw(a);
+    $('amtVat').textContent = (a + vat).toLocaleString() + '원';
+    $('cfAmt').textContent = a.toLocaleString() + '원';
+    $('cfVat').textContent = vat.toLocaleString() + '원';
+    $('cfTotal').textContent = (a + vat).toLocaleString() + '원';
+    $('cfDep').textContent = $('depositor').value || '-';
+    var tax = document.querySelector('input[name="tax_invoice"]:checked').value === '1';
+    var bn = document.querySelector('input[name="biz_name"]').value;
+    $('cfTax').textContent = tax ? ('발행' + (bn ? ' · ' + bn : '')) : '선택안함';
+  }
+  amt.addEventListener('input', calc);
+  $('depositor').addEventListener('input', calc);
+  document.querySelectorAll('.amt-quick button').forEach(function (b) {
+    b.addEventListener('click', function () { amt.value = (+amt.value || 0) + (+b.dataset.add); calc(); });
+  });
+  document.querySelectorAll('.wsel input').forEach(function (r) {
+    r.addEventListener('change', function () {
+      document.querySelectorAll('.wsel').forEach(function (l) { l.classList.toggle('on', l.querySelector('input').checked); });
+      $('bizForm').hidden = document.querySelector('input[name="tax_invoice"]:checked').value !== '1';
+      calc();
+    });
+  });
+  document.querySelector('.wsel input').dispatchEvent(new Event('change'));
+
+  function show() {
+    document.querySelectorAll('.wpane').forEach(function (p) { p.hidden = +p.dataset.p !== step; });
+    document.querySelectorAll('.wstep').forEach(function (s) {
+      var n = +s.dataset.s;
+      s.classList.toggle('cur', n === step);
+      s.classList.toggle('done', n < step);
+      s.querySelector('.no').innerHTML = n < step ? '✓' : n;
+    });
+    $('wPrev').disabled = step === 1;
+    $('wNext').hidden = step === MAX;
+    $('wSubmit').hidden = step !== MAX;
+    if (step === MAX) calc();
+  }
+  function valid1() {
+    var a = +amt.value || 0;
+    if (a < {{ min_charge }}) { alert('최소 충전 금액은 {{ "{:,}".format(min_charge) }}원입니다.'); return false; }
+    if (a % 1000) { alert('1,000원 단위로 입력해주세요.'); return false; }
+    if (!$('depositor').value.trim()) { alert('입금자명을 입력해주세요.'); $('depositor').focus(); return false; }
+    return true;
+  }
+  function valid2() {
+    if (document.querySelector('input[name="tax_invoice"]:checked').value !== '1') return true;
+    var f = document.querySelectorAll('#bizForm input');
+    if (!f[0].value.trim() || !f[1].value.trim()) { alert('세금계산서 발행에는 상호와 사업자번호가 필요합니다.'); return false; }
+    return true;
+  }
+  $('wNext').addEventListener('click', function () {
+    if (step === 1 && !valid1()) return;
+    if (step === 2 && !valid2()) return;
+    step = Math.min(MAX, step + 1); show();
+  });
+  $('wPrev').addEventListener('click', function () { step = Math.max(1, step - 1); show(); });
+  calc(); show();
+})();
+</script>{% endblock %}

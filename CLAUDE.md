@@ -10,7 +10,7 @@
 - 아이콘은 Lucide만. 이미지 아이콘 금지.
 
 ## 규칙
-- 포인트·선충전 개념 없음(스펙 v3.1 노트). 결제·취소는 services/payment_service 외 경로 금지 (P3에서 생성).
+- 결제 모델 v3.3 (2026-09-16, v3.1 폐기): 선충전 **크레딧**. 무통장 충전 요청(charge_requests, VAT 10%는 입금액에만) → 어드민 승인/직접 충전(credit_ledger + users.credit_balance, services/credit_service — 잔액 변경은 models/credit.apply()만). 캠페인은 생성 시 크레딧 차감(VAT 없음) 후 바로 review, 환불(반려 전액·중단 잔여)은 크레딧 반환. 카드/건별 PG 결제 폐기(pay/bank 라우트·payments 테이블은 레거시 조회용). 결제·취소는 여전히 payment_service 경유(credit 분기 포함).
 - 캠페인 상태 변경은 services/campaign_service.transition() 외 경로 금지 (전이표 검증 + status_log 기록).
 - 익명 닉네임은 services/nick_service.pick() 외 경로 금지. 익명·마케팅 정보 목록은 마케팅광장(ranking_product_next) 스타일 리스트(.category-list-*, 2줄 미리보기 포함 — 2026-08-31 JDH 결정으로 기존 '미리보기 금지' 규칙 폐기).
 - 관리자 쓰기 작업은 admin_log에 남긴다.
@@ -23,6 +23,7 @@
 cp .env.example .env → mysql < schema.sql → python scripts/seed.py → flask run
 
 ## 현재 Phase
+- 2026-09-16 크레딧 전환: 충전 위저드 /credit/charge(3스텝: 금액+입금자명 → 세금계산서 사업자정보 → 확인, templates/credit/charge.html, .wiz 공용 위저드 CSS). 마이페이지 = My 크레딧 카드 + 충전 요청/사용 내역 탭. 캠페인 생성 = 4스텝 위저드(상품 URL·이름 수동 입력 → 매체 타일·키워드·일일 유입수(100단위) · 요청사항(extra.request_note) → 기간 10/20/30일(DATE_PRESETS, 시작일 서버 계산) → 비용 요약+보유 크레딧, 부족 시 충전 유도). campaign_service.create_with_credit(). 어드민 /admin/credits: 충전 요청 승인·거절 + 회원 직접 충전·차감 + 최근 원장. deploy 시 migrate.py가 스키마 반영.
 P4 완료 (2026-08-30, a·b·c 전부) → 다음 P5 운영(배치·실 PG·알림톡·리포트·배포)
 - 2026-09-01 정리: 앱명 "트래픽"(.env APP_NAME). 목업 데이터(공지·정보·게시글·캠페인·매체명·슬롯)는 전부 "테스트 N" — seed.py도 동일. 메인 배너 8구좌 슬라이더(4개 노출·3초 좌측 자동, dashboard.html+.banner-slider), 배너 이미지는 AD 플레이스홀더. 매체 뱃지 rec/best/new(인기·BEST·NEW, sale 폐기 — schema ENUM 변경). 키워드 도구 로그인 필수+하루 30회. 카카오 플로팅 버튼은 대시보드에서만. 대행의뢰 메뉴 임시 숨김(라우트는 유지, MENU에서만 제거). 게시글 상세 추천(vote)·채널 pill 제거, 목록 조회수는 "조회 N" 텍스트+고정폭 정렬. 인기 트래픽은 "이번 주 N건" 대신 매체별 익명 댓글 토론(media_comments/media_nicks, nick_service.pick_media, POST /popular/comment). 캠페인 생성은 스텝 아코디언(.cols.picked — 매체 선택 시 1열 요약 축소·2/3열 확장) + 효율 게이지(media.eff_level normal/good/best + eff_note 설명, 어드민 설정, 효율 수동% UI 폐기). 대행사 인증 신청은 마이페이지 카드(POST /community/agency/apply, back=/my).
 - P4-c 메모: 네이버 검색광고 API는 services/naver_ad.py(HMAC 서명) + keyword_service(lookup/related 24h 캐시, 키 없거나 실패 시 결정적 더미, 더미는 캐시 안 함). 쿼터 keyword_service.quota(로그인 필수·개인당 하루 30회 고정 — 2026-09-01 JDH, keyword_query_log). 쇼핑 추적 슬롯은 생성 화면이 아니라 별도 메뉴 /campaign/store/slots("쇼핑 작업량 권장 체크", 2026-08-31 JDH 결정). 슬롯 갱신 refresh_all_slots(), 매체 효율 media_service.refresh_all_efficiency(), 미입금 만료 payment_service.expire_unpaid(), 의뢰 자동 마감 agency_model.close_stale() — P5에서 스케줄러 등록.

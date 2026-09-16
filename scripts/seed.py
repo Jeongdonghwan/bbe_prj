@@ -309,7 +309,7 @@ def seed():
     cur.execute("SET FOREIGN_KEY_CHECKS=0")
     for t in ("comments", "posts", "boards", "contents", "banners", "media", "nick_words", "forbidden_words",
               "admin_log", "campaign_daily", "status_log", "payments", "campaigns", "store_slots",
-              "popular_sets", "popular_excludes", "popular_meta", "popular_categories", "settings",
+              "popular_sets", "popular_excludes", "popular_meta", "popular_categories", "settings", "credit_ledger", "charge_requests",
               "post_nicks", "post_likes", "media_nicks", "media_comments", "reports", "notifications", "agency_proposals", "agency_applies", "agency_requests", "series_reads", "users"):
         cur.execute(f"TRUNCATE TABLE {t}")
 
@@ -383,6 +383,15 @@ def seed():
          ("info", "마케팅 정보", 0, "admin"), ("agency", "대행의뢰", 1, "user")],
     )
     cur.execute("UPDATE users SET is_agency = 1, grade = 'agency', biz_name = '스토어마케팅랩', biz_no = '123-45-67890' WHERE id = 4")
+    # prepaid credit samples (2026-09-16)
+    cur.execute("UPDATE users SET credit_balance = 500000 WHERE id = 2")
+    cur.execute("""INSERT INTO credit_ledger (user_id, type, amount, balance_after, ref_type, memo, actor_id)
+                   VALUES (2, 'adjust', 500000, 500000, 'admin', '테스트 충전', 1)""")
+    cur.executemany(
+        """INSERT INTO charge_requests (user_id, amount, vat, total, depositor, tax_invoice, status, processed_by, processed_at)
+           VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+        [(2, 100000, 10000, 110000, "테스트", 0, "pending", None, None),
+         (3, 300000, 30000, 330000, "테스트", 1, "approved", 1, now)])
     seed_community(cur, now)
 
     seed_campaigns(cur, now)
