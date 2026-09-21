@@ -1,6 +1,8 @@
 {% extends "layout/base.html" %}
 {% block title %}대시보드{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/popular.css') }}">{% endblock %}
 {% block content %}
+{% import "macros/traffic.html" as t %}
 {# Prototype #p-dash, violet redesign 2026-09-03: ad grid + slide banner + campaign cards, FAQ left / tall community right. #}
 
 {% if grid_banners %}
@@ -41,20 +43,12 @@
       </ul>
     </div></div>
   </div>
-  <div class="card comtall"><div class="ch"><h3>커뮤니티</h3><a class="more" href="/community/anon">더보기<i data-lucide="chevron-right" class="i i14"></i></a></div><div class="cb">
-    <ul class="homelist">
-    {% set tagmap = {'place': ('플레이스', 'hp'), 'store': ('스토어', 'hs'), 'coupang': ('쿠팡', 'hc'), 'tool': ('도구', 'ht')} %}
-    {% for p in anon_posts %}
-      {% set tg = tagmap.get(p.channel_tag, ('자유', 'hf')) %}
-      <li><span class="tagchip {{ tg[1] }}">{{ tg[0] }}</span><a href="/community/anon/{{ p.id }}">{{ p.title }}</a><span class="hnick">{{ p.anon_nick }}</span></li>
-    {% else %}
-      <li><span class="hnick">아직 글이 없습니다.</span></li>
-    {% endfor %}
-    </ul>
-  </div></div>
+  {% include "main/_traffic_widget.html" %}
 </div>
+{{ t.drawer_shell() }}
 {% endblock %}
-{% block scripts %}<script>
+{% block scripts %}<script src="{{ url_for('static', filename='js/popular.js') }}"></script>
+<script>
 (function () {
   document.querySelectorAll('.hq').forEach(function (b) {
     b.addEventListener('click', function () {

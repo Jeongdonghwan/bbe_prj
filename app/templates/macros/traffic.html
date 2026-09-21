@@ -1,0 +1,141 @@
+{# 인기 트래픽 공용 매크로 — 페이지 카드 / 메인 위젯 행 / 상세 드로어.
+   prototype_popular_traffic.html 의 card() · renderWidget() · openD() 를 그대로 옮긴 것. #}
+
+{% set GN = {'reward': '리워드', 'inflow': '유입플'} %}
+
+{% macro face_color(m) -%}
+{{ 'var(--c-ready)' if m.origin == 'ready' else ('var(--c-inflow)' if m.group_key == 'inflow' else 'var(--c-reward)') }}
+{%- endmacro %}
+
+{% macro origin_label(m) -%}
+{{ '자체 개발' if m.origin == 'own' else '기성 매체' }}{% if m.group_key %} · {{ GN[m.group_key] }}{% endif %}
+{%- endmacro %}
+
+{% macro stars(n) -%}
+{{ '★★★★★'[:(n | round | int)] }}{{ '☆☆☆☆☆'[:(5 - (n | round | int))] }}
+{%- endmacro %}
+
+{% macro note(m) %}
+  {% set bits = [] %}
+  {% if m.badge_label %}{% set _ = bits.append(('hot' if m.badge == 'hot' else 'new' if m.badge == 'new' else '', m.badge_label)) %}{% endif %}
+  {% if m.no_refund_days %}{% set _ = bits.append(('no', m.no_refund_days ~ '일 환불불가')) %}{% endif %}
+  {% if bits %}<div class="p-note">{% for cls, text in bits %}{% if not loop.first %} · {% endif %}<span{% if cls %} class="p-{{ cls }}"{% endif %}>{{ text }}</span>{% endfor %}</div>{% endif %}
+{% endmacro %}
+
+{# 상품 카드. rank 는 이번 주 운영팀 순위(없으면 None). #}
+{% macro card(m) %}
+<button type="button" class="p-card" data-type="{{ m.id }}"
+        data-rank="{{ m.rank or 99 }}" data-cnt="{{ m.review_cnt }}" data-price="{{ m.unit_price }}">
+  <div class="p-face" style="--c:{{ face_color(m) }}">
+    <span class="p-own{% if m.origin == 'ready' %} p-rd{% endif %}">{{ '자체개발' if m.origin == 'own' else '기성' }}</span>
+    {% if m.rank %}<span class="p-rank">{{ m.rank }}위</span>{% endif %}
+    <div class="p-nm">{{ m.name }}</div>
+    {% if m.group_key %}<span class="p-grp">{{ GN[m.group_key] }}</span>{% endif %}
+  </div>
+  <div class="p-body">
+    <div class="p-row"><span class="p-ttl">{{ m.name }}</span><span class="p-pr p-num">{{ m.unit_price }}원<small>/회</small></span></div>
+    {% if m.review_cnt %}<div class="p-meta"><span class="p-st">★<b>{{ '%.1f' | format(m.rating_avg | float) }}</b></span><span>후기 {{ m.review_cnt }}</span></div>{% endif %}
+    {{ note(m) }}
+  </div>
+</button>
+{% endmacro %}
+
+{# 메인 위젯의 TOP 5 행. i 는 0부터. #}
+{% macro widget_row(m, i) %}
+<button type="button" class="p-wrow" data-type="{{ m.id }}">
+  <span class="p-rk{% if i < 3 %} p-t{% endif %}">{{ i + 1 }}</span>
+  <span class="p-mini" style="--c:{{ face_color(m) }}">{{ m.name }}</span>
+  <span>
+    <div class="p-nm">{{ m.name }}<small>{{ '자체' if m.origin == 'own' else '기성' }}{% if m.group_key %} · {{ GN[m.group_key] }}{% endif %}</small></div>
+    <div class="p-sub">{% if m.review_cnt %}<span class="p-st">★ {{ '%.1f' | format(m.rating_avg | float) }}</span> · 후기 {{ m.review_cnt }}{% if m.no_refund_days %} · {% endif %}{% endif %}{% if m.no_refund_days %}<span class="p-no">{{ m.no_refund_days }}일 환불불가</span>{% endif %}</div>
+  </span>
+  <span class="p-pr p-num">{{ m.unit_price }}원<small>유입 1회</small></span>
+</button>
+{% endmacro %}
+
+{# 상세 드로어의 내용물. /popular/drawer/<id> 가 이것만 렌더해서 내려준다. #}
+{% macro drawer_body(m, channel_label, reviews, dist, can_write, draft) %}
+<div class="p-dh" style="--c:{{ face_color(m) }}">
+  <button type="button" class="p-x" data-close aria-label="닫기">×</button>
+  <div class="p-g">{{ channel_label }} · {{ origin_label(m) }}</div>
+  <div class="p-n">{{ m.name }}</div>
+  <div class="p-p p-num"><b>{{ m.unit_price }}원</b><span>/ 유입 1회</span></div>
+  <div class="p-rt">
+    {% if m.rank %}<span class="p-rk">이번 주 {{ m.rank }}위</span>{% endif %}
+    {% if m.review_cnt %}<span>★ {{ '%.1f' | format(m.rating_avg | float) }} (후기 {{ m.review_cnt }})</span>{% endif %}
+    {% if m.badge_label %}<span>{{ m.badge_label }}</span>{% endif %}
+  </div>
+</div>
+<div class="p-db">
+  <section>
+    <h3>상품 설명</h3>
+    <p>{{ m.description or '설명이 아직 등록되지 않았습니다' }}</p>
+  </section>
+  <section>
+    <h3>이용 조건</h3>
+    <table class="p-spec">
+      <tr><th>유입 1회 단가</th><td class="p-num">{{ m.unit_price }}원</td></tr>
+      <tr><th>최소 일일 수량</th><td class="p-num">{{ m.min_daily }}회 이상</td></tr>
+      <tr><th>환불 규정</th><td{% if m.no_refund_days %} class="p-warn"{% endif %}>{% if m.no_refund_days %}시작 후 {{ m.no_refund_days }}일간 환불 불가{% else %}미진행분 환불 가능{% endif %}</td></tr>
+      <tr><th>순위 반영</th><td>{{ m.rank_lead_days or '-' }}</td></tr>
+      <tr><th>적합 업종</th><td>{{ m.fit_for | join(', ') if m.fit_for else '-' }}</td></tr>
+    </table>
+  </section>
+  {% if m.op_note %}
+  <section><div class="p-op"><div class="p-k">운영팀 한줄평</div><p>{{ m.op_note }}</p></div></section>
+  {% endif %}
+  <section>
+    <h3>이용 후기<small>{{ m.review_cnt }}건</small></h3>
+    {% if m.review_cnt %}
+    <div class="p-rsum">
+      <div class="p-big">
+        <b class="p-num">{{ '%.1f' | format(m.rating_avg | float) }}</b>
+        <div class="p-s">{{ stars(m.rating_avg | float) }}</div>
+        <div class="p-c">{{ m.review_cnt }}건</div>
+      </div>
+      <div class="p-bars">
+        {% for s in [5, 4, 3, 2, 1] %}
+        {% set w = (dist[loop.index0] / m.review_cnt * 100) | round | int %}
+        <div><span>{{ s }}점</span><i><b style="--w:{{ w }}%"></b></i><span class="p-num">{{ w }}%</span></div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    {% for r in reviews %}
+    <div class="p-rev">
+      <div class="p-h"><span class="p-s">{{ stars(r.stars) }}</span><b>{{ r.nick }}</b><span>{{ r.created_at | fmt_date('%Y.%m.%d') }}</span><span class="p-v">진행 확인</span></div>
+      <p>{{ r.body }}</p>
+      {% if r.keyword %}<div class="p-kw">키워드 <b>{{ r.keyword }}</b></div>{% endif %}
+    </div>
+    {% else %}
+    <div class="p-locked">등록된 후기가 없습니다.</div>
+    {% endfor %}
+  </section>
+  <section>
+    <h3>후기 작성</h3>
+    {% if can_write %}
+    <form class="p-write" method="post" action="/popular/review">
+      <input type="hidden" name="type_id" value="{{ m.id }}">
+      <input type="hidden" name="campaign_id" value="{{ draft.id }}">
+      <input type="hidden" name="stars" id="p-stars-val" value="5">
+      <div class="p-stars">{% for i in [1, 2, 3, 4, 5] %}<button type="button" class="p-on" data-star="{{ i }}">★</button>{% endfor %}</div>
+      <textarea name="body" maxlength="600" required placeholder="순위 변화, 반려 여부, 효과가 나타난 시점 등"></textarea>
+      <div class="p-note"><b>{{ draft.end_date | fmt_date('%Y.%m.%d') }} 완료 캠페인{% if draft.main_keyword %} (키워드: {{ draft.main_keyword }}){% endif %}</b> 기준으로 등록됩니다. 닉네임은 임의로 표시됩니다.</div>
+      <button class="p-btn p-sm" type="submit">등록</button>
+    </form>
+    {% else %}
+    <div class="p-locked"><b>이 상품으로 캠페인을 완료한 회원</b>만 후기를 작성할 수 있습니다.</div>
+    {% endif %}
+  </section>
+</div>
+<div class="p-df">
+  <button type="button" class="p-btn" data-close>닫기</button>
+  <a class="p-btn p-go" href="/campaign/{{ m.channel }}/new?type={{ m.id }}">이 상품으로 캠페인 만들기</a>
+</div>
+{% endmacro %}
+
+{# 페이지·대시보드 양쪽에 넣는 빈 드로어 껍데기. 내용은 JS가 채운다. #}
+{% macro drawer_shell() %}
+<div class="p-scrim" id="p-scrim"></div>
+<aside class="p-drawer" id="p-drawer" aria-label="상품 상세"></aside>
+{% endmacro %}

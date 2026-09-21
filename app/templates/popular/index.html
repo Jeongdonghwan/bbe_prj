@@ -1,0 +1,56 @@
+{% extends "layout/base.html" %}
+{% import "macros/traffic.html" as t %}
+{% block title %}인기 트래픽{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/popular.css') }}">{% endblock %}
+{% block content %}
+<div class="poppage">
+  <div class="p-hero">
+    <h1>인기 트래픽</h1>
+    <p class="p-lede">채널별 트래픽 상품과 실제 진행한 사업자 후기. 추천 순위는 운영팀이 주간 접수량·반려율을 보고 직접 정합니다.</p>
+    <div class="p-chan">
+      {% for key, label in channels.items() %}
+      <a href="/popular?ch={{ key }}"{% if key == channel %} class="p-on"{% endif %}>{{ label }}</a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="p-sec" style="margin-top:0">
+    <div class="p-sec-h"><h2>운영팀 추천 순위</h2><small>{{ week_label }} 선정</small></div>
+    <div class="p-top3">
+      {% for m in top3 %}{{ t.card(m) }}{% endfor %}
+    </div>
+  </div>
+
+  {% set sort_html %}
+  <div class="p-sp"></div>
+  <div class="p-sort">
+    {% for key, label in [('rec', '추천순'), ('rev', '후기순'), ('price', '단가순')] %}
+    <button type="button" data-sort="{{ key }}"{% if key == 'rec' %} class="p-on"{% endif %}>{{ label }}</button>
+    {% endfor %}
+  </div>
+  {% endset %}
+
+  {% if own %}
+  <div class="p-sec">
+    <div class="p-sec-h"><h2>자체 개발 프로그램</h2><small>{{ own | length }}개</small>{{ sort_html }}</div>
+    {% if own_groups %}
+      {% for key, label, items in own_groups %}
+      <div class="p-gh">{{ label }}</div>
+      <div class="p-grid">{% for m in items %}{{ t.card(m) }}{% endfor %}</div>
+      {% endfor %}
+    {% else %}
+      <div class="p-grid">{% for m in own %}{{ t.card(m) }}{% endfor %}</div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if ready %}
+  <div class="p-sec">
+    <div class="p-sec-h"><h2>기성 매체</h2><small>{{ ready | length }}개</small>{% if not own %}{{ sort_html }}{% endif %}</div>
+    <div class="p-grid">{% for m in ready %}{{ t.card(m) }}{% endfor %}</div>
+  </div>
+  {% endif %}
+</div>
+{{ t.drawer_shell() }}
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/popular.js') }}"></script>{% endblock %}

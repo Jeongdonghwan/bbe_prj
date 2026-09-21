@@ -10,6 +10,8 @@ from ..constants import (CHANNEL_LABEL, DATE_PRESETS, PAY_METHOD_LABEL, PAYMENT_
 from ..models import campaign as campaign_model
 from ..models import content as content_model
 from ..models import media as media_model
+from ..models import review as review_model
+from ..models import weekly_rank
 from ..models import payment as payment_model
 from ..models import store_slot as slot_model
 from ..services import (campaign_service, forbidden_service, keyword_service, payment_service, rank_client,
@@ -113,6 +115,10 @@ def new(channel):
     _channel(channel)
     if request.method == "POST":
         return _create(channel)
+    picked = request.args.get("type", type=int)
+    if picked:
+        # 인기 트래픽에서 상품을 고르고 넘어온 경우. Step 2 자동 선택은 다음 작업.
+        current_app.logger.info("wizard %s opened with type=%s", channel, picked)
     pre = _prefill(channel)
     if not isinstance(pre, tuple):
         return pre
@@ -466,32 +472,75 @@ def popular_legacy(channel):
     return redirect(url_for("popular.popular", ch=channel, cat=request.args.get("cat")))
 
 
+def traffic_list(channel):
+    """Active types for a channel, decorated with this week's operator rank."""
+    ranks = weekly_rank.by_type(channel)
+    rows = media_model.list_by_channel(channel)
+    for m in rows:
+        m["rank"] = ranks.get(m["id"])
+    rows.sort(key=lambda m: (m["rank"] or 99, -m["review_cnt"]))
+    return rows
+
+
 @pop.route("/popular")
 def popular():
-    """Channel-level ranking with per-media discussion (weekly counts dropped, 2026-09-01)."""
-    from ..models import media_comment as mc_model
-    from ..models import popular as popular_model
-    from ..services import popular_service
-    channel = request.args.get("ch", "place")
-    if channel not in CHANNELS:
-        channel = "place"
-    cats = popular_model.list_categories(channel, active_only=True)
-    data = popular_service.build(channel, cats[0]["id"]) if cats else None
-    rows = []
-    if data:
-        for s in data["sets"]:
-            rows.append({"rank": s["rank"], "media_id": s["media_id"], "name": s["media_name"],
-                         "tagline": s.get("tagline"), "price": s["unit_price"], "note": s.get("note"), "is_set": True})
-        for m in data["rest"][:max(0, 10 - len(rows))]:
-            rows.append({"rank": len(rows) + 1, "media_id": m["id"], "name": m["name"],
-                         "tagline": m.get("tagline"), "price": m["unit_price"], "note": None, "is_set": False})
-    ids = [r["media_id"] for r in rows]
-    return render_template("campaign/popular.html", channel=channel, channels=CHANNELS, rows=rows,
-                           meta=data["meta"] if data else None, counts=mc_model.counts(ids),
-                           comments={mid: mc_model.list_for(mid) for mid in ids},
-                           open_id=request.args.get("open", type=int))
+    """채널별 상품 목록 + 운영팀 주간 추천. 정렬은 클라이언트에서 카드 순서만 바꾼다."""
+    channel = request.args.get("ch") if request.args.get("ch") in CHANNELS else "place"
+    rows = traffic_list(channel)
+    own = [m for m in rows if m["origin"] == "own"]
+    own_groups = []
+    if any(m["group_key"] for m in own):
+        for key, label in (("reward", "리워드"), ("inflow", "유입플")):
+            items = [m for m in own if m["group_key"] == key]
+            if items:
+                own_groups.append((key, label, items))
+    return render_template("popular/index.html", channel=channel, channels=CHANNELS,
+                           week_label=weekly_rank.week_label(),
+                           top3=[m for m in rows if m["rank"]][:3],
+                           own=own, ready=[m for m in rows if m["origin"] == "ready"],
+                           own_groups=own_groups)
 
 
+@pop.route("/popular/drawer/<int:type_id>")
+def popular_drawer(type_id):
+    """Drawer contents only — the page and the dashboard widget both inject this."""
+    m = media_model.get(type_id)
+    if not m or not m["is_active"]:
+        abort(404)
+    m["rank"] = weekly_rank.by_type(m["channel"]).get(m["id"])
+    draft = review_model.done_campaign_without_review(g.user["id"], type_id) if g.get("user") else None
+    return render_template("popular/_drawer.html", m=m, channel_label=CHANNELS[m["channel"]],
+                           reviews=review_model.list_for(type_id), dist=review_model.star_dist(type_id),
+                           can_write=bool(draft), draft=draft or {})
+
+
+@pop.route("/popular/review", methods=["POST"])
+@login_required
+def popular_review():
+    """후기는 그 상품으로 완료한 캠페인이 있어야 쓸 수 있고, 완료 캠페인당 1건이다."""
+    from ..services import mask_service, nick_service
+    type_id = request.form.get("type_id", type=int)
+    m = media_model.get(type_id) if type_id else None
+    if not m:
+        abort(404)
+    stars = request.form.get("stars", type=int) or 0
+    body = " ".join((request.form.get("body") or "").split())[:600]
+    draft = review_model.done_campaign_without_review(g.user["id"], type_id)
+    if not draft or draft["id"] != request.form.get("campaign_id", type=int):
+        flash("이 상품으로 완료한 캠페인이 있어야 후기를 쓸 수 있습니다.")
+    elif not 1 <= stars <= 5 or len(body) < 10:
+        flash("별점을 고르고 후기를 10자 이상 적어주세요.")
+    else:
+        review_model.insert(type_id, g.user["id"], draft["id"], stars, mask_service.mask(body),
+                            nick_service.draw(), draft["main_keyword"],
+                            campaign_service.days_between(draft["start_date"], draft["end_date"]))
+        review_model.recount(type_id)
+        flash("후기를 등록했습니다.")
+    return redirect(url_for("popular.popular", ch=m["channel"]))
+
+
+# 매체별 익명 댓글(2026-09-01)은 구 인기 트래픽 화면에만 있었다. 새 화면은 후기로 대체했고,
+# 라우트와 media_comments 테이블은 남겨 두되 UI에서 연결된 곳은 없다.
 @pop.route("/popular/comment", methods=["POST"])
 @login_required
 def popular_comment():

@@ -36,6 +36,8 @@ CREATE TABLE IF NOT EXISTS media (
   id                INT AUTO_INCREMENT PRIMARY KEY,
   channel           ENUM('place','store','coupang') NOT NULL,
   group_name        VARCHAR(40) NOT NULL DEFAULT '',
+  origin            ENUM('own','ready') NOT NULL DEFAULT 'ready',
+  group_key         ENUM('reward','inflow') NULL,
   name              VARCHAR(40) NOT NULL,
   tagline           VARCHAR(80) NULL,
   logo_url          VARCHAR(255) NULL,
@@ -43,13 +45,18 @@ CREATE TABLE IF NOT EXISTS media (
   unit_price        INT NOT NULL,
   list_price        INT NULL,
   min_days          INT NOT NULL DEFAULT 3,
-  min_daily         INT NOT NULL DEFAULT 50,
+  min_daily         INT NOT NULL DEFAULT 100,
   max_daily         INT NOT NULL DEFAULT 500,
+  no_refund_days    TINYINT NULL,
+  rank_lead_days    VARCHAR(20) NULL,
   efficiency_auto   TINYINT NOT NULL DEFAULT 0,
   efficiency_manual TINYINT NULL,
   cutoff_time       TIME NOT NULL DEFAULT '13:30:00',
   same_day          TINYINT(1) NOT NULL DEFAULT 1,
   description       TEXT NULL,
+  op_note           VARCHAR(200) NULL,
+  rating_avg        DECIMAL(2,1) NOT NULL DEFAULT 0,
+  review_cnt        INT NOT NULL DEFAULT 0,
   fit_for           JSON NULL,
   flow_steps        JSON NULL,
   badge             ENUM('hot','best','new','pick') NULL,
@@ -338,6 +345,30 @@ CREATE TABLE IF NOT EXISTS post_nicks (
   user_id INT NOT NULL,
   nick    VARCHAR(20) NOT NULL,
   PRIMARY KEY (post_id, user_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS weekly_ranks (
+  week_start DATE NOT NULL,
+  channel    VARCHAR(20) NOT NULL,
+  type_id    INT NOT NULL,
+  `rank`     TINYINT NOT NULL,
+  PRIMARY KEY (week_start, channel, `rank`),
+  KEY idx_weekly_type (type_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS reviews (
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  type_id     INT NOT NULL,
+  user_id     INT NOT NULL,
+  campaign_id INT NOT NULL UNIQUE,
+  stars       TINYINT NOT NULL,
+  body        VARCHAR(600) NOT NULL,
+  nick        VARCHAR(30) NOT NULL,
+  keyword     VARCHAR(100) NULL,
+  days        TINYINT NULL,
+  status      ENUM('shown','hidden','pinned') NOT NULL DEFAULT 'shown',
+  created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_reviews_type (type_id, status, created_at)
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS media_nicks (

@@ -32,5 +32,8 @@ def dashboard():
     slide_banners = banner_model.list_active_banners(6, "slide")
     notices = content_model.dashboard_notices(5)
     anon_posts = post_model.latest_anon_posts(10)
+    from ..blueprints.campaign import traffic_list
+    from ..constants import CHANNEL_LABEL
+    traffic_top = {ch: traffic_list(ch)[:5] for ch in CHANNEL_LABEL}
     return render_template("main/dashboard.html", grid_banners=grid_banners, slide_banners=slide_banners,
-                           notices=notices, anon_posts=anon_posts)
+                           notices=notices, anon_posts=anon_posts, channels=CHANNEL_LABEL, traffic_top=traffic_top)

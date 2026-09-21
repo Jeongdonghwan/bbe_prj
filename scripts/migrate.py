@@ -203,6 +203,82 @@ def main():
             PRIMARY KEY (pick_date, channel)) ENGINE=InnoDB""")
         done.append("daily_picks")
 
+    # -- popular traffic: product facts + weekly ranks + reviews (2026-09-21) --
+    for name, ddl in (
+        ("origin", "ADD COLUMN origin ENUM('own','ready') NOT NULL DEFAULT 'ready' AFTER group_name"),
+        ("group_key", "ADD COLUMN group_key ENUM('reward','inflow') NULL AFTER origin"),
+        ("no_refund_days", "ADD COLUMN no_refund_days TINYINT NULL AFTER max_daily"),
+        ("rank_lead_days", "ADD COLUMN rank_lead_days VARCHAR(20) NULL AFTER no_refund_days"),
+        ("op_note", "ADD COLUMN op_note VARCHAR(200) NULL AFTER description"),
+        ("rating_avg", "ADD COLUMN rating_avg DECIMAL(2,1) NOT NULL DEFAULT 0 AFTER op_note"),
+        ("review_cnt", "ADD COLUMN review_cnt INT NOT NULL DEFAULT 0 AFTER rating_avg"),
+    ):
+        if not col("media", name):
+            cur.execute("ALTER TABLE media " + ddl)
+            done.append("media." + name)
+
+    # origin/group_key are derivable from the catalog's section names, so backfill from those.
+    cur.execute("SELECT id, channel, group_name FROM media WHERE origin = 'ready' AND group_key IS NULL")
+    fixed = 0
+    for mid, ch, gname in cur.fetchall():
+        origin = "own" if (gname or "").startswith("자체") else "ready"
+        gkey = "reward" if "리워드" in (gname or "") else "inflow" if "유입" in (gname or "") else None
+        if origin == "own" or gkey:
+            cur.execute("UPDATE media SET origin = %s, group_key = %s WHERE id = %s", (origin, gkey, mid))
+            fixed += 1
+    if fixed:
+        done.append(f"media.origin/group_key x{fixed}")
+
+    cur.execute("SELECT COUNT(*) FROM media WHERE min_daily <> 100")
+    if cur.fetchone()[0]:
+        cur.execute("ALTER TABLE media MODIFY min_daily INT NOT NULL DEFAULT 100")
+        cur.execute("UPDATE media SET min_daily = 100 WHERE min_daily <> 100")
+        done.append("media.min_daily=100")
+
+    # 기성 플레이스 두 건은 시작 후 7일간 환불 불가 (운영 규칙)
+    cur.execute("""UPDATE media SET no_refund_days = 7
+                   WHERE channel = 'place' AND name IN ('고스트','허니') AND no_refund_days IS NULL""")
+    if cur.rowcount:
+        done.append(f"media.no_refund_days x{cur.rowcount}")
+
+    if not table("weekly_ranks"):
+        cur.execute("""CREATE TABLE weekly_ranks (
+            week_start DATE NOT NULL, channel VARCHAR(20) NOT NULL,
+            type_id INT NOT NULL, `rank` TINYINT NOT NULL,
+            PRIMARY KEY (week_start, channel, `rank`),
+            KEY idx_weekly_type (type_id)) ENGINE=InnoDB""")
+        done.append("weekly_ranks")
+    if not table("reviews"):
+        cur.execute("""CREATE TABLE reviews (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            type_id INT NOT NULL, user_id INT NOT NULL, campaign_id INT NOT NULL UNIQUE,
+            stars TINYINT NOT NULL, body VARCHAR(600) NOT NULL,
+            nick VARCHAR(30) NOT NULL, keyword VARCHAR(100) NULL, days TINYINT NULL,
+            status ENUM('shown','hidden','pinned') NOT NULL DEFAULT 'shown',
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            KEY idx_reviews_type (type_id, status, created_at)) ENGINE=InnoDB""")
+        done.append("reviews")
+
+    # this week's picks (admin screen comes later; seeded so the page has something to show)
+    import datetime as _dt
+    _today = _dt.date.today()
+    _week = _today - _dt.timedelta(days=_today.weekday())
+    cur.execute("SELECT COUNT(*) FROM weekly_ranks WHERE week_start = %s", (_week,))
+    if not cur.fetchone()[0]:
+        seeded = 0
+        for chan, names in (("place", ["짱구", "비비안", "파도"]),
+                            ("store", ["타이탄", "싱크", "말론"]),
+                            ("coupang", ["탑", "베스트"])):
+            for i, nm in enumerate(names, 1):
+                cur.execute("SELECT id FROM media WHERE channel = %s AND name = %s AND is_active = 1", (chan, nm))
+                row = cur.fetchone()
+                if row:
+                    cur.execute("INSERT IGNORE INTO weekly_ranks (week_start, channel, type_id, `rank`) VALUES (%s,%s,%s,%s)",
+                                (_week, chan, row[0], i))
+                    seeded += 1
+        if seeded:
+            done.append(f"weekly_ranks seed x{seeded}")
+
     # -- strip banner settings (2026-09-02, default OFF) -------------------
     for k, v in (("strip_on", "0"), ("strip_text", "테스트 띠배너 문구입니다"), ("strip_link", ""), ("strip_bg", "#2563EB")):
         cur.execute("INSERT IGNORE INTO settings (k, v) VALUES (%s,%s)", (k, v))
