@@ -371,23 +371,6 @@ CREATE TABLE IF NOT EXISTS reviews (
   KEY idx_reviews_type (type_id, status, created_at)
 ) ENGINE=InnoDB;
 
-CREATE TABLE IF NOT EXISTS media_nicks (
-  media_id INT NOT NULL,
-  user_id  INT NOT NULL,
-  nick     VARCHAR(20) NOT NULL,
-  PRIMARY KEY (media_id, user_id)
-) ENGINE=InnoDB;
-
-CREATE TABLE IF NOT EXISTS media_comments (
-  id         INT AUTO_INCREMENT PRIMARY KEY,
-  media_id   INT NOT NULL,
-  user_id    INT NOT NULL,
-  anon_nick  VARCHAR(20) NOT NULL,
-  body       VARCHAR(500) NOT NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  KEY idx_media_created (media_id, created_at)
-) ENGINE=InnoDB;
-
 CREATE TABLE IF NOT EXISTS nick_words (
   id   INT AUTO_INCREMENT PRIMARY KEY,
   kind ENUM('adj','noun') NOT NULL,

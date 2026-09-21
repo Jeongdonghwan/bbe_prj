@@ -266,13 +266,6 @@ def seed_popular(cur):
             for rank, (mname, note) in enumerate(tops, 1):
                 cur.execute("INSERT INTO popular_sets (category_id, rank, media_id, note) VALUES (%s,%s,%s,%s)", (cid, rank, media[mname], note))
             cur.execute("INSERT INTO popular_meta (category_id, show_weekly_cnt, updated_by) VALUES (%s,1,1)", (cid,))
-            for rank, (mname, _note) in enumerate(tops, 1):
-                for j in range(2):
-                    uid = 2 + (rank + j) % 3
-                    nick = f"{random.choice(ADJ)} {random.choice(NOUN)}"
-                    cur.execute("INSERT IGNORE INTO media_nicks (media_id, user_id, nick) VALUES (%s,%s,%s)", (media[mname], uid, nick))
-                    cur.execute("INSERT INTO media_comments (media_id, user_id, anon_nick, body) VALUES (%s,%s,%s,%s)",
-                                (media[mname], uid, nick, "테스트"))
     cur.execute("INSERT INTO settings (k, v) VALUES ('bank_due_days','3')")
     cur.executemany("INSERT INTO settings (k, v) VALUES (%s,%s)",
                     [("strip_on", "0"), ("strip_text", "테스트 띠배너 문구입니다"), ("strip_link", ""), ("strip_bg", "#2563EB")])
@@ -287,7 +280,7 @@ def seed():
     for t in ("comments", "posts", "boards", "contents", "banners", "media", "nick_words", "forbidden_words",
               "admin_log", "campaign_daily", "status_log", "payments", "campaigns", "store_slots",
               "popular_sets", "popular_excludes", "popular_meta", "popular_categories", "settings", "credit_ledger", "charge_requests",
-              "post_nicks", "post_likes", "media_nicks", "media_comments", "reports", "notifications", "agency_proposals", "agency_applies", "agency_requests", "series_reads", "users"):
+              "post_nicks", "post_likes", "reports", "notifications", "agency_proposals", "agency_applies", "agency_requests", "series_reads", "users"):
         cur.execute(f"TRUNCATE TABLE {t}")
 
     # users

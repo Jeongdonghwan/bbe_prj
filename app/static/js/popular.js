@@ -45,11 +45,10 @@
   });
 
   /* ── 정렬 (추천순 = 순위 → 후기수) ── */
-  var KEY = { rec: null, rev: 'cnt', price: 'price' };
   document.querySelectorAll('[data-sort]').forEach(function (btn) {
     btn.addEventListener('click', function () {
       var mode = btn.dataset.sort;
-      document.querySelectorAll('[data-sort]').forEach(function (b) { b.classList.toggle('p-on', b === btn); });
+      document.querySelectorAll('[data-sort]').forEach(function (b) { b.classList.toggle('p-on', b.dataset.sort === mode); });
       document.querySelectorAll('.p-grid').forEach(function (grid) {
         var cards = Array.prototype.slice.call(grid.children);
         cards.sort(function (a, b) {
@@ -59,6 +58,19 @@
         });
         cards.forEach(function (c) { grid.appendChild(c); });
       });
+    });
+  });
+
+  /* ── 채널 탭 (세 채널 모두 렌더돼 있어 이동 없이 전환) ── */
+  document.querySelectorAll('[data-ch]').forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      e.preventDefault();
+      var ch = a.dataset.ch;
+      document.querySelectorAll('[data-ch]').forEach(function (b) { b.classList.toggle('p-on', b === a); });
+      document.querySelectorAll('[data-chview]').forEach(function (v) { v.hidden = v.dataset.chview !== ch; });
+      // 새로고침·공유 시 유지. file:// 등 일부 환경에서는 막히므로 탭 전환을 깨지 않게 감싼다.
+      try { history.replaceState(null, '', '?ch=' + ch); } catch (err) { /* ignore */ }
+      close();
     });
   });
 

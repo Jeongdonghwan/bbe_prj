@@ -482,23 +482,27 @@ def traffic_list(channel):
     return rows
 
 
-@pop.route("/popular")
-def popular():
-    """채널별 상품 목록 + 운영팀 주간 추천. 정렬은 클라이언트에서 카드 순서만 바꾼다."""
-    channel = request.args.get("ch") if request.args.get("ch") in CHANNELS else "place"
+def _channel_view(channel):
+    """One channel's sections. 세 채널을 모두 렌더해 두고 탭은 클라이언트에서 전환한다."""
     rows = traffic_list(channel)
     own = [m for m in rows if m["origin"] == "own"]
-    own_groups = []
+    groups = []
     if any(m["group_key"] for m in own):
         for key, label in (("reward", "리워드"), ("inflow", "유입플")):
             items = [m for m in own if m["group_key"] == key]
             if items:
-                own_groups.append((key, label, items))
+                groups.append((key, label, items))
+    return {"top3": [m for m in rows if m["rank"]][:3], "own": own, "own_groups": groups,
+            "ready": [m for m in rows if m["origin"] == "ready"]}
+
+
+@pop.route("/popular")
+def popular():
+    """채널·정렬 모두 클라이언트 전환. 현재 채널은 ?ch= 에 남겨 새로고침·공유 시 유지된다."""
+    channel = request.args.get("ch") if request.args.get("ch") in CHANNELS else "place"
     return render_template("popular/index.html", channel=channel, channels=CHANNELS,
                            week_label=weekly_rank.week_label(),
-                           top3=[m for m in rows if m["rank"]][:3],
-                           own=own, ready=[m for m in rows if m["origin"] == "ready"],
-                           own_groups=own_groups)
+                           views={ch: _channel_view(ch) for ch in CHANNELS})
 
 
 @pop.route("/popular/drawer/<int:type_id>")
@@ -537,26 +541,6 @@ def popular_review():
         review_model.recount(type_id)
         flash("후기를 등록했습니다.")
     return redirect(url_for("popular.popular", ch=m["channel"]))
-
-
-# 매체별 익명 댓글(2026-09-01)은 구 인기 트래픽 화면에만 있었다. 새 화면은 후기로 대체했고,
-# 라우트와 media_comments 테이블은 남겨 두되 UI에서 연결된 곳은 없다.
-@pop.route("/popular/comment", methods=["POST"])
-@login_required
-def popular_comment():
-    from ..models import media_comment as mc_model
-    from ..services import mask_service, nick_service
-    media_id = request.form.get("media_id", type=int)
-    channel = request.form.get("ch") if request.form.get("ch") in CHANNELS else "place"
-    if not media_id or not media_model.get(media_id):
-        abort(404)
-    body = (request.form.get("body") or "").strip()
-    if not 2 <= len(body) <= 300:
-        flash("댓글은 2~300자로 입력해주세요.")
-    else:
-        nick = nick_service.pick_media(media_id, g.user["id"])
-        mc_model.insert(media_id, g.user["id"], nick, mask_service.mask(body))
-    return redirect(url_for("popular.popular", ch=channel, open=media_id) + f"#m{media_id}")
 
 
 # =============================================================== JSON API

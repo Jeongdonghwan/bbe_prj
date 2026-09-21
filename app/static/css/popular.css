@@ -9,6 +9,7 @@
   --p-red:#d3321f; --p-star:#e79b00; --p-ok:#1b7f4a;
   --c-reward:#5b4fd6; --c-inflow:#1c6fb1; --c-ready:#1f1f24;
 }
+.poppage{max-width:1164px}
 .poppage, .p-drawer{color:var(--p-ink); font-size:14px; line-height:1.5; word-break:keep-all}
 .poppage *, .p-drawer *{box-sizing:border-box}
 .poppage button, .p-drawer button{font:inherit; cursor:pointer; color:inherit; background:none; border:0; padding:0}

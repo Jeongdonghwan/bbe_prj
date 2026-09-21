@@ -90,19 +90,12 @@ def main():
         cur.execute("UPDATE media SET eff_note = '테스트'")
         done.append("media.eff_note")
 
-    # -- media discussion tables (2026-09-01) ------------------------------
-    if not table("media_nicks"):
-        cur.execute("""CREATE TABLE media_nicks (
-            media_id INT NOT NULL, user_id INT NOT NULL, nick VARCHAR(20) NOT NULL,
-            PRIMARY KEY (media_id, user_id)) ENGINE=InnoDB""")
-        done.append("media_nicks")
-    if not table("media_comments"):
-        cur.execute("""CREATE TABLE media_comments (
-            id INT AUTO_INCREMENT PRIMARY KEY, media_id INT NOT NULL, user_id INT NOT NULL,
-            anon_nick VARCHAR(20) NOT NULL, body VARCHAR(500) NOT NULL,
-            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            KEY idx_media_created (media_id, created_at)) ENGINE=InnoDB""")
-        done.append("media_comments")
+    # -- 매체별 익명 댓글 폐기 (2026-09-21) --------------------------------
+    # 구 인기 트래픽 화면 전용이었고 새 화면에서 후기(reviews)로 대체됐다.
+    for t in ("media_comments", "media_nicks"):
+        if table(t):
+            cur.execute(f"DROP TABLE {t}")
+            done.append(f"drop {t}")
 
     # -- banners.zone + slide slots (2026-09-02) ---------------------------
     if not col("banners", "zone"):

@@ -55,25 +55,6 @@ def pick(post_id, user_id):
     return nick
 
 
-def _taken_in_media(media_id):
-    return {r["nick"] for r in query("SELECT nick FROM media_nicks WHERE media_id = %s", [media_id])}
-
-
-def pick_media(media_id, user_id):
-    """Same rules as pick(), scoped to one media discussion thread (인기 트래픽)."""
-    row = query_one("SELECT nick FROM media_nicks WHERE media_id = %s AND user_id = %s", [media_id, user_id])
-    if row:
-        return row["nick"]
-    taken = _taken_in_media(media_id)
-    nick = draw()
-    for _ in range(30):
-        if nick not in taken:
-            break
-        nick = draw()
-    execute("INSERT IGNORE INTO media_nicks (media_id, user_id, nick) VALUES (%s,%s,%s)", [media_id, user_id, nick])
-    return nick
-
-
 def preview(board):
     """Nick shown in the write box; kept in session per board until the post is saved."""
     store = session.get(SESSION_KEY) or {}
