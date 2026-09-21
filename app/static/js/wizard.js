@@ -66,6 +66,7 @@
   }
 
   function lookup() {
+    if (!W.preview) return;                        // rank server off, or a channel it cannot read
     var url = $('f-url').value.trim();
     if (!/^https?:\/\/[^\s]+\.[^\s]+/.test(url)) return;
     if (lookupDone[url]) { showLookup(url, lookupDone[url]); return; }

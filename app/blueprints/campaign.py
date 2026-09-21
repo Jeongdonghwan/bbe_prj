@@ -12,7 +12,8 @@ from ..models import content as content_model
 from ..models import media as media_model
 from ..models import payment as payment_model
 from ..models import store_slot as slot_model
-from ..services import campaign_service, forbidden_service, keyword_service, payment_service, url_service
+from ..services import (campaign_service, forbidden_service, keyword_service, payment_service, rank_client,
+                        url_service)
 from .auth import login_required
 from .main import render_placeholder
 
@@ -150,6 +151,8 @@ def new(channel):
                       "desc": m["description"] or "", "fit": m["fit_for"], "flow": m["flow_steps"]}
             for m in medias}, ensure_ascii=False),
         today_picks=today_picks,
+        # Auto-fill copy must not promise what an unconfigured rank server cannot deliver.
+        preview_on=channel in ("store", "coupang") and rank_client.configured(),
         balance=g.user["credit_balance"], place_categories=PLACE_CATEGORIES,
         bank=bank_info(), is_debug=current_app.debug,
     )
@@ -529,7 +532,6 @@ def api_product_preview():
 
     Best-effort: any failure answers {"ok": false} and the wizard just keeps manual entry.
     """
-    from ..services import rank_client
     return jsonify(rank_client.product_preview(request.args.get("url", "")))
 
 
