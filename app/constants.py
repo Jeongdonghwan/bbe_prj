@@ -61,19 +61,6 @@ BANK_DUE_DAYS = 3
 CUTOFF_TIME = "13:30"
 DATE_PRESETS = [10, 20, 30]
 
-# Left panel of the channel campaign wizard (spec 2026-09-21). 2·3 are indented under a group label.
-def wizard_steps(channel):
-    first = ("플레이스 정보 입력", "플레이스 링크와 이름") if channel == "place" else ("상품 정보 입력", "상품 URL과 이름")
-    return [
-        {"n": 1, "t": first[0], "d": first[1]},
-        {"group": "광고 설정", "items": [
-            {"n": 2, "t": "광고 유형", "d": "유형과 단가"},
-            {"n": 3, "t": "유입 설정", "d": "키워드와 목표 유입수"},
-        ]},
-        {"n": 4, "t": "일정 설정", "d": "시작일과 기간"},
-        {"n": 5, "t": "최종 확인", "d": "입력 내용 확인"},
-    ]
-
 # Store tracking slots (2-4-1)
 STORE_SLOT_MAX = 10
 RECO_PER_1000 = 1.5

@@ -184,6 +184,25 @@ def main():
     if cur.rowcount:
         done.append(f"media daily min {MEDIA_MIN_DAILY}, no cap ({cur.rowcount})")
 
+    # -- ad type detail fields + daily picks (2026-09-21 HANDOFF_v3) -------
+    c = col("media", "badge")
+    if c and "pick" not in str(c[1]):
+        cur.execute("ALTER TABLE media MODIFY badge ENUM('rec','hot','best','new','pick') NULL")
+        cur.execute("UPDATE media SET badge = 'hot' WHERE badge = 'rec'")
+        cur.execute("ALTER TABLE media MODIFY badge ENUM('hot','best','new','pick') NULL")
+        done.append("media.badge -> hot/best/new/pick")
+    for name, ddl in (("badge_until", "DATE NULL AFTER badge"),
+                      ("fit_for", "JSON NULL AFTER description"),
+                      ("flow_steps", "JSON NULL AFTER fit_for")):
+        if not col("media", name):
+            cur.execute(f"ALTER TABLE media ADD COLUMN {name} {ddl}")
+            done.append(f"media.{name}")
+    if not table("daily_picks"):
+        cur.execute("""CREATE TABLE daily_picks (
+            pick_date DATE NOT NULL, channel VARCHAR(20) NOT NULL, type_ids JSON NOT NULL,
+            PRIMARY KEY (pick_date, channel)) ENGINE=InnoDB""")
+        done.append("daily_picks")
+
     # -- strip banner settings (2026-09-02, default OFF) -------------------
     for k, v in (("strip_on", "0"), ("strip_text", "테스트 띠배너 문구입니다"), ("strip_link", ""), ("strip_bg", "#2563EB")):
         cur.execute("INSERT IGNORE INTO settings (k, v) VALUES (%s,%s)", (k, v))

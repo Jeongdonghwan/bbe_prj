@@ -50,7 +50,10 @@ CREATE TABLE IF NOT EXISTS media (
   cutoff_time       TIME NOT NULL DEFAULT '13:30:00',
   same_day          TINYINT(1) NOT NULL DEFAULT 1,
   description       TEXT NULL,
-  badge             ENUM('rec','best','new') NULL,
+  fit_for           JSON NULL,
+  flow_steps        JSON NULL,
+  badge             ENUM('hot','best','new','pick') NULL,
+  badge_until       DATE NULL,
   eff_level         ENUM('normal','good','best') NOT NULL DEFAULT 'good',
   eff_note          VARCHAR(120) NULL,
   sort              INT NOT NULL DEFAULT 0,
@@ -95,6 +98,13 @@ CREATE TABLE IF NOT EXISTS campaigns (
   INDEX idx_campaign_status (status, created_at),
   FOREIGN KEY (user_id) REFERENCES users(id),
   FOREIGN KEY (media_id) REFERENCES media(id)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS daily_picks (
+  pick_date DATE NOT NULL,
+  channel   VARCHAR(20) NOT NULL,
+  type_ids  JSON NOT NULL,
+  PRIMARY KEY (pick_date, channel)
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS credit_ledger (

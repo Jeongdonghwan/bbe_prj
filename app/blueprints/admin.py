@@ -13,6 +13,7 @@ from ..models import admin_log
 from ..models import banner as banner_model
 from ..models import campaign as campaign_model
 from ..models import content as content_model
+from ..models import daily_pick as pick_model
 from ..models import media as media_model
 from ..models import payment as payment_model
 from ..models import popular as popular_model
@@ -38,6 +39,13 @@ def _log(action, target_type=None, target_id=None, summary=None):
 def _back(default):
     ref = request.form.get("back") or request.referrer
     return redirect(ref if ref and "/admin" in ref else default)
+
+
+def _csv_json(v):
+    """Comma separated admin input -> JSON list column."""
+    import json as _json
+    items = [x.strip() for x in (v or "").split(",") if x.strip()][:8]
+    return _json.dumps(items, ensure_ascii=False) if items else None
 
 
 def _page():
@@ -312,6 +320,18 @@ def payments_settings():
     return redirect(url_for("admin.payments"))
 
 
+@bp.route("/media/picks", methods=["POST"])
+@admin_required
+def media_picks():
+    """오늘의 인기 — types shown in the wizard's highlight band for this channel today."""
+    channel = request.form.get("channel") if request.form.get("channel") in CHANNEL_LABEL else "place"
+    ids = [int(i) for i in request.form.getlist("type_ids") if str(i).isdigit()][:6]
+    pick_model.save(channel, date.today(), ids)
+    _log("media_picks", "media", None, f"{CHANNEL_LABEL[channel]} 오늘의 인기 {len(ids)}개")
+    flash("오늘의 인기를 저장했습니다.")
+    return redirect(url_for("admin.media", channel=channel))
+
+
 # =============================================================== credits
 @bp.route("/credits")
 @admin_required
@@ -399,6 +419,7 @@ def media():
     new = request.args.get("new") == "1"
     return render_template("admin/media.html", channel=channel, rows=rows, counts=counts, edit=edit, new=new,
                            sections=MEDIA_SECTIONS.get(channel, []),
+                           today=date.today(), picks=pick_model.get(channel, date.today()),
                            channel_label=CHANNEL_LABEL)
 
 
@@ -417,7 +438,10 @@ def media_save():
             "min_days": int(f.get("min_days", 3)), "min_daily": int(f.get("min_daily", 50)), "max_daily": int(f.get("max_daily", 500)),
             "cutoff_time": (f.get("cutoff_time") or "13:30")[:5] + ":00",
             "efficiency_manual": int(f["efficiency_manual"]) if f.get("efficiency_manual", "").strip() else None,
-            "badge": f.get("badge") if f.get("badge") in ("rec", "best", "new") else None,
+            "badge": f.get("badge") if f.get("badge") in ("hot", "best", "new", "pick") else None,
+            "badge_until": f.get("badge_until") or None,
+            "fit_for": _csv_json(f.get("fit_for")),
+            "flow_steps": _csv_json(f.get("flow_steps")),
             "eff_level": f.get("eff_level") if f.get("eff_level") in ("normal", "good", "best") else "good",
             "eff_note": f.get("eff_note", "").strip()[:120] or None,
             "description": f.get("description", "").strip() or None,
@@ -426,7 +450,7 @@ def media_save():
         }
         if not fields["name"]:
             raise ValueError("이름을 입력해주세요.")
-        if fields["min_daily"] > fields["max_daily"]:
+        if fields["max_daily"] and fields["min_daily"] > fields["max_daily"]:
             raise ValueError("일 수량 범위가 올바르지 않습니다.")
     except (ValueError, TypeError) as e:
         flash(f"입력값을 확인해주세요: {e}")

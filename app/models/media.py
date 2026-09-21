@@ -1,14 +1,37 @@
-"""media table."""
+"""media table (the ad_types catalog)."""
+import json
+from datetime import date
+
 from ..db import execute, query, query_one
+
+BADGE_LABEL = {"hot": "인기", "best": "BEST", "new": "NEW", "pick": "추천"}
+
+
+def decorate(m):
+    """JSON columns -> lists, and drop a badge whose badge_until has passed."""
+    if not m:
+        return m
+    for k in ("fit_for", "flow_steps"):
+        v = m.get(k)
+        if isinstance(v, str):
+            try:
+                v = json.loads(v)
+            except ValueError:
+                v = None
+        m[k] = v or []
+    if m.get("badge") and m.get("badge_until") and m["badge_until"] < date.today():
+        m["badge"] = None
+    m["badge_label"] = BADGE_LABEL.get(m.get("badge"))
+    return m
 
 
 def list_by_channel(channel, active_only=True):
     where = "channel = %s" + (" AND is_active = 1" if active_only else "")
-    return query(f"SELECT * FROM media WHERE {where} ORDER BY group_name, sort, id", [channel])
+    return [decorate(m) for m in query(f"SELECT * FROM media WHERE {where} ORDER BY group_name, sort, id", [channel])]
 
 
 def get(media_id):
-    return query_one("SELECT * FROM media WHERE id = %s", [media_id])
+    return decorate(query_one("SELECT * FROM media WHERE id = %s", [media_id]))
 
 
 def efficiency(m):

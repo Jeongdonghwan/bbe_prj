@@ -229,6 +229,7 @@ td.plus{color:var(--success);font-weight:600}td.minus{color:var(--text);font-wei
 .editor{min-height:260px;border:1px solid var(--border);border-radius:8px;padding:12px;font-size:13.5px;line-height:1.7;color:var(--text-2)}
 .editor .tb{display:flex;gap:2px;border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:10px}.editor .tb button{width:28px;height:28px;border-radius:5px;font-size:12px;font-weight:700;color:var(--text-2)}.editor .tb button:hover{background:var(--bg)}
 .form2{display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start}
+.pill-chk{padding:6px 12px;border:1px solid var(--border);border-radius:999px;background:#fff}.pill-chk.on{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
 .chk{display:flex;align-items:center;gap:8px;font-size:13px;padding:6px 0}.chk i{width:16px;height:16px;border:1.5px solid var(--border);border-radius:4px;display:inline-block}.chk.on i{background:var(--accent);border-color:var(--accent)}
 .thin{font-size:12px;color:var(--text-3)}
 @media (max-width:1180px){.mp,.form2{grid-template-columns:1fr}.queue{grid-template-columns:repeat(2,1fr)}}

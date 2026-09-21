@@ -6,7 +6,7 @@ from flask import (Blueprint, abort, current_app, flash, g, jsonify, redirect, r
                    url_for)
 
 from ..constants import (CHANNEL_LABEL, DATE_PRESETS, PAY_METHOD_LABEL, PAYMENT_STATUS_LABEL, PLACE_CATEGORIES,
-                         STATUS_CLASS, STATUS_LABEL, STATUS_ORDER, STORE_SLOT_MAX, reco_qty, wizard_steps)
+                         STATUS_CLASS, STATUS_LABEL, STATUS_ORDER, STORE_SLOT_MAX, reco_qty)
 from ..models import campaign as campaign_model
 from ..models import content as content_model
 from ..models import media as media_model
@@ -116,6 +116,10 @@ def new(channel):
         return pre
     pre, editing = pre
     medias, sections = _media_ctx(channel)
+    from ..models import daily_pick as pick_model
+    picks = pick_model.get(channel, date.today())
+    by_id = {m["id"]: m for m in medias}
+    today_picks = [by_id[i]["name"] for i in picks if i in by_id]
     min_start = campaign_service.earliest_start()
     pre_start = min_start
     if pre.get("start_date"):
@@ -136,7 +140,15 @@ def new(channel):
     return render_template(
         "campaign/new.html", channel=channel, channels=CHANNELS, sections=sections,
         pre=pre, editing=editing, presets=DATE_PRESETS, pre_days=pre_days,
-        min_start=min_start, pre_start=pre_start, wiz_steps=wizard_steps(channel),
+        min_start=min_start, pre_start=pre_start,
+        group_names=[s["name"] for s in sections],
+        types_json=json.dumps({
+            m["id"]: {"g": next((i for i, s in enumerate(sections) if m in s["items"]), 0),
+                      "n": m["name"], "p": m["unit_price"], "max": m["max_daily"] or 0,
+                      "badge": m["badge"], "badge_label": m["badge_label"],
+                      "desc": m["description"] or "", "fit": m["fit_for"], "flow": m["flow_steps"]}
+            for m in medias}, ensure_ascii=False),
+        today_picks=today_picks,
         balance=g.user["credit_balance"], place_categories=PLACE_CATEGORIES,
         bank=bank_info(), is_debug=current_app.debug,
     )
