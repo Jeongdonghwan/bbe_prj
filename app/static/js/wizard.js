@@ -41,8 +41,8 @@
     $('preview').hidden = !u;
     if (!u) { $('pvImg').hidden = true; $('pvIcon').hidden = false; $('pvWarn').hidden = true; return; }
     var pn = $('pvName');
-    pn.textContent = n || ($('f-name').dataset.opt === '1' ? '희망 키워드로 표시됩니다' : '이름을 입력해주세요');
-    pn.classList.toggle('w-dim', !n);              // a hint here must not read like the product name
+    pn.textContent = n;
+    pn.hidden = !n;
     $('pvUrl').textContent = tidyUrl(u);
     $('pvOk').hidden = !urlLooksOk(u);
   }
