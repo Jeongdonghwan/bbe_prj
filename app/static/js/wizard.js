@@ -66,8 +66,10 @@
       icon.hidden = true;
       img.onerror = function () { img.hidden = true; icon.hidden = false; };
     }
-    ok.textContent = (d.mallName ? d.mallName + ' · ' : '') + '상품을 확인했습니다';
-    ok.hidden = false;
+    if (d.prodNm || d.imageUrl) {                  // only claim a hit when something came back
+      ok.textContent = (d.mallName ? d.mallName + ' · ' : '') + '상품을 확인했습니다';
+      ok.hidden = false;
+    }
     var nameIn = $('f-name');
     if (!nameIn.value.trim() && d.prodNm) {        // never overwrite what the user typed
       nameIn.value = String(d.prodNm).slice(0, 60);
