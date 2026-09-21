@@ -182,12 +182,6 @@ def _parse_form(channel, media, form):
 
     f["biz_name"] = (form.get("biz_name") or "").strip()[:80]
     f["product_name"] = (form.get("product_name") or "").strip()[:120] or None
-    if channel in ("store", "coupang"):
-        if not f["product_name"]:
-            return None, "상품명을 입력해주세요."
-        f["biz_name"] = f["product_name"]
-    elif not f["biz_name"]:
-        return None, "플레이스명을 입력해주세요."
     try:
         f["target_url"] = url_service.normalize(form.get("target_url"), channel)
     except url_service.URLError as e:
@@ -195,6 +189,11 @@ def _parse_form(channel, media, form):
     f["main_keyword"] = " ".join((form.get("main_keyword") or "").split())[:60]
     if not f["main_keyword"]:
         return None, "희망 키워드를 입력해주세요."
+    if channel in ("store", "coupang"):
+        # 상품명은 선택 입력 (2026-09-21 JDH). 비우면 키워드를 목록 표시명으로 쓴다.
+        f["biz_name"] = f["product_name"] or f["main_keyword"]
+    elif not f["biz_name"]:
+        return None, "플레이스명을 입력해주세요."
     f["sub_keywords"] = []
     f["keyword_mode"] = "manual"
     f["setting_keywords"] = [f["main_keyword"]]

@@ -53,10 +53,10 @@
           <div><div class="w-pn" id="pvName">-</div><div class="w-pu" id="pvUrl">-</div><div class="w-ps" id="pvOk" hidden>주소 형식을 확인했습니다</div></div>
         </div>
         <div class="w-fld" style="margin-top:20px">
-          <label for="f-name">{{ '플레이스명' if is_place else '상품명' }}</label>
-          <p class="w-hint">캠페인 목록에서 구분하기 쉬운 이름. 2~60자.</p>
-          <input class="w-in" id="f-name" name="{{ 'biz_name' if is_place else 'product_name' }}" maxlength="60"
-                 value="{{ (pre.biz_name if is_place else (pre.product_name or pre.biz_name)) or '' }}" placeholder="2~60자">
+          <label for="f-name">{{ '플레이스명' if is_place else '상품명' }}{% if not is_place %} <span class="w-opt">선택</span>{% endif %}</label>
+          <p class="w-hint">{% if is_place %}캠페인 목록에서 구분하기 쉬운 이름. 2~60자.{% else %}캠페인 목록에서 구분하기 쉬운 이름. 비우면 희망 키워드로 표시됩니다.{% endif %}</p>
+          <input class="w-in" id="f-name" name="{{ 'biz_name' if is_place else 'product_name' }}" maxlength="60"{% if not is_place %} data-opt="1"{% endif %}
+                 value="{{ (pre.biz_name if is_place else (pre.product_name or pre.biz_name)) or '' }}" placeholder="{{ '2~60자' if is_place else '비워두면 희망 키워드로 표시됩니다' }}">
           <span class="w-err" id="e-name" hidden></span>
         </div>
       </div>

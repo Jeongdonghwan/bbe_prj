@@ -31,7 +31,7 @@
     var u = $('f-url').value.trim(), n = $('f-name').value.trim();
     $('preview').hidden = !u;
     if (!u) return;
-    $('pvName').textContent = n || '이름을 입력하면 여기에 표시됩니다';
+    $('pvName').textContent = n || ($('f-name').dataset.opt === '1' ? '이름을 비우면 희망 키워드로 표시됩니다' : '이름을 입력하면 여기에 표시됩니다');
     $('pvUrl').textContent = u.replace(/^https?:\/\//, '').split('?')[0];
     $('pvOk').hidden = !/^https?:\/\/[^\s]+\.[^\s]+/.test(u);
   }
@@ -150,7 +150,7 @@
     var perDay = cnt() * t.p, total = perDay * span();
     var raw = $('f-url').value.trim();
     var url = raw.replace(/^https?:\/\//, '').split('?')[0];
-    $('v-prod').innerHTML = ($('f-name').value || '-') + '<span class="w-s" title="' + raw + '">' + url + '</span>';
+    $('v-prod').innerHTML = ($('f-name').value.trim() || $('f-kw').value.trim() || '-') + '<span class="w-s" title="' + raw + '">' + url + '</span>';
     $('v-kind').textContent = t.n + ' · 회당 ' + num(t.p) + '원';
     $('v-kw').textContent = $('f-kw').value || '-';
     $('v-cnt').textContent = num(cnt()) + '회';
@@ -192,7 +192,8 @@
     if (n === 1) {
       var u = $('f-url').value.trim(), nm = $('f-name').value.trim();
       var a = err('e-url', u ? '' : '주소를 입력해주세요.');
-      var b = err('e-name', nm.length >= 2 && nm.length <= 60 ? '' : '이름을 2~60자로 입력해주세요.');
+      var opt = $('f-name').dataset.opt === '1';
+      var b = err('e-name', (opt && !nm) || (nm.length >= 2 && nm.length <= 60) ? '' : '이름을 2~60자로 입력해주세요.');
       return a && b;
     }
     if (n === 2) return err('e-media', sel() ? '' : '광고 유형을 선택해주세요.');

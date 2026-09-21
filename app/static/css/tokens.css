@@ -1,7 +1,7 @@
 /* Design tokens — ported verbatim from prototype_v3.html. Use only these variables in CSS. */
 :root{
   --sidebar-active:#FFFFFF;
-  --sidebar-bg:#5D50C7;--sidebar-text:#E7E3FB;--sidebar-active-bg:rgba(255,255,255,.16);--sidebar-line:rgba(255,255,255,.2);
+  --sidebar-bg:#5D50C7;--sidebar-text:#E7E3FB;--sidebar-cap:rgba(255,255,255,.8);--sidebar-active-bg:rgba(255,255,255,.16);--sidebar-line:rgba(255,255,255,.2);
   --bg:#F4F2FB;--surface:#fff;--border:#E7E4F2;--line-2:#CFCCDE;--text:#111827;--text-2:#6B7280;--text-3:#9CA3AF;
   --accent:#6C5CE7;--accent-hover:#5A4BD6;--accent-soft:#EFECFF;--kakao:#FEE500;
   --success:#16A34A;--success-soft:#DCFCE7;--warn:#D97706;--warn-soft:#FEF3C7;--danger:#DC2626;--danger-soft:#FEE2E2;
