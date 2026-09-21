@@ -1,140 +1,156 @@
 {% extends "layout/base.html" %}
-{% block title %}{{ channels[channel] }} 캠페인 생성{% endblock %}
+{% from "macros/wizard_steps.html" import wizard_steps %}
+{% block title %}{{ channels[channel] }} 광고 만들기{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/wizard.css') }}">{% endblock %}
 {% block content %}
 {% set ch = channel %}
 {% set is_place = ch == 'place' %}
-<form method="post" id="campForm" class="wiz" autocomplete="off" style="max-width:1120px">
+<form method="post" id="cwForm" class="wz" autocomplete="off">
   <input type="hidden" name="media_id" id="mediaId" value="{{ pre.media_id or '' }}">
   <input type="hidden" name="days" id="daysVal" value="{{ pre_days }}">
-  <div class="wiz-head"><div><h1>광고 시작하기</h1><p>{{ channels[ch] }} 광고를 생성합니다 🔥</p></div>
-    <div class="chan-tabs" style="margin-left:auto;margin-right:12px">
-      {% for key, label in channels.items() %}<a href="/campaign/{{ key }}/new"><button type="button"{% if key == ch %} class="on"{% endif %}><i class="dot c-{{ key }}"></i>{{ label }}</button></a>{% endfor %}
+
+  <div class="wz-head">
+    <div>
+      <h1>{{ channels[ch] }} 광고 만들기</h1>
+      <p>{{ channels[ch] }} 채널에서 광고를 만듭니다 ·
+        <span class="wz-chan"><button type="button" class="lnk" id="chanBtn">채널 변경</button>
+          <span class="wz-chanpop" id="chanPop" hidden>
+            {% for key, label in channels.items() %}{% if key != ch %}<a href="/campaign/{{ key }}/new">{{ label }}</a>{% endif %}{% endfor %}
+          </span></span>
+      </p>
     </div>
-    <a class="icon-btn" href="/campaign/{{ ch }}"><i data-lucide="x" class="i"></i></a></div>
-  <div class="wiz-side">
-    <div class="wstep cur" data-s="1"><i class="no">1</i><div><b>{{ '플레이스 정보' if is_place else '상품 정보' }} 입력</b><span>{{ '플레이스' if is_place else '상품' }}의 기본 정보를 입력하세요</span></div></div>
-    <div class="wstep" data-s="2"><i class="no">2</i><div><b>광고 설정</b><span>광고 옵션을 설정하세요</span></div></div>
-    <div class="wstep" data-s="3"><i class="no">3</i><div><b>일정 설정</b><span>광고 일정을 설정하세요</span></div></div>
-    <div class="wstep" data-s="4"><i class="no">4</i><div><b>최종 확인</b><span>입력한 정보를 확인하세요</span></div></div>
-    <a class="wiz-kakao" href="{{ KAKAO_CHAT_URL }}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M12 3C6.5 3 2 6.6 2 11c0 2.8 1.8 5.2 4.6 6.6L5.5 21l4.6-2.7c.6.1 1.2.1 1.9.1 5.5 0 10-3.6 10-8S17.5 3 12 3z"/></svg>카카오 문의</a>
+    <a class="wz-x" href="/campaign/{{ ch }}" aria-label="닫기"><i data-lucide="x" class="i"></i></a>
   </div>
-  <div class="wiz-main">
-    <div class="wiz-body">
 
-      <div class="wpane" data-p="1">
-        <h4 class="wt">{{ '플레이스 링크' if is_place else '상품 URL' }}</h4>
-        <p class="thin">{{ '네이버 지도 플레이스 링크를 입력하세요. PC 주소는 자동으로 변환됩니다.' if is_place else '판매 중인 상품 URL과 상품명을 입력하세요.' }}</p>
-        <div class="urlinfo"><i data-lucide="info" class="i i14"></i>URL형식:
-          {% if ch == 'store' %}https://smartstore.naver.com/…, https://brand.naver.com/…{% elif ch == 'coupang' %}https://www.coupang.com/vp/products/…{% else %}https://m.place.naver.com/… , https://naver.me/…{% endif %}
-        </div>
-        <div class="f" style="max-width:640px"><label>{{ '플레이스 링크' if is_place else '상품 URL' }}</label>
-          <input class="in" name="target_url" id="pUrl" value="{{ pre.target_url or '' }}" placeholder="{% if ch == 'store' %}https://smartstore.naver.com/12345678{% elif ch == 'coupang' %}https://www.coupang.com/vp/products/…{% else %}https://m.place.naver.com/…{% endif %}" required></div>
-        <div class="f" style="max-width:640px"><label>{{ '플레이스명' if is_place else '상품명' }}</label>
-          <input class="in" name="{{ 'biz_name' if is_place else 'product_name' }}" id="pName" value="{{ (pre.biz_name if is_place else (pre.product_name or pre.biz_name)) or '' }}" placeholder="{{ '예) 대박갈비 일산동구점' if is_place else '예) 우거지 뼈해장국 감자탕 1kg' }}" required maxlength="{{ 80 if is_place else 120 }}"></div>
-        <div class="prod-card" id="prodCard" hidden>
-          <span class="qic c-{{ ch }}" style="width:44px;height:44px;border-radius:12px"><i data-lucide="{{ 'map-pin' if is_place else ('shopping-bag' if ch == 'store' else 'package') }}" class="i"></i></span>
-          <div><b id="pcName">-</b><span class="mut" id="pcUrl">-</span></div>
-        </div>
-      </div>
+  <div class="wz-cols">
+    <aside class="wz-side">
+      {{ wizard_steps(wiz_steps, 1) }}
+      <a class="wz-kakao" href="{{ KAKAO_CHAT_URL }}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M12 3C6.5 3 2 6.6 2 11c0 2.8 1.8 5.2 4.6 6.6L5.5 21l4.6-2.7c.6.1 1.2.1 1.9.1 5.5 0 10-3.6 10-8S17.5 3 12 3z"/></svg>카카오 문의</a>
+    </aside>
 
-      <div class="wpane" data-p="2" hidden>
-        <h4 class="wt"><i data-lucide="flag" class="i i16"></i>광고 유형</h4>
-        <p class="thin">{{ '플레이스' if is_place else '상품' }} 특성에 맞는 광고 유형을 선택하세요.</p>
-        {% for sec in sections %}
-        <div class="msec"><span class="msec-h">{{ sec.name }}</span>
-          <div class="mtiles">
-            {% for m in sec['items'] %}
-            <div class="mcard mtile{% if pre.media_id == m.id %} sel{% endif %}" data-id="{{ m.id }}" data-p="{{ m.unit_price }}" title="{{ m.tagline or m.name }}">
-              {% if m.badge == 'best' %}<span class="bd bd-best">BEST</span>{% elif m.badge == 'rec' %}<span class="bd bd-rec">인기</span>{% elif m.badge == 'new' %}<span class="bd bd-new">NEW</span>{% endif %}
-              <b>{{ m.name }}</b>
-              <span class="mprice"><em class="tile-rate">{{ m.unit_price | fmt_num }}원/회</em></span>
+    <div class="wz-main">
+      <div class="wz-body">
+
+        <section class="wz-pane" data-p="1">
+          <h4>{{ '플레이스 정보' if is_place else '상품 정보' }}</h4>
+          <p class="wz-hint">{{ '광고할 플레이스의 링크와 이름을 입력하세요.' if is_place else '광고할 상품의 URL과 이름을 입력하세요.' }}</p>
+          <div class="wz-field">
+            <label for="f-url">{{ '플레이스 링크' if is_place else '상품 URL' }}</label>
+            <p class="wz-hint">{% if ch == 'store' %}https://smartstore.naver.com/스토어명/products/상품번호{% elif ch == 'coupang' %}https://www.coupang.com/vp/products/상품번호{% else %}https://m.place.naver.com/… 또는 https://naver.me/…{% endif %}</p>
+            <input class="in" id="f-url" name="target_url" value="{{ pre.target_url or '' }}" required>
+            <span class="wz-err" id="e-url" hidden></span>
+          </div>
+          <div class="wz-field">
+            <label for="f-name">{{ '플레이스명' if is_place else '상품명' }}</label>
+            <p class="wz-hint">{{ '2~60자로 입력하세요.' }}</p>
+            <input class="in" id="f-name" name="{{ 'biz_name' if is_place else 'product_name' }}" value="{{ (pre.biz_name if is_place else (pre.product_name or pre.biz_name)) or '' }}" maxlength="60" required>
+            <span class="wz-err" id="e-name" hidden></span>
+          </div>
+        </section>
+
+        <section class="wz-pane" data-p="2" hidden>
+          <h4>광고 유형</h4>
+          <p class="wz-hint">{{ '플레이스' if is_place else '상품' }} 특성에 맞는 광고 유형을 고르세요.</p>
+          {% for sec in sections %}
+          <div class="msec"><span class="msec-h">{{ sec.name }}</span>
+            <div class="mtiles">
+              {% for m in sec['items'] %}
+              <div class="mcard mtile{% if pre.media_id == m.id %} sel{% endif %}" data-id="{{ m.id }}" data-p="{{ m.unit_price }}" title="{{ m.tagline or m.name }}">
+                {% if m.badge == 'best' %}<span class="bd bd-best">BEST</span>{% elif m.badge == 'rec' %}<span class="bd bd-rec">인기</span>{% elif m.badge == 'new' %}<span class="bd bd-new">NEW</span>{% endif %}
+                <b>{{ m.name }}</b>
+                <span class="mprice"><em class="tile-rate">{{ m.unit_price | fmt_num }}원/회</em></span>
+              </div>
+              {% endfor %}
             </div>
+          </div>
+          {% endfor %}
+          <span class="wz-err" id="e-media" hidden></span>
+        </section>
+
+        <section class="wz-pane" data-p="3" hidden>
+          <h4>유입 설정</h4>
+          <p class="wz-hint">순위를 측정할 키워드와 하루 목표 유입수를 정하세요.</p>
+          <div class="wz-field">
+            <label for="f-kw">메인 키워드</label>
+            <p class="wz-hint">키워드 1개 기준으로 순위가 측정됩니다.</p>
+            <input class="in" id="f-kw" name="main_keyword" value="{{ pre.main_keyword or '' }}" maxlength="60" style="max-width:420px" required>
+            <span class="wz-err" id="e-kw" hidden></span>
+          </div>
+          <div class="wz-field">
+            <label>일일 목표 유입수</label>
+            <p class="wz-hint">최소 100회부터 100회 단위로 조절할 수 있습니다.</p>
+            <div class="qty-row">
+              <button type="button" class="qbtn" id="qMinus">−</button>
+              <div class="qval"><b class="num" id="qShow">{{ pre.daily_qty or 100 }}</b><span>회</span></div>
+              <button type="button" class="qbtn" id="qPlus">+</button>
+              <input type="hidden" name="daily_qty" id="qty" value="{{ pre.daily_qty or 100 }}">
+            </div>
+            <div class="comp-range">
+              <small>경쟁도별 권장 범위</small>
+              <div class="cr-chips">
+                <div><span class="crc c-low">하</span><em>100~300</em></div>
+                <div><span class="crc c-mid">중</span><em>400~600</em></div>
+                <div><span class="crc c-high">상</span><em>800~2,000</em></div>
+              </div>
+            </div>
+          </div>
+          <details class="wz-field" id="memoBox"{% if pre.extra and pre.extra.request_note %} open{% endif %}>
+            <summary style="cursor:pointer;font-size:13.5px;font-weight:700">고객 요청사항 추가 (선택)</summary>
+            <textarea class="in" id="f-memo" name="request_note" rows="4" maxlength="500" style="margin-top:8px" placeholder="추가 요청사항을 입력하세요.">{{ pre.extra.request_note if pre.extra and pre.extra.request_note else '' }}</textarea>
+            <div class="thin" style="text-align:right" id="memoCnt">0/500</div>
+          </details>
+        </section>
+
+        <section class="wz-pane" data-p="4" hidden>
+          <h4>일정 설정</h4>
+          <p class="wz-hint" id="dateRange">-</p>
+          <div class="dcards">
+            {% for d in presets %}
+            <button type="button" class="dcard{% if d == pre_days %} on{% endif %}" data-d="{{ d }}">{% if loop.first %}<span class="dpop">많이 선택</span>{% endif %}<b>{{ d }}일</b><i data-lucide="check-circle-2" class="i"></i></button>
             {% endfor %}
           </div>
-        </div>
-        {% endfor %}
+        </section>
 
-        <h4 class="wt" style="margin-top:24px"><i data-lucide="flag" class="i i16"></i>메인 키워드 1개</h4>
-        <p class="thin">메인 키워드 기준으로 순위가 측정됩니다.</p>
-        <input class="in" name="main_keyword" id="kw" value="{{ pre.main_keyword or '' }}" placeholder="예) 감자탕" maxlength="60" style="max-width:640px" required>
-
-        <h4 class="wt" style="margin-top:24px"><i data-lucide="flag" class="i i16"></i>일일 목표 유입수</h4>
-        <p class="thin">최소 100회부터 100회 단위로 조절 가능합니다.</p>
-        <div class="qty-row">
-          <button type="button" class="qbtn" id="qMinus">−</button>
-          <div class="qval"><b class="num" id="qShow">{{ pre.daily_qty or 100 }}</b><span>회</span></div>
-          <button type="button" class="qbtn" id="qPlus">+</button>
-          <input type="hidden" name="daily_qty" id="qty" value="{{ pre.daily_qty or 100 }}">
-        </div>
-        <div class="comp-range">
-          <small>경쟁도별 권장 범위</small>
-          <div class="cr-chips">
-            <div><span class="crc c-low">하</span><em>100~300</em></div>
-            <div><span class="crc c-mid">중</span><em>400~600</em></div>
-            <div><span class="crc c-high">상</span><em>800~2,000</em></div>
+        <section class="wz-pane" data-p="5" hidden>
+          <h4>최종 확인</h4>
+          <p class="wz-hint">입력한 내용을 확인하고 광고를 만드세요.</p>
+          <div class="dgrid" style="grid-template-columns:1fr 1fr;max-width:640px;margin-top:14px">
+            <div><span>{{ '플레이스' if is_place else '상품' }}</span><b id="cfName">-</b></div>
+            <div><span>광고 유형</span><b id="cfMedia">-</b></div>
+            <div><span>메인 키워드</span><b id="cfKw">-</b></div>
+            <div><span>일일 목표 유입수</span><b class="num" id="cfQty">-</b></div>
           </div>
-        </div>
-
-        <button type="button" class="lnk" id="noteToggle" style="margin-top:20px;font-weight:600">고객 요청사항 추가 (선택) <i data-lucide="chevron-down" class="i i14"></i></button>
-        <div id="noteBox" hidden style="margin-top:8px;max-width:640px">
-          <textarea class="in" name="request_note" rows="4" maxlength="200" placeholder="추가 요청사항을 입력하세요...">{{ pre.extra.request_note if pre.extra and pre.extra.request_note else '' }}</textarea>
-          <div class="thin" style="text-align:right" id="noteCnt">0/200</div>
-        </div>
-      </div>
-
-      <div class="wpane" data-p="3" hidden>
-        <h4 class="wt"><i data-lucide="calendar" class="i i16"></i>광고 기간</h4>
-        <p class="thin" id="dateRange">-</p>
-        <div class="dcards">
-          {% for d in presets %}
-          <button type="button" class="dcard{% if d == pre_days %} on{% endif %}" data-d="{{ d }}">{% if loop.first %}<span class="dpop">인기</span>{% endif %}<b>{{ d }}일</b><i data-lucide="check-circle-2" class="i"></i></button>
-          {% endfor %}
-        </div>
-      </div>
-
-      <div class="wpane" data-p="4" hidden>
-        <h4 class="wt"><i data-lucide="flag" class="i i16"></i>{{ '플레이스 정보' if is_place else '상품 정보' }}</h4>
-        <div class="prod-card" style="border-color:var(--accent)">
-          <span class="qic c-{{ ch }}" style="width:44px;height:44px;border-radius:12px"><i data-lucide="{{ 'map-pin' if is_place else ('shopping-bag' if ch == 'store' else 'package') }}" class="i"></i></span>
-          <div><b id="cfName">-</b><span class="mut" id="cfUrl">-</span></div>
-        </div>
-
-        <h4 class="wt" style="margin-top:22px"><i data-lucide="flag" class="i i16"></i>광고 설정</h4>
-        <div class="dgrid" style="grid-template-columns:1fr 1fr;max-width:640px">
-          <div><span>광고 유형</span><b id="cfMedia">-</b></div>
-          <div><span>메인 키워드</span><b id="cfKw">-</b></div>
-          <div><span>광고 기간</span><b id="cfDays">-</b></div>
-          <div><span>일일 목표 유입수</span><b class="num" id="cfQty">-</b></div>
-        </div>
-
-        <h4 class="wt" style="margin-top:22px"><i data-lucide="flag" class="i i16"></i>비용 요약</h4>
-        <div class="costbox" id="costBox">
-          <div class="kv"><span>일일 비용</span><b class="num" id="cDaily">-</b></div>
-          <div class="kv"><span>광고 기간</span><b id="cDays">-</b></div>
-          <div class="kv total"><span>총 광고비</span><b class="num" id="cTotal">-</b></div>
-          <div class="credit-box" id="creditBox">
-            <div><b>보유 크레딧</b><small id="lackMsg" hidden><i data-lucide="alert-circle" class="i i14"></i> 크레딧 부족: <em class="num" id="lackAmt"></em></small></div>
-            <b class="num" id="cBal">{{ balance | fmt_num }}원</b>
+          <div class="costbox" id="costBox" style="margin-top:16px">
+            <div class="kv"><span>일일 비용</span><b class="num" id="cDaily">-</b></div>
+            <div class="kv"><span>광고 기간</span><b id="cDays">-</b></div>
+            <div class="kv total"><span>총 광고비</span><b class="num" id="cTotal">-</b></div>
+            <div class="credit-box" id="creditBox">
+              <div><b>보유 크레딧</b><small id="lackMsg" hidden><i data-lucide="alert-circle" class="i i14"></i> 크레딧 부족: <em class="num" id="lackAmt"></em></small></div>
+              <b class="num" id="cBal">{{ balance | fmt_num }}원</b>
+            </div>
+            <a class="btn chargebtn" id="chargeBtn" href="/credit/charge" hidden><i data-lucide="wallet" class="i i16"></i>크레딧 충전</a>
           </div>
-          <a class="btn chargebtn" id="chargeBtn" href="/credit/charge" hidden><i data-lucide="wallet" class="i i16"></i>크레딧 충전</a>
-        </div>
-      </div>
+        </section>
 
-    </div>
-    <div class="wiz-foot">
-      <button type="button" class="btn sec" id="wPrev" disabled>이전</button>
-      <button type="button" class="btn pri" id="wNext">다음</button>
-      <button type="submit" class="btn pri" id="wSubmit" hidden>광고 생성하기</button>
+      </div>
+      <div class="wz-foot">
+        <button type="button" class="btn sec" id="wPrev" disabled>이전</button>
+        <button type="button" class="btn pri" id="wNext">다음</button>
+        <button type="submit" class="btn pri" id="wSubmit" hidden>광고 만들기</button>
+      </div>
     </div>
   </div>
 </form>
 {% endblock %}
 {% block scripts %}
 <script>
-window.MEDIA = {{ media_json | safe }};
-window.CHANNEL = "{{ ch }}";
-window.BALANCE = {{ balance }};
-window.START_DATE = "{{ start.isoformat() }}";
+window.WZ = {
+  media: {{ media_json | safe }},
+  channel: "{{ ch }}",
+  balance: {{ balance }},
+  startDate: "{{ start.isoformat() }}",
+  steps: 5
+};
 </script>
-<script src="{{ url_for('static', filename='js/campaign_new.js') }}"></script>
+<script src="{{ url_for('static', filename='js/wizard.js') }}"></script>
 {% endblock %}

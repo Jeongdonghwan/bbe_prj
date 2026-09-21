@@ -1,0 +1,72 @@
+/* Channel campaign wizard shell (spec 2026-09-21).
+   Colors come from tokens.css only: brand=--accent, tint=--accent-soft, ink=--text/-2/-3,
+   line=--border/--line-2, ok=--success/--success-soft, warn=--warn. */
+
+.wz{max-width:1000px;margin:0 auto;background:var(--surface);border:1px solid var(--border);
+    border-radius:18px;box-shadow:var(--shadow);overflow:hidden}
+.wz .num,.wz input[type=number],.wz-price,.wz-cost b{font-variant-numeric:tabular-nums}
+
+/* head */
+.wz-head{display:flex;align-items:flex-start;gap:12px;padding:22px 26px 18px;border-bottom:1px solid var(--border)}
+.wz-head h1{font-size:22px;font-weight:800;letter-spacing:-.01em}
+.wz-head p{font-size:13px;color:var(--text-2);margin-top:5px}
+.wz-x{margin-left:auto;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:var(--text-3)}
+.wz-x:hover{background:var(--bg);color:var(--text)}
+.wz-chan{position:relative;display:inline-block}
+.wz-chan .lnk{font-size:13px}
+.wz-chanpop{position:absolute;left:0;top:22px;z-index:12;background:var(--surface);border:1px solid var(--border);
+            border-radius:10px;box-shadow:var(--shadow);padding:6px;min-width:150px;display:flex;flex-direction:column}
+.wz-chanpop a{padding:8px 10px;border-radius:7px;font-size:13px;color:var(--text)}
+.wz-chanpop a:hover{background:var(--accent-soft);color:var(--accent)}
+
+/* columns */
+.wz-cols{display:grid;grid-template-columns:232px 1fr;align-items:stretch}
+.wz-side{border-right:1px solid var(--border);padding:18px 14px;display:flex;flex-direction:column}
+.wz-steps{display:flex;flex-direction:column;gap:2px}
+.wz-step{display:flex;gap:11px;align-items:flex-start;width:100%;text-align:left;padding:11px 10px;
+         border-radius:10px;color:var(--text-3);font-family:var(--font);transition:background-color .15s}
+.wz-step .n{flex:none;width:24px;height:24px;border-radius:50%;background:var(--bg);color:var(--text-3);
+            font-style:normal;font-size:12.5px;font-weight:700;display:grid;place-items:center}
+.wz-step b{display:block;font-size:14px;font-weight:700}
+.wz-step span{display:block;font-size:12px;margin-top:2px;color:var(--text-3)}
+.wz-step.cur{background:var(--accent-soft);color:var(--text)}
+.wz-step.cur .n{background:var(--accent);color:#fff}
+.wz-step.cur span{color:var(--text-2)}
+.wz-step.done{color:var(--text);cursor:pointer}
+.wz-step.done .n{background:var(--success-soft);color:var(--success)}
+.wz-step.done:hover{background:var(--bg)}
+.wz-glabel{font-size:11.5px;font-weight:700;color:var(--text-3);letter-spacing:.02em;padding:12px 10px 4px}
+.wz-sub{margin-left:14px;padding-left:10px;border-left:1px solid var(--line-2);display:flex;flex-direction:column;gap:2px}
+.wz-kakao{margin-top:auto;display:flex;align-items:center;justify-content:center;gap:8px;background:var(--kakao);
+          color:#191600;font-weight:700;border-radius:12px;height:48px;font-size:14px}
+.wz-kakao svg{width:19px;height:19px;fill:#191600}
+
+/* panes */
+.wz-main{display:flex;flex-direction:column;min-width:0}
+.wz-body{padding:24px 28px;min-height:360px}
+.wz-pane>h4{font-size:16.5px;font-weight:700}
+.wz-hint{font-size:12.5px;color:var(--text-3);margin-top:4px}
+.wz-field{margin-top:18px}
+.wz-field>label{display:block;font-size:13.5px;font-weight:700;margin-bottom:4px}
+.wz-field .wz-hint{margin:0 0 7px}
+.wz-err{display:block;font-size:12.5px;color:var(--warn);margin-top:6px}
+.in.bad{border-color:var(--warn)}
+
+/* foot */
+.wz-foot{display:flex;justify-content:space-between;gap:10px;padding:14px 28px;border-top:1px solid var(--border)}
+.wz-foot .btn{min-width:104px;height:44px}
+
+@media(max-width:880px){
+  .wz{border-radius:14px}
+  .wz-head{padding:18px 16px 14px}
+  .wz-cols{grid-template-columns:1fr}
+  .wz-side{flex-direction:row;align-items:center;gap:6px;border-right:0;border-bottom:1px solid var(--border);
+           overflow-x:auto;padding:10px 12px}
+  .wz-steps{flex-direction:row;gap:6px}
+  .wz-step{width:auto;white-space:nowrap;padding:8px 12px}
+  .wz-step span,.wz-glabel,.wz-kakao{display:none}
+  .wz-sub{flex-direction:row;margin-left:0;padding-left:0;border-left:0;gap:6px}
+  .wz-body{padding:18px 16px;min-height:0}
+  .wz-foot{padding:12px 16px}
+  .wz-foot .btn{min-width:88px}
+}

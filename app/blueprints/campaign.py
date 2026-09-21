@@ -6,7 +6,7 @@ from flask import (Blueprint, abort, current_app, flash, g, jsonify, redirect, r
                    url_for)
 
 from ..constants import (CHANNEL_LABEL, DATE_PRESETS, PAY_METHOD_LABEL, PAYMENT_STATUS_LABEL, PLACE_CATEGORIES,
-                         STATUS_CLASS, STATUS_LABEL, STATUS_ORDER, STORE_SLOT_MAX, reco_qty)
+                         STATUS_CLASS, STATUS_LABEL, STATUS_ORDER, STORE_SLOT_MAX, reco_qty, wizard_steps)
 from ..models import campaign as campaign_model
 from ..models import content as content_model
 from ..models import media as media_model
@@ -132,6 +132,7 @@ def new(channel):
     return render_template(
         "campaign/new.html", channel=channel, channels=CHANNELS, sections=sections,
         pre=pre, editing=editing, presets=DATE_PRESETS, pre_days=pre_days, start=start,
+        wiz_steps=wizard_steps(channel),
         balance=g.user["credit_balance"], place_categories=PLACE_CATEGORIES,
         media_json=json.dumps({m["id"]: {"name": m["name"], "price": m["unit_price"], "list": m["list_price"],
                                          "min_days": m["min_days"], "min_daily": m["min_daily"], "max_daily": m["max_daily"],
