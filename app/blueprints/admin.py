@@ -7,7 +7,7 @@ from datetime import date, datetime
 from flask import (Blueprint, abort, current_app, flash, g, jsonify, redirect, render_template, request, send_file,
                    url_for)
 
-from ..constants import (CHANNEL_LABEL, PAY_METHOD_LABEL, PAYMENT_STATUS_LABEL, STATUS_CLASS, STATUS_LABEL,
+from ..constants import (CHANNEL_LABEL, MEDIA_SECTIONS, PAY_METHOD_LABEL, PAYMENT_STATUS_LABEL, STATUS_CLASS, STATUS_LABEL,
                          STATUS_ORDER)
 from ..models import admin_log
 from ..models import banner as banner_model
@@ -398,6 +398,7 @@ def media():
         edit["auto"] = media_service.calc_efficiency(edit["id"])
     new = request.args.get("new") == "1"
     return render_template("admin/media.html", channel=channel, rows=rows, counts=counts, edit=edit, new=new,
+                           sections=MEDIA_SECTIONS.get(channel, []),
                            channel_label=CHANNEL_LABEL)
 
 
@@ -410,7 +411,7 @@ def media_save():
     try:
         fields = {
             "channel": channel, "name": f.get("name", "").strip()[:40],
-            "group_name": f.get("group_name") if f.get("group_name") in ("리워드", "유입", "복합") else "유입",
+            "group_name": f.get("group_name") if f.get("group_name") in MEDIA_SECTIONS.get(channel, []) else (MEDIA_SECTIONS.get(channel) or ["기성"])[0],
             "tagline": f.get("tagline", "").strip()[:80] or None, "color": f.get("color", "#4B5563")[:7],
             "unit_price": int(f.get("unit_price")), "list_price": int(f["list_price"]) if f.get("list_price", "").strip() else None,
             "min_days": int(f.get("min_days", 3)), "min_daily": int(f.get("min_daily", 50)), "max_daily": int(f.get("max_daily", 500)),

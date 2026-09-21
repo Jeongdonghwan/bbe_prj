@@ -60,34 +60,11 @@ SERIES = [f"테스트 {i}" for i in range(1, 6)]
 BANNERS = ([(f"테스트 {i}", "grid", f"/static/uploads/banners/t{i}.png") for i in range(1, 9)]
            + [(f"슬라이드 테스트 {i}", "slide", f"/static/uploads/banners/s{i}.png") for i in range(1, 7)])
 
-MEDIA = {
-    "place": [
-        ("테스트 1", "리워드", "테스트", "#0891B2", 150, 170, "rec", 82),
-        ("테스트 2", "리워드", "테스트", "#7C3AED", 140, None, None, 78),
-        ("테스트 3", "유입", "테스트", "#2563EB", 100, None, None, 71),
-        ("테스트 4", "유입", "테스트", "#F59E0B", 110, 120, "best", 69),
-        ("테스트 5", "유입", "테스트", "#EC4899", 105, None, "new", 66),
-        ("테스트 6", "복합", "테스트", "#10B981", 80, None, None, 60),
-        ("테스트 7", "복합", "테스트", "#F97316", 85, None, None, 58),
-        ("테스트 8", "복합", "테스트", "#6B7280", 75, None, None, 55),
-    ],
-    "store": [
-        ("테스트 9", "리워드", "테스트", "#7C3AED", 160, None, "rec", 80),
-        ("테스트 10", "리워드", "테스트", "#0891B2", 155, 175, "best", 76),
-        ("테스트 11", "유입", "테스트", "#2563EB", 110, None, None, 70),
-        ("테스트 12", "유입", "테스트", "#F59E0B", 115, None, "new", 64),
-        ("테스트 13", "복합", "테스트", "#F97316", 90, None, None, 59),
-        ("테스트 14", "복합", "테스트", "#6B7280", 80, None, None, 54),
-    ],
-    "coupang": [
-        ("테스트 15", "리워드", "테스트", "#DC2626", 170, None, "rec", 79),
-        ("테스트 16", "리워드", "테스트", "#7C3AED", 165, 185, "best", 75),
-        ("테스트 17", "유입", "테스트", "#2563EB", 120, None, None, 68),
-        ("테스트 18", "유입", "테스트", "#F59E0B", 115, None, "new", 63),
-        ("테스트 19", "복합", "테스트", "#F97316", 95, None, None, 57),
-        ("테스트 20", "복합", "테스트", "#6B7280", 85, None, None, 52),
-    ],
-}
+from app.constants import MEDIA_CATALOG, MEDIA_COLORS, MEDIA_MAX_DAILY, MEDIA_MIN_DAILY  # noqa: E402
+
+MEDIA = {ch: [(name, group, None, MEDIA_COLORS[i % len(MEDIA_COLORS)], price, None, None, 70)
+              for i, (name, group, price) in enumerate(items)]
+         for ch, items in MEDIA_CATALOG.items()}
 
 ADJ = ["꿈꾸는", "조용한", "말없는", "부지런한", "느긋한", "씩씩한", "수줍은", "용감한", "엉뚱한", "다정한",
        "졸린", "배고픈", "명랑한", "차분한", "재빠른", "느긋한", "호기심많은", "성실한", "부드러운", "똑똑한",
@@ -328,13 +305,12 @@ def seed():
     for channel, items in MEDIA.items():
         for i, (name, grp, tag, color, price, lst, badge, eff) in enumerate(items):
             lvl = "best" if eff >= 75 else ("good" if eff >= 60 else "normal")
-            rows.append((channel, grp, name, tag, color, price, lst, 3, 50, 500, eff, badge, lvl, i,
-                         "테스트"))
+            rows.append((channel, grp, name, tag, color, price, lst, 3, MEDIA_MIN_DAILY, MEDIA_MAX_DAILY,
+                         eff, badge, lvl, i, None))
     cur.executemany(
         """INSERT INTO media (channel, group_name, name, tagline, color, unit_price, list_price, min_days,
            min_daily, max_daily, efficiency_auto, badge, eff_level, sort, description)
            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""", rows)
-    cur.execute("UPDATE media SET eff_note = '테스트'")
 
     # contents: notices / info / series
     rows = []

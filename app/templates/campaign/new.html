@@ -78,13 +78,13 @@
           </div>
           <div class="wz-field">
             <label>일일 목표 유입수</label>
-            <p class="wz-hint">최소 100회부터 100회 단위로 조절할 수 있습니다.</p>
+            <p class="wz-hint" id="qRange">버튼으로 100회씩 조절하거나 직접 입력할 수 있습니다.</p>
             <div class="qty-row">
-              <button type="button" class="qbtn" id="qMinus">−</button>
-              <div class="qval"><b class="num" id="qShow">{{ pre.daily_qty or 100 }}</b><span>회</span></div>
-              <button type="button" class="qbtn" id="qPlus">+</button>
-              <input type="hidden" name="daily_qty" id="qty" value="{{ pre.daily_qty or 100 }}">
+              <button type="button" class="qbtn" id="qMinus" aria-label="100회 줄이기">−</button>
+              <div class="qval"><input class="num" id="qty" name="daily_qty" type="text" inputmode="numeric" value="{{ pre.daily_qty or 100 }}" aria-label="일일 목표 유입수"><span>회</span></div>
+              <button type="button" class="qbtn" id="qPlus" aria-label="100회 늘리기">+</button>
             </div>
+            <span class="wz-err" id="e-qty" hidden></span>
             <div class="comp-range">
               <small>경쟁도별 권장 범위</small>
               <div class="cr-chips">

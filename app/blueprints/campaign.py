@@ -52,11 +52,12 @@ def _media_ctx(channel):
         m["initial"] = m["name"][:1]
     medias.sort(key=lambda m: (0 if m["badge"] == "rec" else 1, m["sort"], m["unit_price"]))
     sections = []
-    for name in MEDIA_SECTIONS:
+    order = MEDIA_SECTIONS.get(channel, [])
+    for name in order:
         items = [m for m in medias if m["group_name"] == name]
         if items:
             sections.append({"name": name, "items": items})
-    rest = [m for m in medias if m["group_name"] not in MEDIA_SECTIONS]
+    rest = [m for m in medias if m["group_name"] not in order]
     if rest:
         sections.append({"name": "기타", "items": rest})
     return medias, sections

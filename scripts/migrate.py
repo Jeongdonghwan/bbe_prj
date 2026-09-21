@@ -144,6 +144,46 @@ def main():
             INDEX idx_charge_user (user_id), INDEX idx_charge_status (status)) ENGINE=InnoDB""")
         done.append("charge_requests")
 
+    # -- real media catalog (2026-09-21): retire 테스트 N, insert the live list -----
+    sys.path.insert(0, str(ROOT))
+    from app.constants import MEDIA_CATALOG, MEDIA_COLORS, MEDIA_MAX_DAILY, MEDIA_MIN_DAILY
+    cur.execute("SELECT COUNT(*) FROM media WHERE name LIKE '테스트 %' AND is_active = 1")
+    if cur.fetchone()[0]:
+        for ch, items in MEDIA_CATALOG.items():
+            for i, (name, group, price) in enumerate(items):
+                cur.execute("SELECT id FROM media WHERE channel = %s AND name = %s", (ch, name))
+                if cur.fetchone():
+                    continue
+                cur.execute(
+                    """INSERT INTO media (channel, group_name, name, color, unit_price, min_days, min_daily,
+                       max_daily, efficiency_auto, eff_level, sort, is_active)
+                       VALUES (%s,%s,%s,%s,%s,3,%s,%s,70,'good',%s,1)""",
+                    (ch, group, name, MEDIA_COLORS[i % len(MEDIA_COLORS)], price,
+                     MEDIA_MIN_DAILY, MEDIA_MAX_DAILY, i))
+        cur.execute("UPDATE media SET is_active = 0 WHERE name LIKE '테스트 %'")
+        # keep 인기 트래픽 pointing at live media
+        cur.execute("SELECT c.id, c.channel FROM popular_categories c")
+        for cat_id, ch in cur.fetchall():
+            cur.execute("SELECT id FROM popular_sets WHERE category_id = %s ORDER BY rank", (cat_id,))
+            set_ids = [r[0] for r in cur.fetchall()]
+            if not set_ids:
+                continue
+            cur.execute("SELECT id FROM media WHERE channel = %s AND is_active = 1 ORDER BY sort, id LIMIT %s",
+                        (ch, len(set_ids)))
+            new_ids = [r[0] for r in cur.fetchall()]
+            for sid, mid in zip(set_ids, new_ids):
+                cur.execute("UPDATE popular_sets SET media_id = %s WHERE id = %s", (mid, sid))
+            for sid in set_ids[len(new_ids):]:          # fewer live media than podium slots
+                cur.execute("DELETE FROM popular_sets WHERE id = %s", (sid,))
+        done.append("media catalog (live list)")
+    cur.execute("""DELETE s FROM popular_sets s JOIN media m ON m.id = s.media_id WHERE m.is_active = 0""")
+    if cur.rowcount:
+        done.append(f"popular_sets cleanup ({cur.rowcount})")
+    cur.execute("UPDATE media SET min_daily = %s, max_daily = %s WHERE is_active = 1 AND max_daily < %s",
+                (MEDIA_MIN_DAILY, MEDIA_MAX_DAILY, MEDIA_MAX_DAILY))
+    if cur.rowcount:
+        done.append(f"media daily range -> {MEDIA_MIN_DAILY}~{MEDIA_MAX_DAILY} ({cur.rowcount})")
+
     # -- strip banner settings (2026-09-02, default OFF) -------------------
     for k, v in (("strip_on", "0"), ("strip_text", "테스트 띠배너 문구입니다"), ("strip_link", ""), ("strip_bg", "#2563EB")):
         cur.execute("INSERT IGNORE INTO settings (k, v) VALUES (%s,%s)", (k, v))

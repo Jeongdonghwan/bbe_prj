@@ -53,6 +53,12 @@
       var kw = $('f-kw').value.trim();
       if (!kw) return err('e-kw', '메인 키워드를 입력해주세요.');
       if (/[,\s]/.test(kw)) return err('e-kw', '키워드는 한 개만 입력하세요.');
+      var r = qtyRange(), v = readQty();
+      if (v < r[0] || v > r[1]) {
+        err('e-qty', '일일 목표 유입수는 ' + r[0].toLocaleString() + '~' + r[1].toLocaleString() + '회 사이로 입력하세요.');
+        return false;
+      }
+      err('e-qty', '');
       return err('e-kw', '');
     }
     return true;
@@ -80,7 +86,7 @@
     mediaId.value = card.dataset.id;
     sel = M[card.dataset.id];
     err('e-media', '');
-    clampQty();
+    clampQty(0);
     save();
   }
   document.querySelectorAll('.msec .mcard').forEach(function (c) {
@@ -88,15 +94,35 @@
   });
 
   // ---------- step 3: qty + memo ----------
-  function clampQty() {
-    var lo = 100, hi = 2000;
-    if (sel) { lo = Math.max(100, Math.ceil(sel.min_daily / 100) * 100); hi = Math.max(lo, sel.max_daily || 2000); }
-    var v = Math.min(hi, Math.max(lo, Math.round((+qty.value || lo) / 100) * 100));
-    qty.value = v;
-    $('qShow').textContent = v.toLocaleString();
+  function qtyRange() {
+    var lo = sel ? Math.max(100, sel.min_daily || 100) : 100;
+    var hi = sel ? Math.max(lo, sel.max_daily || 2000) : 2000;
+    return [lo, hi];
   }
-  $('qMinus').addEventListener('click', function () { qty.value = (+qty.value || 100) - 100; clampQty(); save(); });
-  $('qPlus').addEventListener('click', function () { qty.value = (+qty.value || 100) + 100; clampQty(); save(); });
+  function showRange() {
+    var r = qtyRange();
+    $('qRange').textContent = '버튼으로 100회씩 조절하거나 직접 입력할 수 있습니다. (' +
+      r[0].toLocaleString() + '~' + r[1].toLocaleString() + '회)';
+  }
+  function readQty() { return parseInt(String(qty.value).replace(/[^0-9]/g, ''), 10) || 0; }
+  function clampQty(step) {
+    var r = qtyRange(), v = readQty();
+    if (step) v = Math.round(v / 100) * 100 + step;          // stepper snaps to 100 units
+    v = Math.min(r[1], Math.max(r[0], v || r[0]));
+    qty.value = v;
+    err('e-qty', '');
+    showRange();
+  }
+  qty.addEventListener('input', function () {
+    var r = qtyRange(), v = readQty();
+    qty.value = String(qty.value).replace(/[^0-9]/g, '');
+    err('e-qty', v && (v < r[0] || v > r[1])
+      ? '일일 목표 유입수는 ' + r[0].toLocaleString() + '~' + r[1].toLocaleString() + '회 사이로 입력하세요.' : '');
+    save();
+  });
+  qty.addEventListener('blur', function () { clampQty(0); save(); });
+  $('qMinus').addEventListener('click', function () { clampQty(-100); save(); });
+  $('qPlus').addEventListener('click', function () { clampQty(100); save(); });
   var memo = $('f-memo');
   function memoCnt() { $('memoCnt').textContent = memo.value.length + '/500'; }
   memo.addEventListener('input', function () { memoCnt(); save(); });
@@ -124,7 +150,7 @@
 
   // ---------- step 5: summary ----------
   function summary() {
-    var n = +daysVal.value, q = +qty.value || 0, price = sel ? sel.price : 0;
+    var n = +daysVal.value, q = readQty(), price = sel ? sel.price : 0;
     var daily = price * q, total = daily * n;
     $('cfName').textContent = $('f-name').value || '-';
     $('cfMedia').textContent = sel ? sel.name + ' (' + price.toLocaleString() + '원/회)' : '-';
@@ -163,6 +189,7 @@
       if (card) pick(card);
     }
     if (d.qty) { qty.value = d.qty; }
+
     if (d.days) {
       var b = document.querySelector('.dcard[data-d="' + d.days + '"]');
       if (b) { document.querySelectorAll('.dcard').forEach(function (o) { o.classList.remove('on'); }); b.classList.add('on'); daysVal.value = d.days; }
@@ -176,7 +203,7 @@
     for (var n = 1; n <= 3; n++) {
       if (!validate(n)) { e.preventDefault(); go(n); return; }
     }
-    var total = (sel ? sel.price : 0) * (+qty.value || 0) * (+daysVal.value);
+    var total = (sel ? sel.price : 0) * readQty() * (+daysVal.value);
     if (total > BAL) { e.preventDefault(); go(MAX); return; }
     try { sessionStorage.removeItem(KEY); } catch (err2) { /* ignore */ }
   });
@@ -185,6 +212,6 @@
   var preSel = document.querySelector('.msec .mcard.sel');
   if (preSel) pick(preSel);
   restore();
-  clampQty();
+  clampQty(0);
   paint();
 })();
