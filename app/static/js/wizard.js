@@ -60,22 +60,26 @@
       warn.hidden = false;
       return;
     }
+    // 썸네일은 자주 없다. 네이버가 데이터센터 IP의 상품 페이지 열람을 막아서, 순위 서버가
+    // 수집 캐시(source:"serp")로 답할 때는 이미지가 아예 포함되지 않는다.
     if (d.imageUrl) {
       img.src = d.imageUrl;
       img.hidden = false;
       icon.hidden = true;
       img.onerror = function () { img.hidden = true; icon.hidden = false; };
     }
-    if (d.prodNm || d.imageUrl) {                  // only claim a hit when something came back
-      ok.textContent = (d.mallName ? d.mallName + ' · ' : '') + '상품을 확인했습니다';
-      ok.hidden = false;
-    }
     var nameIn = $('f-name');
-    if (!nameIn.value.trim() && d.prodNm) {        // never overwrite what the user typed
-      nameIn.value = String(d.prodNm).slice(0, 60);
-      preview();
-      save();
+    if (d.prodNm) {
+      ok.textContent = (d.mallName ? d.mallName + ' · ' : '') + '상품을 확인했습니다';
+      if (!nameIn.value.trim()) {                  // never overwrite what the user typed
+        nameIn.value = String(d.prodNm).slice(0, 60);
+        preview();
+        save();
+      }
+    } else {
+      ok.textContent = '주소는 확인했습니다. 상품명은 직접 입력해주세요';
     }
+    ok.hidden = false;
   }
 
   function lookup() {

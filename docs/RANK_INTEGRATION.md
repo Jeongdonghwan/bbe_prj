@@ -33,8 +33,25 @@ GET /partner/product/preview?url=<상품URL>     (rankserver)
 → {"ok":true, "valid":true|false, "prodNm":.., "imageUrl":.., "mallName":.., "nvMid":.., "catalogId":.., "note":..}
 ```
 
-- `valid:false` = rankserver 가 URL을 읽었지만 상품 번호를 못 찾음 → 사용자에게 주소 확인 안내
+- `valid:false` = URL에서 상품 번호를 못 찾음 → 사용자에게 주소 확인 안내.
+  `valid` 판정은 URL 경로에서 상품번호를 뽑은 결과라 **페이지 열람 성공 여부와 무관하다**
 - 네이버 클릭 리다이렉트(`search.naver.com/p/crd/rd`)는 rankserver 가 알아서 풀어준다
+- `source`: `"page"`(상품 페이지를 직접 읽음) · `"serp"`(일별 수집 캐시에서 찾음) · `null`(둘 다 실패)
+
+### 상품명·이미지가 자주 비는 이유 (2026-09-21 확인)
+
+네이버가 **데이터센터 IP의 상품 페이지 열람을 전면 차단(429)** 한다. rankserver·bbe 서버·외부
+미리보기 서비스 모두 차단되고, 스크래퍼 UA 위장도 안 통한다 (네이버는 카카오톡·페이스북봇을
+UA가 아니라 화이트리스트한 실제 서버 IP로 검증). 그래서 rankserver 는 페이지 조회가 실패하면
+매일 수집하는 SERP(키워드별 300위)에서 nvMid·mall_product_id 로 상품명·몰이름을 찾아 돌려준다.
+
+그 결과 UI가 반드시 감당해야 하는 상태:
+
+- **`source:"serp"` 면 `imageUrl` 은 항상 `null`** (수집 항목에 썸네일이 없다) → 이미지 없이도
+  카드가 성립해야 한다. 지금은 기본 아이콘으로 떨어진다
+- **신규 상품은 SERP에도 없어 `source:null` + `prodNm` 없음이 흔하다** → 이때 "상품을
+  확인했습니다"라고 하면 안 된다. `주소는 확인했습니다. 상품명은 직접 입력해주세요` 로 안내하고
+  사용자가 직접 입력하게 둔다 (2단계 순위 연동을 붙이면 등록 후 자동 보정 예정)
 
 구현 위치:
 
@@ -52,6 +69,7 @@ GET /partner/product/preview?url=<상품URL>     (rankserver)
 - `valid:false` 면 빨간 안내만 띄우고, 다음 단계 이동은 막지 않는다 (URL 형식 검증은
   기존 `constants.URL_PATTERNS` 가 서버에서 따로 한다)
 - 사용자가 이미 상품명을 입력했으면 절대 덮어쓰지 않는다
+- `prodNm` 이 없으면 상품을 확인했다고 말하지 않는다 (위 "자주 비는 이유" 참고)
 - 화면 문구("상품 URL을 넣으면 자동으로 채워집니다")는 `preview_on` 기준이라 토큰이 없어도
   노출되고, 실제 호출은 `preview_live`(= `WZ.preview`)가 참일 때만 일어난다
 
@@ -126,6 +144,6 @@ bbe_prj 로 옮길 때 지킬 것: SQL은 `app/models/` 안에서만, 상태 전
 ## 확인 필요
 
 - 2단계 착수 시점 — 현재는 1단계만 합의됨
-- rankserver 배포 후 실제 미리보기 응답으로 1단계 검증 필요
-  (지금까지는 스텁 서버와 `{"ok":false}` 폴백 경로로만 확인)
+- 화면 문구 "상품 URL을 넣으면 자동으로 채워집니다" 는 `source:null` 일 때 지켜지지 않는다.
+  신규 상품에서 얼마나 자주 비는지 실측 후 문구 재검토 필요 (2026-09-21 JDH 요청으로 현재 문구 유지)
 - `.env` 의 `RANK_API_TOKEN` 실제 값 입력 (서버·로컬 각각)
