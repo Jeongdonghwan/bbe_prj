@@ -62,10 +62,13 @@
 .wzpage .w-preview{display:grid; grid-template-columns:64px 1fr; gap:14px; align-items:center; padding:14px; border:1px solid var(--line); border-radius:12px; background:var(--panel-2); margin-top:-6px}
 .wzpage .w-preview .w-thumb{width:64px; height:64px; border-radius:10px; background:linear-gradient(135deg,var(--brand-soft),var(--brand-tint)); display:grid; place-items:center; color:var(--brand)}
 .wzpage .w-preview .w-pn{font-weight:600}
+.wzpage .w-preview .w-pn.w-dim{font-weight:400; color:var(--ink-3)}
 .wzpage .w-preview .w-pu{font-size:12px; color:var(--ink-3); word-break:break-all}
 .wzpage .w-preview .w-ps{font-size:12px; color:var(--ok); font-weight:600; margin-top:2px}
 .wzpage .w-preview .w-pw{font-size:12px; color:var(--warn); font-weight:600; margin-top:2px}
 .wzpage .w-preview .w-thumb img{width:100%; height:100%; object-fit:cover; border-radius:10px}
+.wzpage .w-urlok{display:inline-flex; align-items:center; gap:7px; max-width:100%; margin-top:-2px; padding:7px 13px; border-radius:999px; background:var(--ok-bg); color:var(--ok); font-size:12.5px; font-weight:600}
+.wzpage .w-urlok span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:500}
 .wzpage .w-md{display:grid; grid-template-columns:1fr 300px; gap:22px; align-items:start}
 .wzpage .w-tabs{display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap}
 .wzpage .w-tabs button{height:32px; padding:0 13px; border-radius:999px; border:1px solid var(--line-2); background:var(--panel); font-size:13px; color:var(--ink-2)}

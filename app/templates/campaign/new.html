@@ -48,10 +48,14 @@
                  placeholder="{% if ch == 'store' %}https://smartstore.naver.com/스토어명/products/상품번호{% elif ch == 'coupang' %}https://www.coupang.com/vp/products/상품번호{% else %}https://m.place.naver.com/…{% endif %}">
           <span class="w-err" id="e-url" hidden></span>
         </div>
+        {% if preview_on %}
         <div class="w-preview" id="preview" hidden>
           <div class="w-thumb"><span id="pvIcon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 7.5h14l-1 11.5H6L5 7.5zM9 7.5a3 3 0 0 1 6 0"/></svg></span><img id="pvImg" alt="" hidden></div>
           <div><div class="w-pn" id="pvName">-</div><div class="w-pu" id="pvUrl">-</div><div class="w-ps" id="pvOk" hidden>주소 형식을 확인했습니다</div><div class="w-pw" id="pvWarn" hidden></div></div>
         </div>
+        {% else %}
+        <div class="w-urlok" id="urlOk" hidden><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg><span id="urlOkTxt"></span></div>
+        {% endif %}
         <div class="w-fld" style="margin-top:20px">
           <label for="f-name">{{ '플레이스명' if is_place else '상품명' }}{% if not is_place %} <span class="w-opt">선택</span>{% endif %}</label>
           <p class="w-hint">{% if is_place %}캠페인 목록에서 구분하기 쉬운 이름. 2~60자.{% elif preview_on %}상품 URL을 넣으면 자동으로 채워집니다. 고쳐도 되고, 비워두면 희망 키워드로 표시됩니다.{% else %}캠페인 목록에서 구분하기 쉬운 이름. 비우면 희망 키워드로 표시됩니다.{% endif %}</p>
@@ -198,7 +202,7 @@ window.WZ = {
   groups: {{ group_names | tojson }},
   types: {{ types_json | safe }},
   spans: {{ presets | tojson }},
-  preview: {{ 'true' if preview_on else 'false' }}
+  preview: {{ 'true' if preview_live else 'false' }}
 };
 </script>
 <script src="{{ url_for('static', filename='js/wizard.js') }}"></script>

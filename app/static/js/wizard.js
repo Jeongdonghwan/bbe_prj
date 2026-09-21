@@ -27,13 +27,24 @@
   }
 
   /* ── Step 1: URL preview ── */
+  function urlLooksOk(u) { return /^https?:\/\/[^\s]+\.[^\s]+/.test(u); }
+  function tidyUrl(u) { return u.replace(/^https?:\/\//, '').split('?')[0]; }
+
   function preview() {
     var u = $('f-url').value.trim(), n = $('f-name').value.trim();
+    var chip = $('urlOk');
+    if (chip) {                                    // 쿠팡·플레이스: 확인 표시만
+      chip.hidden = !(u && urlLooksOk(u));
+      if (!chip.hidden) $('urlOkTxt').textContent = tidyUrl(u);
+      return;
+    }
     $('preview').hidden = !u;
     if (!u) { $('pvImg').hidden = true; $('pvIcon').hidden = false; $('pvWarn').hidden = true; return; }
-    $('pvName').textContent = n || ($('f-name').dataset.opt === '1' ? '이름을 비우면 희망 키워드로 표시됩니다' : '이름을 입력하면 여기에 표시됩니다');
-    $('pvUrl').textContent = u.replace(/^https?:\/\//, '').split('?')[0];
-    $('pvOk').hidden = !/^https?:\/\/[^\s]+\.[^\s]+/.test(u);
+    var pn = $('pvName');
+    pn.textContent = n || ($('f-name').dataset.opt === '1' ? '희망 키워드로 표시됩니다' : '이름을 입력해주세요');
+    pn.classList.toggle('w-dim', !n);              // a hint here must not read like the product name
+    $('pvUrl').textContent = tidyUrl(u);
+    $('pvOk').hidden = !urlLooksOk(u);
   }
 
   /* ── Step 1: product lookup (proxy to the rank server; best-effort) ── */
@@ -66,9 +77,8 @@
   }
 
   function lookup() {
-    if (!W.preview) return;                        // rank server off, or a channel it cannot read
     var url = $('f-url').value.trim();
-    if (!/^https?:\/\/[^\s]+\.[^\s]+/.test(url)) return;
+    if (!urlLooksOk(url)) return;
     if (lookupDone[url]) { showLookup(url, lookupDone[url]); return; }
     var seq = ++lookupSeq;
     fetch('/api/product/preview?url=' + encodeURIComponent(url), { credentials: 'same-origin' })
@@ -312,16 +322,18 @@
   ['f-url', 'f-name', 'f-kw'].forEach(function (id) {
     $(id).addEventListener('input', function () { preview(); save(); });
   });
-  var pvOkDefault = $('pvOk').textContent;
-  $('f-url').addEventListener('input', function () {
-    $('pvWarn').hidden = true;
-    $('pvOk').textContent = pvOkDefault;          // drop the previous product's mall line
-    $('pvImg').hidden = true;
-    $('pvIcon').hidden = false;
-    clearTimeout(lookupTimer);
-    lookupTimer = setTimeout(lookup, 600);
-  });
-  $('f-url').addEventListener('blur', function () { clearTimeout(lookupTimer); lookup(); });
+  if (W.preview && $('preview')) {
+    var pvOkDefault = $('pvOk').textContent;
+    $('f-url').addEventListener('input', function () {
+      $('pvWarn').hidden = true;
+      $('pvOk').textContent = pvOkDefault;        // drop the previous product's mall line
+      $('pvImg').hidden = true;
+      $('pvIcon').hidden = false;
+      clearTimeout(lookupTimer);
+      lookupTimer = setTimeout(lookup, 600);
+    });
+    $('f-url').addEventListener('blur', function () { clearTimeout(lookupTimer); lookup(); });
+  }
 
   /* ── submit ── */
   $('cwForm').addEventListener('submit', function (e) {

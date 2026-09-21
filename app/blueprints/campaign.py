@@ -151,8 +151,9 @@ def new(channel):
                       "desc": m["description"] or "", "fit": m["fit_for"], "flow": m["flow_steps"]}
             for m in medias}, ensure_ascii=False),
         today_picks=today_picks,
-        # Auto-fill copy must not promise what an unconfigured rank server cannot deliver.
-        preview_on=channel in ("store", "coupang") and rank_client.configured(),
+        # 미리보기는 쇼핑·스토어만. 쿠팡·플레이스는 순위 서버가 읽지 못한다 (2026-09-21 JDH).
+        preview_on=channel == "store",
+        preview_live=channel == "store" and rank_client.configured(),
         balance=g.user["credit_balance"], place_categories=PLACE_CATEGORIES,
         bank=bank_info(), is_debug=current_app.debug,
     )

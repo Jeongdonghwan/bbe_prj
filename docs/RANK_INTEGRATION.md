@@ -22,6 +22,9 @@ rankserver 호출은 `app/services/rank_client.py` 안에서만 한다. 코드�
 
 ## 1단계 — 상품 미리보기 (구현 완료, 2026-09-21)
 
+**쇼핑·스토어 채널에만 적용한다** (2026-09-21 JDH). 쿠팡·플레이스는 순위 서버가 읽는
+대상이 아니라서 미리보기 카드 자체를 렌더하지 않고, 주소 확인 칩(`.w-urlok`)만 보여준다.
+
 캠페인 등록 1스텝에서 상품 URL을 넣으면 상품명·대표이미지·몰이름을 미리 보여주고,
 상품명 칸이 비어 있으면 자동으로 채운다.
 
@@ -40,7 +43,8 @@ GET /partner/product/preview?url=<상품URL>     (rankserver)
 | `app/services/rank_client.py` | rankserver HTTP 호출. 타임아웃 5초, 어떤 실패도 예외 없이 `{"ok": false}` |
 | `app/blueprints/campaign.py` `api_product_preview()` | 프록시 라우트 `GET /api/product/preview?url=` (로그인 필수), `product_api` 블루프린트 |
 | `app/static/js/wizard.js` `lookup()` / `showLookup()` | 입력 후 600ms 디바운스 + blur 시 호출, URL별 1회 캐시 |
-| `app/templates/campaign/new.html` `#preview` | 썸네일(`#pvImg`) · 상태줄(`#pvOk`) · 경고(`#pvWarn`) |
+| `app/templates/campaign/new.html` `#preview` | 썸네일(`#pvImg`) · 상태줄(`#pvOk`) · 경고(`#pvWarn`). 스토어에서만 렌더 |
+| `app/blueprints/campaign.py` `new()` | `preview_on`(문구·카드 노출) / `preview_live`(실제 호출 = 위 + 토큰 설정됨) |
 
 동작 규칙 — **미리보기는 best-effort라 등록 흐름을 절대 막지 않는다.**
 
@@ -48,6 +52,8 @@ GET /partner/product/preview?url=<상품URL>     (rankserver)
 - `valid:false` 면 빨간 안내만 띄우고, 다음 단계 이동은 막지 않는다 (URL 형식 검증은
   기존 `constants.URL_PATTERNS` 가 서버에서 따로 한다)
 - 사용자가 이미 상품명을 입력했으면 절대 덮어쓰지 않는다
+- 화면 문구("상품 URL을 넣으면 자동으로 채워집니다")는 `preview_on` 기준이라 토큰이 없어도
+  노출되고, 실제 호출은 `preview_live`(= `WZ.preview`)가 참일 때만 일어난다
 
 ## 2단계 — 캠페인 순위 자동 조회 (계획, 미구현)
 
