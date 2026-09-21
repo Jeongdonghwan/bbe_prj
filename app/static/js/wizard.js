@@ -231,8 +231,16 @@
 
   /* ── channel popover ── */
   var cb = $('chanBtn'), cp = $('chanPop');
-  cb.addEventListener('click', function (e) { e.stopPropagation(); cp.hidden = !cp.hidden; });
-  document.addEventListener('click', function () { cp.hidden = true; });
+  function shutChan() { cp.hidden = true; cb.setAttribute('aria-expanded', 'false'); }
+  cb.addEventListener('click', function (e) {
+    e.stopPropagation();
+    cp.hidden = !cp.hidden;
+    cb.setAttribute('aria-expanded', cp.hidden ? 'false' : 'true');
+  });
+  document.addEventListener('click', shutChan);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' || e.keyCode === 27) shutChan();
+  });
 
   /* ── draft ── */
   function save() {

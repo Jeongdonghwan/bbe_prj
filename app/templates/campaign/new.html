@@ -9,7 +9,7 @@
   <div class="w-head">
     <h1>{{ channels[ch] }} 광고 만들기</h1>
     <div class="w-sub">{{ channels[ch] }} 채널에서 광고를 만듭니다
-      <button type="button" id="chanBtn">채널 변경</button>
+      <button type="button" id="chanBtn" aria-expanded="false" aria-controls="chanPop">채널 변경</button>
       <span class="w-chanpop" id="chanPop" hidden>
         {% for key, label in channels.items() %}{% if key != ch %}<a href="/campaign/{{ key }}/new">{{ label }}</a>{% endif %}{% endfor %}
       </span>
