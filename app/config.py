@@ -42,6 +42,11 @@ class Config:
         "holder": os.getenv("BANK_HOLDER", "트래픽허브"),
     }
 
+    # Rank server partner API (product preview; 순위 연동은 docs/RANK_INTEGRATION.md).
+    # Empty -> preview is skipped and the wizard falls back to manual entry.
+    RANK_SERVER_URL = os.getenv("RANK_SERVER_URL", "")
+    RANK_API_TOKEN = os.getenv("RANK_API_TOKEN", "")
+
     # Naver Search Ad API (P4-c). Empty -> deterministic dummy data.
     NAVER_AD_ACCESS_LICENSE = os.getenv("NAVER_AD_ACCESS_LICENSE", "")
     NAVER_AD_SECRET_KEY = os.getenv("NAVER_AD_SECRET_KEY", "")

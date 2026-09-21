@@ -49,8 +49,8 @@
           <span class="w-err" id="e-url" hidden></span>
         </div>
         <div class="w-preview" id="preview" hidden>
-          <div class="w-thumb"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 7.5h14l-1 11.5H6L5 7.5zM9 7.5a3 3 0 0 1 6 0"/></svg></div>
-          <div><div class="w-pn" id="pvName">-</div><div class="w-pu" id="pvUrl">-</div><div class="w-ps" id="pvOk" hidden>주소 형식을 확인했습니다</div></div>
+          <div class="w-thumb"><span id="pvIcon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 7.5h14l-1 11.5H6L5 7.5zM9 7.5a3 3 0 0 1 6 0"/></svg></span><img id="pvImg" alt="" hidden></div>
+          <div><div class="w-pn" id="pvName">-</div><div class="w-pu" id="pvUrl">-</div><div class="w-ps" id="pvOk" hidden>주소 형식을 확인했습니다</div><div class="w-pw" id="pvWarn" hidden></div></div>
         </div>
         <div class="w-fld" style="margin-top:20px">
           <label for="f-name">{{ '플레이스명' if is_place else '상품명' }}{% if not is_place %} <span class="w-opt">선택</span>{% endif %}</label>

@@ -25,6 +25,7 @@ def bank_info():
 
 bp = Blueprint("campaign", __name__, url_prefix="/campaign")
 api = Blueprint("campaign_api", __name__, url_prefix="/api/campaign")
+prod = Blueprint("product_api", __name__, url_prefix="/api/product")
 pop = Blueprint("popular", __name__)
 
 CHANNELS = CHANNEL_LABEL
@@ -519,6 +520,17 @@ def api_quote():
         return jsonify(ok=False, error="input"), 400
     days = campaign_service.days_between(s, e)
     return jsonify(ok=True, **campaign_service.quote(media["unit_price"], qty, days))
+
+
+@prod.route("/preview")
+@login_required
+def api_product_preview():
+    """Proxy to the rank server so the partner token stays server side.
+
+    Best-effort: any failure answers {"ok": false} and the wizard just keeps manual entry.
+    """
+    from ..services import rank_client
+    return jsonify(rank_client.product_preview(request.args.get("url", "")))
 
 
 @api.route("/keywords")

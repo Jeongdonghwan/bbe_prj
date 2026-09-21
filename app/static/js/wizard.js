@@ -30,10 +30,54 @@
   function preview() {
     var u = $('f-url').value.trim(), n = $('f-name').value.trim();
     $('preview').hidden = !u;
-    if (!u) return;
+    if (!u) { $('pvImg').hidden = true; $('pvIcon').hidden = false; $('pvWarn').hidden = true; return; }
     $('pvName').textContent = n || ($('f-name').dataset.opt === '1' ? '이름을 비우면 희망 키워드로 표시됩니다' : '이름을 입력하면 여기에 표시됩니다');
     $('pvUrl').textContent = u.replace(/^https?:\/\//, '').split('?')[0];
     $('pvOk').hidden = !/^https?:\/\/[^\s]+\.[^\s]+/.test(u);
+  }
+
+  /* ── Step 1: product lookup (proxy to the rank server; best-effort) ── */
+  var lookupSeq = 0, lookupDone = {}, lookupTimer = null;
+
+  function showLookup(url, d) {
+    var img = $('pvImg'), icon = $('pvIcon'), ok = $('pvOk'), warn = $('pvWarn');
+    warn.hidden = true;
+    if (!d || !d.ok) return;                       // could not ask — stay quiet
+    if (d.valid === false) {
+      img.hidden = true; icon.hidden = false; ok.hidden = true;
+      warn.textContent = d.note || '이 주소에서 상품 번호를 찾지 못했습니다. 상품 페이지 주소가 맞는지 확인해주세요.';
+      warn.hidden = false;
+      return;
+    }
+    if (d.imageUrl) {
+      img.src = d.imageUrl;
+      img.hidden = false;
+      icon.hidden = true;
+      img.onerror = function () { img.hidden = true; icon.hidden = false; };
+    }
+    ok.textContent = (d.mallName ? d.mallName + ' · ' : '') + '상품을 확인했습니다';
+    ok.hidden = false;
+    var nameIn = $('f-name');
+    if (!nameIn.value.trim() && d.prodNm) {        // never overwrite what the user typed
+      nameIn.value = String(d.prodNm).slice(0, 60);
+      preview();
+      save();
+    }
+  }
+
+  function lookup() {
+    var url = $('f-url').value.trim();
+    if (!/^https?:\/\/[^\s]+\.[^\s]+/.test(url)) return;
+    if (lookupDone[url]) { showLookup(url, lookupDone[url]); return; }
+    var seq = ++lookupSeq;
+    fetch('/api/product/preview?url=' + encodeURIComponent(url), { credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : { ok: false }; })
+      .catch(function () { return { ok: false }; })
+      .then(function (d) {
+        lookupDone[url] = d;
+        if (seq !== lookupSeq) return;             // a newer URL was typed meanwhile
+        if ($('f-url').value.trim() === url) showLookup(url, d);
+      });
   }
 
   /* ── Step 2: master-detail ── */
@@ -267,6 +311,16 @@
   ['f-url', 'f-name', 'f-kw'].forEach(function (id) {
     $(id).addEventListener('input', function () { preview(); save(); });
   });
+  var pvOkDefault = $('pvOk').textContent;
+  $('f-url').addEventListener('input', function () {
+    $('pvWarn').hidden = true;
+    $('pvOk').textContent = pvOkDefault;          // drop the previous product's mall line
+    $('pvImg').hidden = true;
+    $('pvIcon').hidden = false;
+    clearTimeout(lookupTimer);
+    lookupTimer = setTimeout(lookup, 600);
+  });
+  $('f-url').addEventListener('blur', function () { clearTimeout(lookupTimer); lookup(); });
 
   /* ── submit ── */
   $('cwForm').addEventListener('submit', function (e) {

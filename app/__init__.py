@@ -150,7 +150,7 @@ def create_app():
     db.init_app(app)
 
     from .blueprints import main, auth, notice, campaign, credit, tools, community, my, admin
-    for bp in (main.bp, auth.bp, notice.bp, campaign.bp, campaign.api, campaign.pop, credit.bp, tools.bp, community.bp, community.notif_bp, my.bp, admin.bp):
+    for bp in (main.bp, auth.bp, notice.bp, campaign.bp, campaign.api, campaign.prod, campaign.pop, credit.bp, tools.bp, community.bp, community.notif_bp, my.bp, admin.bp):
         app.register_blueprint(bp)
 
     app.before_request(auth.load_current_user)
