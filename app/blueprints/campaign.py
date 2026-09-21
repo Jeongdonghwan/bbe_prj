@@ -116,11 +116,14 @@ def new(channel):
         return pre
     pre, editing = pre
     medias, sections = _media_ctx(channel)
-    now = datetime.now()
-    start = _next_weekday(now.date() + (timedelta(days=1) if now.strftime("%H:%M") >= "13:30" else timedelta(days=0)))
-    if not pre.get("start_date"):
-        pre["start_date"] = start
-        pre["end_date"] = start + timedelta(days=9)
+    min_start = campaign_service.earliest_start()
+    pre_start = min_start
+    if pre.get("start_date"):
+        try:
+            cand = pre["start_date"] if isinstance(pre["start_date"], date) else date.fromisoformat(str(pre["start_date"]))
+            pre_start = max(cand, min_start)
+        except (ValueError, TypeError):
+            pre_start = min_start
     pre_days = 10
     if pre.get("start_date") and pre.get("end_date"):
         try:
@@ -132,15 +135,9 @@ def new(channel):
             pre_days = 10
     return render_template(
         "campaign/new.html", channel=channel, channels=CHANNELS, sections=sections,
-        pre=pre, editing=editing, presets=DATE_PRESETS, pre_days=pre_days, start=start,
-        wiz_steps=wizard_steps(channel),
+        pre=pre, editing=editing, presets=DATE_PRESETS, pre_days=pre_days,
+        min_start=min_start, pre_start=pre_start, wiz_steps=wizard_steps(channel),
         balance=g.user["credit_balance"], place_categories=PLACE_CATEGORIES,
-        media_json=json.dumps({m["id"]: {"name": m["name"], "price": m["unit_price"], "list": m["list_price"],
-                                         "min_days": m["min_days"], "min_daily": m["min_daily"], "max_daily": m["max_daily"],
-                                         "tagline": m["tagline"], "eff": m["eff_level"], "eff_note": m["eff_note"] or "",
-                                         "same_day": bool(m["same_day"]), "cutoff": str(m["cutoff_time"])[:5],
-                                         "desc": m["description"] or ""} for m in medias},
-                              ensure_ascii=False),
         bank=bank_info(), is_debug=current_app.debug,
     )
 
@@ -155,8 +152,8 @@ def _parse_form(channel, media, form):
         return None, "기간을 선택해주세요."
     if f["end_date"] < f["start_date"]:
         return None, "종료일이 시작일보다 빠릅니다."
-    if f["start_date"] < date.today():
-        return None, "시작일은 오늘 이후여야 합니다."
+    if f["start_date"] <= date.today():
+        return None, "시작일은 내일 이후여야 합니다. 당일 구동은 제공하지 않습니다."
     days = campaign_service.days_between(f["start_date"], f["end_date"])
     if days < media["min_days"]:
         return None, f"이 매체는 최소 {media['min_days']}일 이상 설정해야 합니다."
@@ -166,8 +163,10 @@ def _parse_form(channel, media, form):
         f["daily_qty"] = int(form.get("daily_qty", "0"))
     except ValueError:
         return None, "일 작업량을 입력해주세요."
-    if not (media["min_daily"] <= f["daily_qty"] <= media["max_daily"]):
-        return None, f"일 작업량은 {media['min_daily']}~{media['max_daily']}건입니다."
+    if f["daily_qty"] < media["min_daily"]:
+        return None, f"일 작업량은 {media['min_daily']}건 이상이어야 합니다."
+    if media["max_daily"] and f["daily_qty"] > media["max_daily"]:
+        return None, f"이 유형의 일 작업량은 최대 {media['max_daily']}건입니다."
 
     f["biz_name"] = (form.get("biz_name") or "").strip()[:80]
     f["product_name"] = (form.get("product_name") or "").strip()[:120] or None
@@ -200,40 +199,54 @@ def _parse_form(channel, media, form):
 
 
 def _create(channel):
-    """Credit model (2026-09-16): wizard posts media/days/qty; server derives dates, spends credit, no card/bank."""
+    """Credit model: wizard posts type/date/qty; server re-reads the unit price and re-checks the total."""
     media_id = request.form.get("media_id", type=int)
     media = media_model.get(media_id) if media_id else None
     if not media or media["channel"] != channel or not media["is_active"]:
-        flash("광고 유형(매체)을 선택해주세요.")
+        flash("광고 유형을 선택해주세요.")
         return redirect(url_for("campaign.new", channel=channel))
     days = request.form.get("days", type=int)
     if days not in DATE_PRESETS:
         flash("광고 기간을 선택해주세요.")
         return redirect(url_for("campaign.new", channel=channel))
-    now = datetime.now()
-    same_day_ok = media["same_day"] and now.strftime("%H:%M") < str(media["cutoff_time"])[:5]
-    start = _next_weekday(now.date() + (timedelta(days=0) if same_day_ok else timedelta(days=1)))
+    earliest = campaign_service.earliest_start()
+    try:
+        start = date.fromisoformat(request.form.get("start_date", ""))
+    except ValueError:
+        flash("시작일을 선택해주세요.")
+        return _back(channel, media_id)
+    if start < earliest:
+        flash(f"시작일은 {earliest.strftime('%Y.%m.%d')} 이후로 선택해주세요. 접수는 24시간 가능하고 구동은 다음 날부터 시작됩니다.")
+        return _back(channel, media_id)
     form = request.form.to_dict()
     form["start_date"] = start.isoformat()
     form["end_date"] = (start + timedelta(days=days - 1)).isoformat()
     data, err = _parse_form(channel, media, form)
     if err:
         flash(err)
-        session["campaign_prefill"] = {k: v for k, v in request.form.items() if k != "csrf"}
-        session["campaign_prefill"]["media_id"] = media_id
-        return redirect(url_for("campaign.new", channel=channel))
-    note = (request.form.get("request_note") or "").strip()[:200]
+        return _back(channel, media_id)
+    note = (request.form.get("request_note") or "").strip()[:500]
     if note:
         data["extra"]["request_note"] = note
+    expected = int(media["unit_price"]) * data["daily_qty"] * days
+    shown = request.form.get("client_total", type=int)
+    if shown is not None and shown != expected:
+        flash(f"금액이 달라졌습니다. 총 광고비 {expected:,}원으로 다시 확인해주세요.")
+        return _back(channel, media_id)
     try:
         c = campaign_service.create_with_credit(g.user, media, data)
     except campaign_service.CampaignError as e:
         flash(str(e))
-        session["campaign_prefill"] = {k: v for k, v in request.form.items() if k != "csrf"}
-        session["campaign_prefill"]["media_id"] = media_id
-        return redirect(url_for("campaign.new", channel=channel))
-    flash(f"광고가 접수되었습니다. 검수 후 구동이 시작됩니다. (주문번호 {c['order_no']})")
+        return _back(channel, media_id)
+    flash(f"광고를 만들었습니다. 검수 후 구동이 시작됩니다. (주문번호 {c['order_no']})")
     return redirect(url_for("campaign.manage", channel=channel, open=c["id"]))
+
+
+def _back(channel, media_id):
+    """Return to the wizard keeping what the user typed."""
+    session["campaign_prefill"] = {k: v for k, v in request.form.items() if k != "csrf"}
+    session["campaign_prefill"]["media_id"] = media_id
+    return redirect(url_for("campaign.new", channel=channel))
 
 
 @bp.route("/<channel>/<int:campaign_id>/pay")

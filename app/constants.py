@@ -35,7 +35,7 @@ MEDIA_SECTIONS = {
 
 MEDIA_COLORS = ["#6C5CE7", "#0EA5E9", "#8B5CF6", "#F97316", "#10B981", "#EC4899", "#F59E0B", "#2563EB"]
 MEDIA_MIN_DAILY = 100
-MEDIA_MAX_DAILY = 2000
+MEDIA_MAX_DAILY = 0   # 0 = 상한 없음 (2026-09-21 JDH)
 
 CHANNEL_LABEL = {"place": "플레이스", "store": "쇼핑·스토어", "coupang": "쿠팡"}
 CHANNEL_CLASS = {"place": "c-place", "store": "c-store", "coupang": "c-coupang"}
@@ -79,6 +79,15 @@ STORE_SLOT_MAX = 10
 RECO_PER_1000 = 1.5
 
 # Link whitelist per channel (host suffix match)
+# 접수는 24시간. 이 시각 이전 접수는 익일 구동, 이후는 익익일 구동. 당일 시작 없음 (2026-09-21 JDH).
+ORDER_CUTOFF = "16:00"
+
+# Channel product-page patterns checked after the host whitelist. Query strings are preserved.
+URL_PATTERNS = {
+    "coupang": (r"^/(vp|vm)/products/\d+", "쿠팡 상품 페이지 주소가 맞는지 확인해주세요. www.coupang.com/vp/products/로 시작해야 합니다."),
+    "store": (r"^/[^/]+(/products/\d+)?/?$", "네이버 쇼핑 상품 주소가 맞는지 확인해주세요. smartstore.naver.com 또는 brand.naver.com 주소를 넣어주세요."),
+}
+
 URL_WHITELIST = {
     "place": ["m.place.naver.com", "place.naver.com", "map.naver.com", "naver.me", "pcmap.place.naver.com"],
     "store": ["smartstore.naver.com", "brand.naver.com", "shopping.naver.com", "m.smartstore.naver.com"],

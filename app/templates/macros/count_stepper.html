@@ -1,0 +1,10 @@
+{# +/- counter with free typing. `min` is the floor; `step` the button increment. #}
+{% macro count_stepper(name, value, min=100, step=100, unit='회') %}
+<div class="qty-row">
+  <button type="button" class="qbtn" id="qMinus" aria-label="{{ step }}{{ unit }} 줄이기">−</button>
+  <div class="qval"><input class="num" id="qty" name="{{ name }}" type="text" inputmode="numeric"
+                           value="{{ value }}" data-min="{{ min }}" data-step="{{ step }}" aria-label="일일 목표 유입수"><span>{{ unit }}</span></div>
+  <button type="button" class="qbtn" id="qPlus" aria-label="{{ step }}{{ unit }} 늘리기">+</button>
+</div>
+<span class="wz-err" id="e-qty" hidden></span>
+{% endmacro %}

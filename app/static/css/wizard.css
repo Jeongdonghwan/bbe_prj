@@ -71,6 +71,54 @@
   .wz-foot .btn{min-width:88px}
 }
 
-/* typed daily-target input */
+
+/* step 2 - ad type radio list */
+.adt-list{border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-top:14px}
+.adt-group{background:var(--bg);padding:8px 16px;font-size:12px;font-weight:700;color:var(--text-2)}
+.adt{display:flex;align-items:center;gap:12px;padding:13px 16px;border-top:1px solid var(--border);cursor:pointer}
+.adt-group + .adt{border-top:0}
+.adt:hover{background:var(--accent-soft)}
+.adt input{position:absolute;opacity:0;width:0;height:0}
+.adt-radio{flex:none;width:18px;height:18px;border-radius:50%;border:1.5px solid var(--line-2)}
+.adt.on .adt-radio{border-color:var(--accent);border-width:5px}
+.adt.on{background:var(--accent-soft)}
+.adt-body{flex:1;min-width:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.adt-body b{font-size:14.5px}
+.adt-badge{font-style:normal;font-size:11px;font-weight:700;padding:2px 7px;border-radius:5px}
+.b-rec{background:var(--accent-soft);color:var(--accent)}
+.b-best{background:var(--warn-soft);color:var(--warn)}
+.b-new{background:var(--success-soft);color:var(--success)}
+.adt-desc{font-size:12.5px;color:var(--text-3)}
+.adt-price{flex:none;font-size:15px;font-weight:700;text-align:right;min-width:88px;font-variant-numeric:tabular-nums}
+.adt-price small{font-size:11.5px;font-weight:500;color:var(--text-3);margin-left:1px}
+.adt-picked{margin-top:12px;font-size:13px;color:var(--text-2)}
+.adt-picked b{color:var(--text)}
+
+/* step 3 - stepper + live daily cost */
 .qval input{width:96px;border:0;background:transparent;outline:none;text-align:right;font-size:20px;
             font-weight:700;color:var(--text);font-family:var(--font);font-variant-numeric:tabular-nums}
+.daycost{display:flex;align-items:center;gap:10px;margin-top:18px;padding:14px 16px;border-radius:12px;
+         background:var(--accent-soft);font-size:13.5px;font-weight:700}
+.daycost em{font-style:normal;font-weight:500;color:var(--text-2);font-size:12.5px}
+.daycost b{margin-left:auto;font-size:17px;color:var(--accent)}
+.wz-pane details>summary{cursor:pointer;font-size:13.5px;font-weight:700;list-style:none}
+.wz-pane details>summary::-webkit-details-marker{display:none}
+
+/* step 4 - period cards + cost block */
+.dcard-range{display:block;font-size:12px;font-weight:500;color:var(--text-3);margin-top:5px}
+.dcard.on .dcard-range{color:rgba(255,255,255,.85)}
+.costbox{margin-top:18px}
+.cost-note{font-size:12.5px;color:var(--text-2);padding:10px 0 2px;line-height:1.6}
+.cost-note.lack{color:var(--warn)}
+.costbox.lack{background:var(--danger-soft)}
+.wz-err.soft{color:var(--warn)}
+
+/* step 5 - summary table */
+.sumtable{width:100%;border-collapse:collapse;margin-top:14px;font-size:14px}
+.sumtable th{width:150px;text-align:left;vertical-align:top;padding:13px 0;font-size:13px;font-weight:600;
+             color:var(--text-2);border-bottom:1px solid var(--border)}
+.sumtable td{padding:13px 0;border-bottom:1px solid var(--border);vertical-align:top}
+.sumtable tr:last-child td,.sumtable tr:last-child th{border-bottom:0}
+.sum-sub{display:block;font-size:12px;color:var(--text-3);margin-top:3px;word-break:break-all}
+.sum-edit{width:56px;text-align:right}
+.sum-edit .lnk{font-size:12.5px}

@@ -1,13 +1,17 @@
 {% extends "layout/base.html" %}
 {% from "macros/wizard_steps.html" import wizard_steps %}
+{% from "macros/ad_type_list.html" import ad_type_list %}
+{% from "macros/count_stepper.html" import count_stepper %}
+{% from "macros/period_picker.html" import period_picker %}
+{% from "macros/cost_summary.html" import cost_summary %}
 {% block title %}{{ channels[channel] }} 광고 만들기{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/wizard.css') }}">{% endblock %}
 {% block content %}
 {% set ch = channel %}
 {% set is_place = ch == 'place' %}
 <form method="post" id="cwForm" class="wz" autocomplete="off">
-  <input type="hidden" name="media_id" id="mediaId" value="{{ pre.media_id or '' }}">
   <input type="hidden" name="days" id="daysVal" value="{{ pre_days }}">
+  <input type="hidden" name="client_total" id="clientTotal" value="0">
 
   <div class="wz-head">
     <div>
@@ -42,7 +46,7 @@
           </div>
           <div class="wz-field">
             <label for="f-name">{{ '플레이스명' if is_place else '상품명' }}</label>
-            <p class="wz-hint">{{ '2~60자로 입력하세요.' }}</p>
+            <p class="wz-hint">2~60자로 입력하세요.</p>
             <input class="in" id="f-name" name="{{ 'biz_name' if is_place else 'product_name' }}" value="{{ (pre.biz_name if is_place else (pre.product_name or pre.biz_name)) or '' }}" maxlength="60" required>
             <span class="wz-err" id="e-name" hidden></span>
           </div>
@@ -51,19 +55,8 @@
         <section class="wz-pane" data-p="2" hidden>
           <h4>광고 유형</h4>
           <p class="wz-hint">{{ '플레이스' if is_place else '상품' }} 특성에 맞는 광고 유형을 고르세요.</p>
-          {% for sec in sections %}
-          <div class="msec"><span class="msec-h">{{ sec.name }}</span>
-            <div class="mtiles">
-              {% for m in sec['items'] %}
-              <div class="mcard mtile{% if pre.media_id == m.id %} sel{% endif %}" data-id="{{ m.id }}" data-p="{{ m.unit_price }}" title="{{ m.tagline or m.name }}">
-                {% if m.badge == 'best' %}<span class="bd bd-best">BEST</span>{% elif m.badge == 'rec' %}<span class="bd bd-rec">인기</span>{% elif m.badge == 'new' %}<span class="bd bd-new">NEW</span>{% endif %}
-                <b>{{ m.name }}</b>
-                <span class="mprice"><em class="tile-rate">{{ m.unit_price | fmt_num }}원/회</em></span>
-              </div>
-              {% endfor %}
-            </div>
-          </div>
-          {% endfor %}
+          {{ ad_type_list(sections, pre.media_id) }}
+          <p class="adt-picked" id="adtPicked" hidden>선택한 유형 <b id="adtPickedName"></b> · 유입 1회당 <b class="num" id="adtPickedPrice"></b></p>
           <span class="wz-err" id="e-media" hidden></span>
         </section>
 
@@ -79,12 +72,7 @@
           <div class="wz-field">
             <label>일일 목표 유입수</label>
             <p class="wz-hint" id="qRange">버튼으로 100회씩 조절하거나 직접 입력할 수 있습니다.</p>
-            <div class="qty-row">
-              <button type="button" class="qbtn" id="qMinus" aria-label="100회 줄이기">−</button>
-              <div class="qval"><input class="num" id="qty" name="daily_qty" type="text" inputmode="numeric" value="{{ pre.daily_qty or 100 }}" aria-label="일일 목표 유입수"><span>회</span></div>
-              <button type="button" class="qbtn" id="qPlus" aria-label="100회 늘리기">+</button>
-            </div>
-            <span class="wz-err" id="e-qty" hidden></span>
+            {{ count_stepper('daily_qty', pre.daily_qty or 100) }}
             <div class="comp-range">
               <small>경쟁도별 권장 범위</small>
               <div class="cr-chips">
@@ -94,8 +82,9 @@
               </div>
             </div>
           </div>
-          <details class="wz-field" id="memoBox"{% if pre.extra and pre.extra.request_note %} open{% endif %}>
-            <summary style="cursor:pointer;font-size:13.5px;font-weight:700">고객 요청사항 추가 (선택)</summary>
+          <div class="daycost"><span>일일 비용</span><em class="num" id="dcCalc">-</em><b class="num" id="dcTotal">-</b></div>
+          <details class="wz-field"{% if pre.extra and pre.extra.request_note %} open{% endif %}>
+            <summary>고객 요청사항 추가 (선택)</summary>
             <textarea class="in" id="f-memo" name="request_note" rows="4" maxlength="500" style="margin-top:8px" placeholder="추가 요청사항을 입력하세요.">{{ pre.extra.request_note if pre.extra and pre.extra.request_note else '' }}</textarea>
             <div class="thin" style="text-align:right" id="memoCnt">0/500</div>
           </details>
@@ -103,32 +92,35 @@
 
         <section class="wz-pane" data-p="4" hidden>
           <h4>일정 설정</h4>
-          <p class="wz-hint" id="dateRange">-</p>
-          <div class="dcards">
-            {% for d in presets %}
-            <button type="button" class="dcard{% if d == pre_days %} on{% endif %}" data-d="{{ d }}">{% if loop.first %}<span class="dpop">많이 선택</span>{% endif %}<b>{{ d }}일</b><i data-lucide="check-circle-2" class="i"></i></button>
-            {% endfor %}
-          </div>
+          <p class="wz-hint">시작일과 광고 기간을 정하면 예상 광고비가 계산됩니다.</p>
+          {{ period_picker(presets, pre_start, min_start, pre_days) }}
+          {{ cost_summary(balance) }}
         </section>
 
         <section class="wz-pane" data-p="5" hidden>
           <h4>최종 확인</h4>
           <p class="wz-hint">입력한 내용을 확인하고 광고를 만드세요.</p>
-          <div class="dgrid" style="grid-template-columns:1fr 1fr;max-width:640px;margin-top:14px">
-            <div><span>{{ '플레이스' if is_place else '상품' }}</span><b id="cfName">-</b></div>
-            <div><span>광고 유형</span><b id="cfMedia">-</b></div>
-            <div><span>메인 키워드</span><b id="cfKw">-</b></div>
-            <div><span>일일 목표 유입수</span><b class="num" id="cfQty">-</b></div>
-          </div>
-          <div class="costbox" id="costBox" style="margin-top:16px">
-            <div class="kv"><span>일일 비용</span><b class="num" id="cDaily">-</b></div>
-            <div class="kv"><span>광고 기간</span><b id="cDays">-</b></div>
-            <div class="kv total"><span>총 광고비</span><b class="num" id="cTotal">-</b></div>
-            <div class="credit-box" id="creditBox">
-              <div><b>보유 크레딧</b><small id="lackMsg" hidden><i data-lucide="alert-circle" class="i i14"></i> 크레딧 부족: <em class="num" id="lackAmt"></em></small></div>
-              <b class="num" id="cBal">{{ balance | fmt_num }}원</b>
-            </div>
-            <a class="btn chargebtn" id="chargeBtn" href="/credit/charge" hidden><i data-lucide="wallet" class="i i16"></i>크레딧 충전</a>
+          <table class="sumtable">
+            <tbody>
+              <tr><th>{{ '플레이스' if is_place else '상품' }}</th>
+                  <td><b id="sName">-</b><span class="sum-sub" id="sUrl" title=""></span></td>
+                  <td class="sum-edit"><button type="button" class="lnk" data-edit="1">수정</button></td></tr>
+              <tr><th>광고 유형</th><td id="sMedia">-</td>
+                  <td class="sum-edit"><button type="button" class="lnk" data-edit="2">수정</button></td></tr>
+              <tr><th>메인 키워드</th><td id="sKw">-</td>
+                  <td class="sum-edit"><button type="button" class="lnk" data-edit="3">수정</button></td></tr>
+              <tr><th>일일 목표 유입수</th><td class="num" id="sQty">-</td>
+                  <td class="sum-edit"><button type="button" class="lnk" data-edit="3">수정</button></td></tr>
+              <tr><th>광고 기간</th><td class="num" id="sDays">-</td>
+                  <td class="sum-edit"><button type="button" class="lnk" data-edit="4">수정</button></td></tr>
+            </tbody>
+          </table>
+          <div class="costbox" id="costBox2" style="margin-top:16px">
+            <div class="kv"><span>일일 비용</span><b class="num" id="fDaily">-</b></div>
+            <div class="kv"><span>광고 기간</span><b class="num" id="fDays">-</b></div>
+            <div class="kv total"><span>총 광고비</span><b class="num" id="fTotal">-</b></div>
+            <p class="cost-note" id="fNote">보유 크레딧 <b class="num">{{ balance | fmt_num }}원</b> <span id="fAfter"></span></p>
+            <p class="cost-note lack" id="fLack" hidden>보유 크레딧보다 <b class="num" id="fLackAmt"></b> 부족합니다. <a class="lnk" href="/credit/charge">크레딧 충전</a></p>
           </div>
         </section>
 
@@ -145,10 +137,9 @@
 {% block scripts %}
 <script>
 window.WZ = {
-  media: {{ media_json | safe }},
   channel: "{{ ch }}",
   balance: {{ balance }},
-  startDate: "{{ start.isoformat() }}",
+  minStart: "{{ min_start.isoformat() }}",
   steps: 5
 };
 </script>

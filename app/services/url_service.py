@@ -2,7 +2,7 @@
 import re
 from urllib.parse import urlparse
 
-from ..constants import URL_WHITELIST
+from ..constants import URL_PATTERNS, URL_WHITELIST
 
 
 class URLError(Exception):
@@ -26,6 +26,9 @@ def normalize(url, channel):
         raise URLError(f"허용되지 않는 링크입니다. ({allowed} 주소만 가능)")
     if channel == "place":
         return to_mobile_place(url, p)
+    rule = URL_PATTERNS.get(channel)
+    if rule and not re.match(rule[0], p.path):
+        raise URLError(rule[1])
     return url
 
 

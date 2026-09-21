@@ -1,7 +1,7 @@
 """Campaign orders: quote, create (campaign + payment in one transaction), transition (state table + status_log)."""
 import math
 import secrets
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from ..constants import DISCOUNT_RULES, TRANSITIONS, VAT_RATE
 from ..models import campaign as campaign_model
@@ -60,6 +60,13 @@ def create(user, media, form, method, depositor=None):
     campaign = campaign_model.get(cid)
     payment_service.create(campaign, user, method, depositor)
     return campaign
+
+
+def earliest_start(now=None):
+    """접수는 24시간, 구동은 익일부터. ORDER_CUTOFF(16:00) 이후 접수는 익익일 (2026-09-21 JDH)."""
+    from ..constants import ORDER_CUTOFF
+    now = now or datetime.now()
+    return now.date() + timedelta(days=1 if now.strftime("%H:%M") < ORDER_CUTOFF else 2)
 
 
 def create_with_credit(user, media, form):

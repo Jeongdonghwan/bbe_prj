@@ -179,10 +179,10 @@ def main():
     cur.execute("""DELETE s FROM popular_sets s JOIN media m ON m.id = s.media_id WHERE m.is_active = 0""")
     if cur.rowcount:
         done.append(f"popular_sets cleanup ({cur.rowcount})")
-    cur.execute("UPDATE media SET min_daily = %s, max_daily = %s WHERE is_active = 1 AND max_daily < %s",
-                (MEDIA_MIN_DAILY, MEDIA_MAX_DAILY, MEDIA_MAX_DAILY))
+    cur.execute("UPDATE media SET min_daily = %s, max_daily = 0 WHERE is_active = 1 AND (min_daily <> %s OR max_daily <> 0)",
+                (MEDIA_MIN_DAILY, MEDIA_MIN_DAILY))
     if cur.rowcount:
-        done.append(f"media daily range -> {MEDIA_MIN_DAILY}~{MEDIA_MAX_DAILY} ({cur.rowcount})")
+        done.append(f"media daily min {MEDIA_MIN_DAILY}, no cap ({cur.rowcount})")
 
     # -- strip banner settings (2026-09-02, default OFF) -------------------
     for k, v in (("strip_on", "0"), ("strip_text", "테스트 띠배너 문구입니다"), ("strip_link", ""), ("strip_bg", "#2563EB")):

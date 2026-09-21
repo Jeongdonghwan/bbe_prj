@@ -1,0 +1,21 @@
+{# Step 2 ad types: one radio row per type — name + badge + description | unit price. #}
+{% macro ad_type_list(sections, selected_id) %}
+<div class="adt-list">
+  {% for sec in sections %}
+  <div class="adt-group">{{ sec.name }}</div>
+  {% for m in sec['items'] %}
+  <label class="adt{% if selected_id == m.id %} on{% endif %}">
+    <input type="radio" name="media_id" value="{{ m.id }}" data-price="{{ m.unit_price }}"
+           data-name="{{ m.name }}" data-min="{{ m.min_daily }}" data-max="{{ m.max_daily }}"
+           {% if selected_id == m.id %}checked{% endif %}>
+    <span class="adt-radio" aria-hidden="true"></span>
+    <span class="adt-body">
+      <b>{{ m.name }}</b>{% if m.badge == 'rec' %}<em class="adt-badge b-rec">인기</em>{% elif m.badge == 'best' %}<em class="adt-badge b-best">BEST</em>{% elif m.badge == 'new' %}<em class="adt-badge b-new">NEW</em>{% endif %}
+      {% if m.tagline %}<span class="adt-desc">{{ m.tagline }}</span>{% endif %}
+    </span>
+    <span class="adt-price num">{{ m.unit_price | fmt_num }}<small>원/회</small></span>
+  </label>
+  {% endfor %}
+  {% endfor %}
+</div>
+{% endmacro %}
