@@ -99,9 +99,10 @@
 .poppage .p-pill-hot{background:#fdeceb; color:var(--p-red)}
 .poppage .p-pill-new{background:#e6f4ec; color:var(--p-ok)}
 .poppage .p-pill-pick, .poppage .p-pill-best{background:#ece9fb; color:var(--p-brand)}
-/* 그룹 띠 색: 화이트 계열 틴트 + 진한 글자 */
-.p-gc-reward{--bb:#f1f0fa; --bi:#4b3fc0; --gt:#f1f0fa; --gc:#4b3fc0}
-.p-gc-inflow{--bb:#edf4f9; --bi:#1f5f9e; --gt:#edf4f9; --gc:#1f5f9e}
+/* 그룹 띠 색 — 리워드 핑크 #FFB6C1 / 유입플 하늘 #87CEFA (2026-09-22 JDH 선택, 프로토타입 틴트 #f1f0fa/#edf4f9 대체).
+   글자는 각 배경 위에서 읽히는 짙은 톤. 기성은 프로토타입 연회색 그대로. */
+.p-gc-reward{--bb:#FFB6C1; --bi:#8b2a3a; --gt:#FFB6C1; --gc:#8b2a3a}
+.p-gc-inflow{--bb:#87CEFA; --bi:#0f4c81; --gt:#87CEFA; --gc:#0f4c81}
 .p-gc-ready{--bb:#f2f2f3; --bi:#4a4d55; --gt:#f2f2f3; --gc:#4a4d55}
 
 /* 드로어 */
