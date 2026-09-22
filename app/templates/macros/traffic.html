@@ -32,10 +32,20 @@
 {% if rank %}<span class="p-medal {{ 'p-g' if rank == 1 else ('p-s' if rank == 2 else 'p-b') }}">{{ rank }}</span>{% endif %}
 {%- endmacro %}
 
-{# 뱃지·환불불가 태그 (카드용 — 자체개발은 이름 행에 이미 있으므로 제외) #}
+{# 뱃지·환불불가 태그 (드로어용 — 자체개발은 all_tags 가 앞에 붙인다) #}
 {% macro badge_tags(m) -%}
 {% if m.badge_label %}<span class="p-tag{% if m.badge == 'hot' %} p-hot{% elif m.badge == 'new' %} p-new{% endif %}">{{ m.badge_label }}</span>{% endif %}
 {%- if m.no_refund_days %}<span class="p-tag p-no">{{ m.no_refund_days }}일 환불불가</span>{% endif %}
+{%- endmacro %}
+
+{# 카드 왼쪽 위 모서리에 걸치는 뱃지 알약 (2026-09-22 JDH — 프로토타입의 본문 태그 대신) #}
+{% macro badge_pill(m) -%}
+{% if m.badge_label %}<span class="p-pill p-pill-{{ m.badge }}">{{ m.badge_label }}</span>{% endif %}
+{%- endmacro %}
+
+{# 카드 본문에 남는 경고 태그 #}
+{% macro refund_tag(m) -%}
+{% if m.no_refund_days %}<span class="p-tag p-no">{{ m.no_refund_days }}일 환불불가</span>{% endif %}
 {%- endmacro %}
 
 {# 드로어용 태그 — 자체개발 태그가 앞에 붙는다 #}
@@ -63,10 +73,11 @@
 {% macro card(m, top=False) %}
 <button type="button" class="p-card" data-type="{{ m.id }}"
         data-rank="{{ m.rank or 99 }}" data-cnt="{{ m.review_cnt }}" data-price="{{ m.unit_price }}">
+  {{ badge_pill(m) }}
   {{ tile(m) }}
   <div class="p-ttl">{{ m.name }}<small>{{ '자체개발' if m.origin == 'own' else '기성' }}</small></div>
   <div class="p-r"><span class="p-rt">{{ rate(m) }}</span><span class="p-pr p-num">{{ m.unit_price }}원<small> /회</small></span></div>
-  <div class="p-tg">{{ badge_tags(m) }}</div>
+  <div class="p-tg">{{ refund_tag(m) }}</div>
   <div class="p-ds">{{ m.description or '설명이 아직 등록되지 않았습니다.' }}</div>
   {% if top and m.op_note %}<div class="p-op"><b>운영팀</b>{{ m.op_note }}</div>{% endif %}
 </button>
