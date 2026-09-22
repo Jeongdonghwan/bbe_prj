@@ -38,6 +38,8 @@ MEDIA_MIN_DAILY = 100
 MEDIA_MAX_DAILY = 0   # 0 = 상한 없음 (2026-09-21 JDH)
 
 CHANNEL_LABEL = {"place": "플레이스", "store": "쇼핑·스토어", "coupang": "쿠팡"}
+# 인기 트래픽 페이지·위젯의 탭 순서 (2026-09-22 JDH): 쇼핑·스토어 먼저, 기본 선택도 쇼핑·스토어.
+TRAFFIC_CHANNELS = [("store", "쇼핑·스토어"), ("place", "플레이스"), ("coupang", "쿠팡")]
 CHANNEL_CLASS = {"place": "c-place", "store": "c-store", "coupang": "c-coupang"}
 STATUS_LABEL = {"pay_wait": "결제 대기", "review": "검수", "approved": "승인", "running": "진행",
                 "rejected": "반려", "done": "완료", "stopped": "중단", "cancelled": "취소"}

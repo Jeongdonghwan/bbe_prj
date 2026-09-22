@@ -1,15 +1,15 @@
 {% import "macros/traffic.html" as t %}
 <div class="p-widget">
-  <div class="p-wh"><h4>인기 트래픽</h4><small>운영팀 주간 선정</small><a href="/popular">전체 보기</a></div>
+  <div class="p-wh"><h4>운영팀 주간 인기 트래픽</h4><span class="p-q" title="운영팀이 주간 접수량·반려율을 보고 정합니다">?</span><a href="/popular">전체 보기</a></div>
   <div class="p-wtabs">
-    {% for key, label in channels.items() %}
+    {% for key, label in channels %}
     <button type="button" data-wch="{{ key }}"{% if loop.first %} class="p-on"{% endif %}>{{ label }}</button>
     {% endfor %}
   </div>
-  {% for key, label in channels.items() %}
+  {% for key, label in channels %}
   <div class="p-wlist" data-wlist="{{ key }}"{% if not loop.first %} hidden{% endif %}>
     {% for m in traffic_top[key] %}{{ t.widget_row(m, loop.index0) }}{% endfor %}
   </div>
   {% endfor %}
-  <div class="p-wf">순위는 운영팀이 주간 접수량·반려율을 보고 정합니다. 후기는 캠페인을 완료한 사업자만 작성할 수 있습니다.</div>
+  <div class="p-wf">후기는 캠페인을 완료한 사업자만 작성할 수 있습니다.</div>
 </div>

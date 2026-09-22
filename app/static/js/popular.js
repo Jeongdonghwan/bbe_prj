@@ -1,4 +1,4 @@
-// 인기 트래픽 — prototype_popular_traffic.html 의 openD/closeD/setSort/renderWidget 이식.
+// 인기 트래픽 — prototype_popular_traffic (1).html 의 openD/closeD/setSort/setCh/renderWidget/setStar 이식.
 // 페이지와 대시보드 위젯이 같은 드로어를 쓴다.
 (function () {
   var scrim = document.getElementById('p-scrim');
@@ -33,11 +33,11 @@
     var row = e.target.closest('[data-type]');
     if (row) { open(row.dataset.type); return; }
     if (e.target.closest('[data-close]') || e.target === scrim) { close(); }
-    var star = e.target.closest('.p-stars [data-star]');
+    var star = e.target.closest('.p-st [data-star]');
     if (star) {
       var n = +star.dataset.star;
       document.getElementById('p-stars-val').value = n;
-      drawer.querySelectorAll('.p-stars button').forEach(function (b, i) { b.classList.toggle('p-on', i < n); });
+      drawer.querySelectorAll('.p-st button').forEach(function (b, i) { b.classList.toggle('p-on', i < n); });
     }
   });
   document.addEventListener('keydown', function (e) {

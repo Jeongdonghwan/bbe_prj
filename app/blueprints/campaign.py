@@ -5,7 +5,7 @@ from datetime import date, datetime, timedelta
 from flask import (Blueprint, abort, current_app, flash, g, jsonify, redirect, render_template, request, session,
                    url_for)
 
-from ..constants import (CHANNEL_LABEL, DATE_PRESETS, PAY_METHOD_LABEL, PAYMENT_STATUS_LABEL, PLACE_CATEGORIES,
+from ..constants import (CHANNEL_LABEL, DATE_PRESETS, PAY_METHOD_LABEL, PAYMENT_STATUS_LABEL, PLACE_CATEGORIES, TRAFFIC_CHANNELS,
                          STATUS_CLASS, STATUS_LABEL, STATUS_ORDER, STORE_SLOT_MAX, reco_qty)
 from ..models import campaign as campaign_model
 from ..models import content as content_model
@@ -488,21 +488,26 @@ def _channel_view(channel):
     own = [m for m in rows if m["origin"] == "own"]
     groups = []
     if any(m["group_key"] for m in own):
-        for key, label in (("reward", "리워드"), ("inflow", "유입플")):
+        for key, label in (("reward", "자체 개발 · 리워드"), ("inflow", "자체 개발 · 유입플")):
             items = [m for m in own if m["group_key"] == key]
             if items:
-                groups.append((key, label, items))
-    return {"top3": [m for m in rows if m["rank"]][:3], "own": own, "own_groups": groups,
-            "ready": [m for m in rows if m["origin"] == "ready"]}
+                groups.append((label, items))
+    elif own:
+        groups.append(("자체 개발", own))
+    ready = [m for m in rows if m["origin"] == "ready"]
+    if ready:
+        groups.append(("기성 매체", ready))
+    return {"top3": [m for m in rows if m["rank"]][:3], "groups": groups, "total": len(rows)}
 
 
 @pop.route("/popular")
 def popular():
     """채널·정렬 모두 클라이언트 전환. 현재 채널은 ?ch= 에 남겨 새로고침·공유 시 유지된다."""
-    channel = request.args.get("ch") if request.args.get("ch") in CHANNELS else "place"
-    return render_template("popular/index.html", channel=channel, channels=CHANNELS,
+    valid = [k for k, _ in TRAFFIC_CHANNELS]
+    channel = request.args.get("ch") if request.args.get("ch") in valid else valid[0]
+    return render_template("popular/index.html", channel=channel, channels=TRAFFIC_CHANNELS,
                            week_label=weekly_rank.week_label(),
-                           views={ch: _channel_view(ch) for ch in CHANNELS})
+                           views={ch: _channel_view(ch) for ch in valid})
 
 
 @pop.route("/popular/drawer/<int:type_id>")
