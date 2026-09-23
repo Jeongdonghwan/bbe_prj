@@ -78,6 +78,8 @@ CREATE TABLE IF NOT EXISTS campaigns (
   biz_name         VARCHAR(80) NOT NULL,
   product_name     VARCHAR(120) NULL,
   target_url       VARCHAR(500) NOT NULL,
+
+  nv_mid           VARCHAR(20) NULL,
   main_keyword     VARCHAR(60) NOT NULL,
   sub_keywords     JSON NULL,
   setting_keywords JSON NULL,

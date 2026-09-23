@@ -272,6 +272,11 @@ def main():
         if seeded:
             done.append(f"weekly_ranks seed x{seeded}")
 
+    # -- campaigns.nv_mid: 위저드 미리보기가 준 네이버 쇼핑 nvMid (2026-09-23) --
+    if not col("campaigns", "nv_mid"):
+        cur.execute("ALTER TABLE campaigns ADD COLUMN nv_mid VARCHAR(20) NULL AFTER target_url")
+        done.append("campaigns.nv_mid")
+
     # -- strip banner settings (2026-09-02, default OFF) -------------------
     for k, v in (("strip_on", "0"), ("strip_text", "테스트 띠배너 문구입니다"), ("strip_link", ""), ("strip_bg", "#2563EB")):
         cur.execute("INSERT IGNORE INTO settings (k, v) VALUES (%s,%s)", (k, v))

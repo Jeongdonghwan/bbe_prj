@@ -69,6 +69,7 @@
       img.onerror = function () { img.hidden = true; icon.hidden = false; };
     }
     var nameIn = $('f-name');
+    if ($('nvMid')) $('nvMid').value = /^\d{1,20}$/.test(String(d.nvMid || '')) ? String(d.nvMid) : '';
     if (d.prodNm) {
       ok.textContent = (d.mallName ? d.mallName + ' · ' : '') + '상품을 확인했습니다';
       if (!nameIn.value.trim()) {                  // never overwrite what the user typed
@@ -335,6 +336,7 @@
       $('pvOk').textContent = pvOkDefault;        // drop the previous product's mall line
       $('pvImg').hidden = true;
       $('pvIcon').hidden = false;
+      if ($('nvMid')) $('nvMid').value = '';            // 주소가 바뀌면 이전 상품의 nvMid 를 버린다
       clearTimeout(lookupTimer);
       lookupTimer = setTimeout(lookup, 600);
     });

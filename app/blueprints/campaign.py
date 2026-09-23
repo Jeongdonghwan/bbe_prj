@@ -197,6 +197,8 @@ def _parse_form(channel, media, form):
         f["target_url"] = url_service.normalize(form.get("target_url"), channel)
     except url_service.URLError as e:
         return None, str(e)
+    nv = (form.get("nv_mid") or "").strip()
+    f["nv_mid"] = nv if nv.isdigit() and len(nv) <= 20 else None   # 위저드 미리보기(순위 서버)가 준 값만
     f["main_keyword"] = " ".join((form.get("main_keyword") or "").split())[:60]
     if not f["main_keyword"]:
         return None, "희망 키워드를 입력해주세요."

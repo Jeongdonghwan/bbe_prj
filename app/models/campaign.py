@@ -205,7 +205,7 @@ def list_log(campaign_id):
 
 # ---- admin ---------------------------------------------------------------
 ADMIN_SELECT = """SELECT c.*, m.name AS media_name, m.color AS media_color, u.nickname, u.phone AS user_phone,
-                         u.email AS user_email, u.biz_name AS user_biz
+                         u.email AS user_email, u.biz_name AS user_biz, u.kakao_id AS user_kakao
                   FROM campaigns c JOIN media m ON m.id = c.media_id JOIN users u ON u.id = c.user_id"""
 
 
