@@ -10,10 +10,12 @@
   <form class="tbar" method="get">{% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}
     <select class="in" name="channel" onchange="this.form.submit()"><option value="">모든 채널</option>{% for k, v in channel_label.items() %}<option value="{{ k }}"{% if channel == k %} selected{% endif %}>{{ v }}</option>{% endfor %}</select>
     <select class="in" name="media" onchange="this.form.submit()"><option value="">모든 매체</option>{% for m in medias %}<option value="{{ m.id }}"{% if media_id == m.id %} selected{% endif %}>{{ m.name }}</option>{% endfor %}</select>
+    <select class="in" name="user" onchange="this.form.submit()"><option value="">모든 계정</option>{% for a in accounts %}<option value="{{ a.id }}"{% if user_id == a.id %} selected{% endif %}>{{ a.biz_name or a.nickname }}{% if a.email %} · {{ a.email }}{% endif %} ({{ a.n }})</option>{% endfor %}</select>
+    <input class="in" type="date" name="from" value="{{ date_from.isoformat() if date_from else '' }}" onchange="this.form.submit()" title="등록일 시작" style="width:150px"><span class="mut">~</span><input class="in" type="date" name="to" value="{{ date_to.isoformat() if date_to else '' }}" onchange="this.form.submit()" title="등록일 끝" style="width:150px">
     <select class="in" name="period" onchange="this.form.submit()"><option value="">전체 기간</option><option value="today"{% if period == 'today' %} selected{% endif %}>오늘 접수</option><option value="week"{% if period == 'week' %} selected{% endif %}>이번 주</option><option value="month"{% if period == 'month' %} selected{% endif %}>이번 달</option></select>
     <div class="search"><i data-lucide="search" class="i"></i><input class="in" name="q" value="{{ q or '' }}" placeholder="주문번호 · 회원 · 업체명"></div></form>
   <form method="post" action="/admin/orders/bulk" id="bulkForm"><input type="hidden" name="back" value="{{ request.full_path }}">
-  <div class="bulk" id="bulkBar" style="display:none"><span class="chk on"><i></i></span><span id="bulkCount">0</span>건 선택됨 <button class="btn pri sm" style="margin-left:auto" name="action" value="approve" type="submit">선택 승인</button><button class="btn sec sm" type="button" id="bulkReject">선택 반려</button></div>
+  <div class="bulk" id="bulkBar" style="display:none"><span class="chk on"><i></i></span><span id="bulkCount">0</span>건 선택됨 <button class="btn pri sm" style="margin-left:auto" name="action" value="approve" type="submit">선택 승인</button><button class="btn sec sm" type="button" id="bulkReject">선택 반려</button><button class="btn sec sm" type="submit" formaction="/admin/orders/export?{{ request.query_string.decode() }}" formmethod="post" formtarget="_blank">선택 엑셀</button></div>
   <div style="overflow-x:auto;margin:0 -18px"><table><thead><tr><th><input type="checkbox" id="chkAll"></th><th>주문</th><th>회원</th><th>채널</th><th>업체 · 키워드</th><th>매체</th><th>기간 · 수량</th><th>링크</th><th>상태</th><th>순위</th><th></th></tr></thead><tbody>
     {% for r in rows %}
     <tr{% if r.warn.block %} style="background:var(--danger-soft)"{% endif %}>
@@ -37,7 +39,7 @@
     </tr>
     {% else %}<tr><td colspan="11"><div class="empty">조건에 맞는 주문이 없습니다.</div></td></tr>{% endfor %}
   </tbody></table></div></form>
-  {{ pager(page, total_pages, 'admin.orders', status=status, channel=channel, media=media_id, period=period, q=q) }}
+  {{ pager(page, total_pages, 'admin.orders', status=status, channel=channel, media=media_id, period=period, q=q, user=user_id, **{'from': date_from.isoformat() if date_from else None, 'to': date_to.isoformat() if date_to else None}) }}
 </div></div>
 {% include "admin/_reject_modal.html" %}
 <div class="modal" id="memoModal"><form class="modal-box" method="post" id="memoForm" action=""><input type="hidden" name="action" value="memo"><input type="hidden" name="back" value="{{ request.full_path }}">

@@ -204,14 +204,24 @@ def list_log(campaign_id):
 
 
 # ---- admin ---------------------------------------------------------------
-ADMIN_SELECT = """SELECT c.*, m.name AS media_name, m.color AS media_color, u.nickname, u.phone AS user_phone
+ADMIN_SELECT = """SELECT c.*, m.name AS media_name, m.color AS media_color, u.nickname, u.phone AS user_phone,
+                         u.email AS user_email, u.biz_name AS user_biz
                   FROM campaigns c JOIN media m ON m.id = c.media_id JOIN users u ON u.id = c.user_id"""
 
 
-def _admin_filters(status, channel, media_id, period, q):
+def _admin_filters(status, channel, media_id, period, q, user_id=None, ids=None, date_from=None, date_to=None):
+    """ids/user_id/date_from/date_to: 엑셀 추출용 (2026-09-23). 날짜 범위는 등록일 기준 — period 와 같은 축."""
     where, params = ["1=1"], []
     if status:
         where.append("c.status = %s"); params.append(status)
+    if user_id:
+        where.append("c.user_id = %s"); params.append(user_id)
+    if ids:
+        where.append(f"c.id IN ({','.join(['%s'] * len(ids))})"); params += list(ids)
+    if date_from:
+        where.append("c.created_at >= %s"); params.append(date_from)
+    if date_to:
+        where.append("c.created_at < DATE_ADD(%s, INTERVAL 1 DAY)"); params.append(date_to)
     if channel:
         where.append("c.channel = %s"); params.append(channel)
     if media_id:
@@ -228,20 +238,39 @@ def _admin_filters(status, channel, media_id, period, q):
     return " AND ".join(where), params
 
 
-def admin_list(status=None, channel=None, media_id=None, period=None, q=None, page=1, per_page=20):
-    w, p = _admin_filters(status, channel, media_id, period, q)
+def admin_list(status=None, channel=None, media_id=None, period=None, q=None, page=1, per_page=20, **flt):
+    w, p = _admin_filters(status, channel, media_id, period, q, **flt)
     rows = query(f"{ADMIN_SELECT} WHERE {w} ORDER BY c.created_at DESC, c.id DESC LIMIT %s OFFSET %s", p + [per_page, (page - 1) * per_page])
     return [_decode(r) for r in rows]
 
 
-def admin_all(status=None, channel=None, media_id=None, period=None, q=None, limit=5000):
-    w, p = _admin_filters(status, channel, media_id, period, q)
+def admin_all(status=None, channel=None, media_id=None, period=None, q=None, limit=5000, **flt):
+    w, p = _admin_filters(status, channel, media_id, period, q, **flt)
     return [_decode(r) for r in query(f"{ADMIN_SELECT} WHERE {w} ORDER BY c.created_at DESC LIMIT %s", p + [limit])]
 
 
-def admin_count(status=None, channel=None, media_id=None, period=None, q=None):
-    w, p = _admin_filters(status, channel, media_id, period, q)
+def admin_count(status=None, channel=None, media_id=None, period=None, q=None, **flt):
+    w, p = _admin_filters(status, channel, media_id, period, q, **flt)
     return query_one(f"SELECT COUNT(*) AS n FROM campaigns c JOIN users u ON u.id = c.user_id WHERE {w}", p)["n"]
+
+
+def accounts_with_campaigns():
+    """계정 필터용 — 캠페인이 있는 회원만."""
+    return query(
+        """SELECT u.id, u.nickname, u.email, u.biz_name, COUNT(c.id) AS n
+           FROM users u JOIN campaigns c ON c.user_id = u.id GROUP BY u.id ORDER BY u.biz_name, u.nickname""")
+
+
+def daily_records(campaign_ids, date_from, date_to):
+    """{(campaign_id, date): {done_qty, rank}} — 어드민이 기록한 일별 작업량·순위."""
+    if not campaign_ids:
+        return {}
+    ph = ",".join(["%s"] * len(campaign_ids))
+    rows = query(
+        f"""SELECT campaign_id, date, done_qty, `rank` FROM campaign_daily
+            WHERE campaign_id IN ({ph}) AND date BETWEEN %s AND %s""",
+        list(campaign_ids) + [date_from, date_to])
+    return {(r["campaign_id"], r["date"]): r for r in rows}
 
 
 def admin_status_counts():

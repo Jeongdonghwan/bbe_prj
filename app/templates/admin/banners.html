@@ -27,7 +27,7 @@
   {% if edit or new %}{% set b = edit or {} %}
   <div class="card"><div class="ch"><h3>{% if edit %}배너 수정{% else %}배너 추가{% endif %}</h3><a class="icon-btn" style="margin-left:auto" href="/admin/banners"><i data-lucide="x" class="i"></i></a></div><div class="cb">
     <form method="post" action="/admin/banners/save" enctype="multipart/form-data">{% if edit %}<input type="hidden" name="id" value="{{ b.id }}">{% endif %}
-      <div class="f"><label>배너 이미지 <small>PNG/JPG/GIF/WEBP · 5MB 이하 · 권장 비율 약 4:1</small></label>
+      <div class="f"><label>배너 이미지 <small>PNG/JPG/GIF/WEBP · 5MB 이하 · 그리드 1200×340 / 슬라이드 2000×300 권장 (화면 폭에 따라 좌우가 잘리니 문구는 가운데에)</small></label>
         <label class="upl" style="cursor:pointer">
           {% if b.image_url %}<img src="{{ b.image_url }}" alt="" style="max-width:100%;max-height:90px;border-radius:8px" id="bnPrev">{% else %}<img alt="" style="max-width:100%;max-height:90px;border-radius:8px;display:none" id="bnPrev"><i data-lucide="image" class="i" style="width:28px;height:28px" id="bnIcon"></i>{% endif %}
           <span>클릭해서 {% if b.image_url %}교체{% else %}이미지 선택{% endif %}</span>

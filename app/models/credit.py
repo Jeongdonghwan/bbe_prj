@@ -93,3 +93,14 @@ def set_request_status(req_id, status, admin_id, reason=None):
 
 def pending_count():
     return query_one("SELECT COUNT(*) AS n FROM charge_requests WHERE status = 'pending'")["n"]
+
+
+def campaign_refunds(campaign_ids):
+    """환불 원장 — 정산 시트에서 환불을 발생 주(週)에 −로 넣기 위해."""
+    if not campaign_ids:
+        return []
+    ph = ",".join(["%s"] * len(campaign_ids))
+    return query(
+        f"""SELECT ref_id AS campaign_id, amount, memo, created_at FROM credit_ledger
+            WHERE type = 'refund' AND ref_type = 'campaign' AND ref_id IN ({ph}) ORDER BY created_at""",
+        list(campaign_ids))

@@ -2,7 +2,7 @@
 import csv
 import io
 import re
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from flask import (Blueprint, abort, current_app, flash, g, jsonify, redirect, render_template, request, send_file,
                    url_for)
@@ -95,14 +95,15 @@ def orders():
     media_id = request.args.get("media", type=int)
     period = request.args.get("period") or None
     q = (request.args.get("q") or "").strip()[:60] or None
+    flt = _export_filters()
     page, per_page = _page()
-    rows = campaign_model.admin_list(status, channel, media_id, period, q, page, per_page)
+    rows = campaign_model.admin_list(status, channel, media_id, period, q, page, per_page, **flt)
     for r in rows:
         r["warn"] = forbidden_service.check([r["biz_name"], r["product_name"], r["main_keyword"], *(r["setting_keywords"] or [])], r["channel"])
         r["day_idx"] = campaign_service.day_index(r)
         r["total_days"] = campaign_service.days_between(r["start_date"], r["end_date"])
         r["today"] = campaign_model.today_rank(r["id"]) if r["status"] == "running" else None
-    total = campaign_model.admin_count(status, channel, media_id, period, q)
+    total = campaign_model.admin_count(status, channel, media_id, period, q, **flt)
     counts = campaign_model.admin_status_counts()
     medias = (media_model.list_by_channel(channel, False) if channel else
               media_model.list_by_channel("place", False) + media_model.list_by_channel("store", False) + media_model.list_by_channel("coupang", False))
@@ -110,8 +111,21 @@ def orders():
         "admin/orders.html", rows=rows, page=page, total_pages=max(1, -(-total // per_page)), counts=counts,
         total_all=sum(counts.values()), status=status, channel=channel, media_id=media_id, period=period, q=q, medias=medias,
         status_order=STATUS_ORDER, status_label=STATUS_LABEL, status_class=STATUS_CLASS, channel_label=CHANNEL_LABEL,
-        pay_method_label=PAY_METHOD_LABEL,
+        pay_method_label=PAY_METHOD_LABEL, accounts=campaign_model.accounts_with_campaigns(),
+        user_id=flt.get("user_id"), date_from=flt.get("date_from"), date_to=flt.get("date_to"),
     )
+
+
+def _export_filters():
+    """계정·등록일 범위 — 목록과 엑셀이 같은 필터를 쓴다."""
+    def _d(v):
+        try:
+            return date.fromisoformat(v) if v else None
+        except ValueError:
+            return None
+    src = request.values
+    return {"user_id": src.get("user", type=int) or None,
+            "date_from": _d(src.get("from")), "date_to": _d(src.get("to"))}
 
 
 def _apply_action(c, action, reason=""):
@@ -203,25 +217,29 @@ def orders_bulk():
     return _back(url_for("admin.orders"))
 
 
-@bp.route("/orders/export")
+@bp.route("/orders/export", methods=["GET", "POST"])
 @admin_required
 def orders_export():
-    from openpyxl import Workbook
-    status = request.args.get("status") or None
-    channel = request.args.get("channel") or None
-    rows = campaign_model.admin_all(status if status in STATUS_LABEL else None, channel if channel in CHANNEL_LABEL else None,
-                                    request.args.get("media", type=int), request.args.get("period") or None, request.args.get("q") or None)
-    wb = Workbook(); ws = wb.active; ws.title = "orders"
-    ws.append(["주문번호", "상태", "채널", "회원", "연락처", "업체", "상품", "키워드", "매체", "시작", "종료", "일 수량", "총 수량",
-               "단가", "할인", "VAT", "결제 금액", "환불", "결제수단", "시작 순위", "현재 순위", "링크", "등록일"])
-    for r in rows:
-        ws.append([r["order_no"], STATUS_LABEL[r["status"]], CHANNEL_LABEL[r["channel"]], r["nickname"], r["user_phone"], r["biz_name"],
-                   r["product_name"], r["main_keyword"], r["media_name"], r["start_date"], r["end_date"], r["daily_qty"], r["total_qty"],
-                   r["unit_price"], r["discount"], r["vat"], r["paid_amount"], r["refund_amount"], PAY_METHOD_LABEL[r["pay_method"]],
-                   r["rank_start"], r["rank_now"], r["target_url"], r["created_at"]])
-    buf = io.BytesIO(); wb.save(buf); buf.seek(0)
-    _log("order_export", None, None, f"엑셀 내보내기 {len(rows)}건")
-    return send_file(buf, as_attachment=True, download_name=f"orders_{date.today():%Y%m%d}.xlsx",
+    """엑셀 3시트(캠페인 / 일별 로그 / 주별 정산). GET 은 목록 필터 그대로, POST 는 체크한 캠페인만."""
+    from ..models import credit as credit_model
+    from ..services import export_service
+    src = request.values
+    status = src.get("status") if src.get("status") in STATUS_LABEL else None
+    channel = src.get("channel") if src.get("channel") in CHANNEL_LABEL else None
+    ids = [int(i) for i in request.form.getlist("ids") if str(i).isdigit()] if request.method == "POST" else None
+    flt = _export_filters()
+    rows = campaign_model.admin_all(status, channel, src.get("media", type=int), src.get("period") or None,
+                                    (src.get("q") or "").strip()[:60] or None, ids=ids, **flt)
+    # 일별·주별 시트의 활동 기간: 지정 없으면 최근 31일
+    today = date.today()
+    d_to = flt["date_to"] or today
+    d_from = flt["date_from"] or (d_to - timedelta(days=30))
+    cids = [r["id"] for r in rows]
+    buf = export_service.build_workbook(rows, campaign_model.daily_records(cids, d_from, d_to),
+                                        credit_model.campaign_refunds(cids), d_from, d_to, today)
+    scope = f"선택 {len(ids)}건" if ids else (f"계정 {flt['user_id']}" if flt["user_id"] else "전체")
+    _log("order_export", None, None, f"엑셀 내보내기 {len(rows)}건 · {scope} · {d_from:%m.%d}~{d_to:%m.%d}")
+    return send_file(buf, as_attachment=True, download_name=f"campaigns_{today:%Y%m%d}.xlsx",
                      mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 
