@@ -3,6 +3,23 @@
 {% block content %}
 <div class="ph"><div><h1>매체사 관리</h1><p>단가·효율·규칙을 여기서 바꾸면 캠페인 생성 화면에 바로 반영됩니다.</p></div>
   <div class="act"><div class="chan-tabs">{% for k, v in channel_label.items() %}<a href="/admin/media?channel={{ k }}"><button type="button"{% if channel == k %} class="on"{% endif %}><i class="dot c-{{ k }}"></i>{{ v }} {{ counts[k] }}</button></a>{% endfor %}</div><a class="btn pri" href="/admin/media?channel={{ channel }}&new=1">+ 매체사 추가</a></div></div>
+<div class="card" style="margin-bottom:14px"><div class="ch"><h3>이번 주 운영팀 추천</h3><span class="thin">{{ week_label }} · 인기 트래픽 페이지 TOP 3 와 메인 위젯 메달</span></div><div class="cb">
+    {% if weekly_empty_now and week == this_week %}<p class="thin" style="color:var(--danger);margin:0 0 10px">이번 주 순위가 비어 있습니다. 비워두면 사용자 화면은 순위가 들어 있는 가장 최근 주를 대신 보여줍니다.</p>{% endif %}
+    <form method="post" action="/admin/media/weekly" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+      <input type="hidden" name="channel" value="{{ channel }}">
+      <input type="hidden" name="week" value="{{ week.isoformat() }}">
+      {% for r in [1, 2, 3] %}
+      <div class="f" style="margin:0;min-width:180px;flex:1"><label>{{ r }}위</label>
+        <select class="in" name="rank{{ r }}">
+          <option value="">-</option>
+          {% for m in rows %}{% if m.is_active %}<option value="{{ m.id }}"{% if weekly.get(r) == m.id %} selected{% endif %}>{{ m.name }} · {{ m.unit_price | fmt_num }}원</option>{% endif %}{% endfor %}
+        </select>
+      </div>
+      {% endfor %}
+      <button class="btn pri" type="submit" style="margin-bottom:8px">주간 추천 저장</button>
+    </form>
+    <p class="thin" style="margin:10px 0 0">다른 주를 손보려면 주소에 <code>&week=YYYY-MM-DD</code> 를 붙이세요. 같은 상품을 두 순위에 넣으면 뒤쪽은 무시됩니다.</p>
+  </div></div>
 <div class="card" style="margin-bottom:14px"><div class="ch"><h3>오늘의 인기</h3><span class="thin">{{ today | fmt_date }} · 위저드 상단 띠에 표시</span></div><div class="cb">
     <form method="post" action="/admin/media/picks">
       <input type="hidden" name="channel" value="{{ channel }}">
@@ -42,6 +59,9 @@
       <div class="f"><label>뱃지 만료일<small>이 날짜가 지나면 뱃지를 표시하지 않습니다. 비우면 계속 표시</small></label><input class="in" name="badge_until" type="date" value="{{ m.badge_until.isoformat() if m.badge_until else '' }}"></div>
       <div class="f"><label>유형 설명<small>위저드 우측 패널에 표시 · 300자</small></label><textarea class="in" name="description" rows="3" maxlength="300" placeholder="예) 검색 → 클릭 → 30초 이상 체류까지 보장합니다.">{{ m.description or '' }}</textarea></div>
       <div class="f"><label>이런 상품에 맞아요<small>쉼표로 구분</small></label><input class="in" name="fit_for" value="{{ m.fit_for | join(', ') if m.fit_for else '' }}" placeholder="순위 진입 목표, 경쟁 키워드"></div>
+      <div class="f"><label>운영팀 한줄평<small>인기 트래픽 추천 카드와 드로어에 표시 · 200자</small></label><textarea class="in" name="op_note" rows="2" maxlength="200" placeholder="예) 쇼핑은 타이탄이 기준점입니다. 다른 상품은 타이탄 대비 뭐가 다른지로 고르세요.">{{ m.op_note or '' }}</textarea></div>
+      <div class="row2"><div class="f"><label>환불 불가 일수<small>비우면 미진행분 환불 가능</small></label><input class="in num" name="no_refund_days" type="number" min="0" max="60" value="{{ m.no_refund_days if m.no_refund_days is not none else '' }}" placeholder="예) 7"></div>
+        <div class="f"><label>순위 반영<small>드로어 이용 조건에 표시</small></label><input class="in" name="rank_lead_days" maxlength="20" value="{{ m.rank_lead_days or '' }}" placeholder="예) 보통 3~5일"></div></div>
       <div class="f"><label>진행 방식<small>쉼표로 구분 · 순서대로</small></label><input class="in" name="flow_steps" value="{{ m.flow_steps | join(', ') if m.flow_steps else '' }}" placeholder="키워드 검색, 상품 클릭, 30초 체류"></div>
       <div class="row2"><div class="f"><label>정렬</label><input class="in num" name="sort" type="number" value="{{ m.sort or 0 }}"></div><div></div></div>
       <label class="chk{% if m.is_active is not defined or m.is_active %} on{% endif %}" style="cursor:pointer"><input type="checkbox" name="is_active" value="1" hidden{% if m.is_active is not defined or m.is_active %} checked{% endif %}><i></i>캠페인 생성 화면에 노출</label>

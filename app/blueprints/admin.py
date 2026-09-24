@@ -338,6 +338,32 @@ def payments_settings():
     return redirect(url_for("admin.payments"))
 
 
+@bp.route("/media/weekly", methods=["POST"])
+@admin_required
+def media_weekly():
+    """이번 주 운영팀 추천 1~3위. 인기 트래픽 페이지의 TOP3 와 메인 위젯 메달이 이 값을 쓴다."""
+    from ..models import weekly_rank
+    channel = request.form.get("channel") if request.form.get("channel") in CHANNEL_LABEL else "place"
+    try:
+        week = date.fromisoformat(request.form.get("week", ""))
+    except ValueError:
+        week = weekly_rank.week_start()
+    week = weekly_rank.week_start(week)          # 어떤 날짜를 줘도 그 주 월요일로
+    ranks, seen = {}, set()
+    for r in (1, 2, 3):
+        tid = request.form.get(f"rank{r}", type=int)
+        if not tid or tid in seen:
+            continue                              # 빈 칸과 중복은 건너뛴다
+        m = media_model.get(tid)
+        if m and m["channel"] == channel:
+            ranks[r] = tid
+            seen.add(tid)
+    weekly_rank.save(channel, ranks, week)
+    _log("media_weekly", "media", None, f"{CHANNEL_LABEL[channel]} {week:%m.%d} 주간 추천 {len(ranks)}개")
+    flash(f"{week:%Y.%m.%d} 주 추천 순위를 저장했습니다." if ranks else "주간 추천 순위를 비웠습니다.")
+    return redirect(url_for("admin.media", channel=channel, week=week.isoformat()))
+
+
 @bp.route("/media/picks", methods=["POST"])
 @admin_required
 def media_picks():
@@ -438,7 +464,19 @@ def media():
     return render_template("admin/media.html", channel=channel, rows=rows, counts=counts, edit=edit, new=new,
                            sections=MEDIA_SECTIONS.get(channel, []),
                            today=date.today(), picks=pick_model.get(channel, date.today()),
-                           channel_label=CHANNEL_LABEL)
+                           channel_label=CHANNEL_LABEL, **_weekly_ctx(channel))
+
+
+def _weekly_ctx(channel):
+    """주간 추천 편집 상자에 필요한 값. ?week= 로 지난 주도 손볼 수 있다."""
+    from ..models import weekly_rank
+    try:
+        week = weekly_rank.week_start(date.fromisoformat(request.args.get("week", "")))
+    except ValueError:
+        week = weekly_rank.week_start()
+    cur = {r: t for t, r in weekly_rank.by_type(channel, week).items()}
+    return {"week": week, "week_label": weekly_rank.week_label(week), "weekly": cur,
+            "this_week": weekly_rank.week_start(), "weekly_empty_now": not weekly_rank.by_type(channel, weekly_rank.week_start())}
 
 
 @bp.route("/media/save", methods=["POST"])
@@ -463,6 +501,9 @@ def media_save():
             "eff_level": f.get("eff_level") if f.get("eff_level") in ("normal", "good", "best") else "good",
             "eff_note": f.get("eff_note", "").strip()[:120] or None,
             "description": f.get("description", "").strip() or None,
+            "op_note": f.get("op_note", "").strip()[:200] or None,
+            "no_refund_days": int(f["no_refund_days"]) if f.get("no_refund_days", "").strip() else None,
+            "rank_lead_days": f.get("rank_lead_days", "").strip()[:20] or None,
             "is_active": 1 if f.get("is_active") == "1" else 0, "same_day": 1 if f.get("same_day") == "1" else 0,
             "sort": int(f.get("sort") or 0),
         }

@@ -507,8 +507,9 @@ def popular():
     """채널·정렬 모두 클라이언트 전환. 현재 채널은 ?ch= 에 남겨 새로고침·공유 시 유지된다."""
     valid = [k for k, _ in TRAFFIC_CHANNELS]
     channel = request.args.get("ch") if request.args.get("ch") in valid else valid[0]
+    shown_week = weekly_rank.latest_week(channel) or weekly_rank.week_start()
     return render_template("popular/index.html", channel=channel, channels=TRAFFIC_CHANNELS,
-                           week_label=weekly_rank.week_label(),
+                           week_label=weekly_rank.week_label(shown_week),
                            views={ch: _channel_view(ch) for ch in valid})
 
 
