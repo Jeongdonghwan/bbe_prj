@@ -22,7 +22,6 @@ from ..models import settings as settings_model
 from ..models import user as user_model
 from ..services import campaign_service, content_service, forbidden_service, media_service, payment_service
 from .auth import admin_required
-from .main import render_placeholder
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
 

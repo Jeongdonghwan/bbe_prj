@@ -17,7 +17,6 @@ from ..models import store_slot as slot_model
 from ..services import (campaign_service, forbidden_service, keyword_service, payment_service, rank_client,
                         url_service)
 from .auth import login_required
-from .main import render_placeholder
 
 
 def bank_info():
