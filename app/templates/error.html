@@ -1,0 +1,13 @@
+{% extends "layout/base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="ph"><div><h1>{{ title }}</h1><p>{{ lede }}</p></div></div>
+<div class="card" style="max-width:560px"><div class="cb" style="padding-top:18px">
+  <p class="thin" style="margin:0 0 16px">{{ detail }}</p>
+  <div style="display:flex;gap:8px">
+    <a class="btn pri" href="/">대시보드로</a>
+    {% if back %}<a class="btn sec" href="{{ back }}">이전 화면</a>{% endif %}
+    <a class="btn sec" href="{{ KAKAO_CHAT_URL }}" target="_blank" rel="noopener">문의하기</a>
+  </div>
+</div></div>
+{% endblock %}

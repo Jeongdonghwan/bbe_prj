@@ -48,7 +48,13 @@ bash scripts/deploy.sh   # 재시작 (데이터 유지)
 ```bash
 tail -f preview.log                  # 로그 보기
 pkill -f scripts/serve_preview.py    # 중지
-bash scripts/deploy.sh               # 시작/재시작
+bash scripts/deploy.sh               # 시작/재시작 (크론도 함께 등록)
+
+# 주기 작업 (deploy.sh 가 crontab 에 자동 등록. 수동 실행도 가능)
+python scripts/cron.py daily         # 미입금 만료·매체 효율·슬롯 갱신·의뢰 마감
+python scripts/cron.py hourly        # 순위 추적 보정 (등록 누락분 + 콜백 유실분)
+python scripts/cron.py expire_unpaid # 작업 하나만
+crontab -l                           # 등록 확인 (bbe-cron 주석이 붙은 두 줄)
 python scripts/seed.py               # 테스트 데이터 초기화(주의: 계정 포함 전체 리셋)
 ```
 

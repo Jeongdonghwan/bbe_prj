@@ -73,77 +73,81 @@ UA가 아니라 화이트리스트한 실제 서버 IP로 검증). 그래서 ran
 - 화면 문구("상품 URL을 넣으면 자동으로 채워집니다")는 `preview_on` 기준이라 토큰이 없어도
   노출되고, 실제 호출은 `preview_live`(= `WZ.preview`)가 참일 때만 일어난다
 
-## 2단계 — 캠페인 순위 자동 조회 (계획, 미구현)
+## 2단계 — 캠페인 순위 자동 조회 (구현 완료, 2026-09-24)
 
-### 스키마 (선행 작업)
+**쇼핑·스토어 채널만.** 파트너 API 는 `slotType=ST002`(쇼핑) 고정이라 플레이스·쿠팡은 대상이 아니다.
 
-```sql
-ALTER TABLE campaigns
-  ADD track_id     VARCHAR(64) NULL,        -- rankserver 슬롯 id
-  ADD track_status VARCHAR(20) NULL;        -- pending | collected | ...
-CREATE INDEX idx_campaigns_track ON campaigns (track_id);
-```
+### 스키마
 
-`scripts/migrate.py` 에 idempotent 블록으로 추가한다 (`deploy.sh` 가 자동 실행).
+`campaigns.track_id INT NULL` + `campaigns.track_status VARCHAR(20) NULL` + `idx_campaigns_track`
+(migrate 가 자동 반영). 순위 자체는 기존 `campaign_daily(date, rank, done_qty)` 에 그대로 쌓는다 —
+어드민 수동 입력과 같은 자리라 화면을 새로 만들 필요가 없다.
 
 ### 슬롯 등록
 
-캠페인이 결제완료/승인으로 넘어가는 시점에 등록한다. 상태 전이는 반드시
-`campaign_service.transition()` 을 거치므로, 훅을 거기에 건다 (알림 훅과 같은 자리).
+`campaign_service.transition()` 이 `approved` / `running` 으로 갈 때 `spawn_track()` 을 부른다.
 
 ```
-POST /partner/slots  {keyword, url}
-→ {trackId, status, rank, prodNm}
+POST /partner/slots   {"keyword": ..., "url": ...}
+→ {"ok", "trackId", "status", "rank", "prodNm", "date"}
 ```
 
-- `status == "collected"` 면 오늘 이미 수집된 키워드·상품이라는 뜻 → 응답의 `rank` 를
-  그 자리에서 일별 순위로 기록
-- 실패해도 캠페인 생성·승인은 성공해야 한다 (순위는 부가 기능)
+- `status` 는 **`"collected"` 또는 `"queued"` 둘뿐**이다 (`pending` 같은 값은 오지 않는다).
+- `collected` 면 `rank` 가 그 자리에 들어 있어 바로 기록한다. `rank: null` 은 300위 밖.
+- 실패해도 상태 전이는 그대로 진행한다. 누락분은 `scripts/cron.py hourly` 가 줍는다.
+- 이미 `track_id` 가 있으면 다시 부르지 않는다. 서버 쪽은 get-or-create 라 같은 키워드·URL 이면
+  같은 `trackId` 를 돌려준다.
 
 ### 콜백 수신
 
 ```
-POST /api/rank/callback   {trackId, date, rank, prodNm}
+POST /api/rank/callback      (app/blueprints/rank_api.py)
+헤더 X-NSR-Token: <RANK_API_TOKEN 과 같은 값>
+본문 {"trackId": int, "keyword": str, "date": "YYYY-MM-DD", "rank": int|null, "prodNm": str|null}
 ```
 
-- `X-NSR-Token` 검증 후 `track_id` 가 일치하는 **진행 중인 캠페인 전부**에 일별 순위 기록
-- rankserver 의 `NSR_PARTNER_CALLBACK_URL` 에 bbe_prj 주소를 콤마로 추가하면 된다
-  (다중 콜백 이미 지원 — 트리플업과 동시 수신 가능)
-- 로그인 없이 들어오는 엔드포인트이므로 토큰 검증 실패는 401, 본문은 신뢰하지 말 것
+- 토큰은 `hmac.compare_digest` 로 검증. 틀리면 401, 본문은 신뢰하지 않는다.
+- **같은 `(trackId, date)` 가 여러 번 온다** — 하루 두 번(11시·17시) 수집 + 재시도(0/5/20/60초, 최대 4회).
+  `upsert` 로만 쓰므로 몇 번 와도 하루 한 행이다.
+- **모르는 `trackId` 는 200 + `matched:0`** 으로 넘긴다. 순위 서버가 여러 파트너 사이트에 같은
+  payload 를 뿌리므로 남의 슬롯이 오는 게 정상이다. 여기서 4xx 를 내면 상대가 재시도를 반복한다.
+- 캠페인 구동 기간 밖의 날짜는 기록하지 않는다 (슬롯이 캠페인보다 오래 산다).
 
-### 중단·종료
-
-같은 `track_id` 를 쓰는 **다른 진행 캠페인이 없을 때만** 슬롯을 지운다.
-
-```
-DELETE /partner/slots/<trackId>
-```
-
-키워드·URL이 같은 캠페인 두 건이 동시에 돌 수 있으므로, 하나가 끝났다고 바로 지우면
-남은 캠페인의 순위가 끊긴다.
+순위 서버 쪽 `.env` 의 `NSR_PARTNER_CALLBACK_URL` 에 우리 주소를 **콤마로 덧붙여야** 한다
+(트리플업 주소를 지우지 말 것): `http://<트리플업>:8034/api/rank/callback,http://211.45.175.195:8034/api/rank/callback`
 
 ### 폴백
 
-순위 화면 진입 시 오늘 순위가 없으면 보정한다. 5분 스로틀(같은 캠페인 재조회 방지).
+- 순위 화면 진입 시 오늘 순위가 없으면 `GET /partner/slots/<trackId>/ranks` 로 보정
+  (`campaign_service.backfill_ranks`, 캠페인당 5분 스로틀).
+- `scripts/cron.py hourly` 가 ① 슬롯 없는 구동 캠페인 등록 ② 오늘 순위 빈 캠페인 보정을 돌린다.
 
-```
-GET /partner/slots/<trackId>/ranks
-```
+### 중단·삭제 — 기본으로 하지 않는다
 
-### 이식 대상 (트리플업 `C:\bbe_shop_prj`)
+순위 서버의 파트너 슬롯은 **`partner:bbe` 공용 계정 하나**를 쓴다. 트리플업이 같은 키워드·URL 을
+이미 등록했으면 우리 POST 는 그쪽 `trackId` 를 돌려받고, 우리가 DELETE 하면 **그쪽 추적까지 끊긴다.**
+그래서 `untrack_if_unused()` 는 우리 쪽 진행 캠페인 수를 세는 것에 더해 `RANK_UNTRACK_ON_STOP`
+(기본 `0`)이 켜져 있을 때만 실제로 지운다. 켜기 전에 순위 서버 운영자와 합의할 것.
+슬롯은 자동 만료가 없고 파트너 슬롯은 수량 쿼터도 안 먹으므로, 안 지우고 두어도 비용은 없다.
 
-| 파일 | 내용 |
+### 토큰
+
+`.env` 의 `RANK_API_TOKEN` = 순위 서버 `.env` 의 **`NSR_PARTNER_TOKEN`** 과 같은 값.
+(`NSR_API_TOKEN` 은 작업 PC 에이전트용 다른 비밀값이니 혼동하지 말 것.) 인바운드 인증과 콜백
+검증에 같은 값을 쓴다.
+
+### 구현 위치
+
+| 파일 | 역할 |
 | --- | --- |
-| `app/services/rank_client.py` | 슬롯 등록·삭제·순위 조회 |
-| `app/blueprints/rank_api.py` | 콜백 수신 엔드포인트 |
-| `app/services/campaign_service.py` | `_spawn_track()` / `_untrack_if_unused()` |
-
-bbe_prj 로 옮길 때 지킬 것: SQL은 `app/models/` 안에서만, 상태 전이는
-`campaign_service.transition()` 만, 쓰기 작업 로그는 기존 규칙대로.
+| `app/services/rank_client.py` | `product_preview` / `register_slot` / `slot_ranks` / `untrack` |
+| `app/services/campaign_service.py` | `spawn_track` · `untrack_if_unused` · `apply_rank` · `backfill_ranks` |
+| `app/blueprints/rank_api.py` | `POST /api/rank/callback` |
+| `app/models/campaign.py` | `by_track` · `count_active_by_track` · `daily_rank` · `untracked_running` · `tracked_without_today_rank` |
+| `scripts/cron.py` | `sync_ranks` (매시) |
 
 ## 확인 필요
 
-- 2단계 착수 시점 — 현재는 1단계만 합의됨
-- 화면 문구 "상품 URL을 넣으면 자동으로 채워집니다" 는 `source:null` 일 때 지켜지지 않는다.
-  신규 상품에서 얼마나 자주 비는지 실측 후 문구 재검토 필요 (2026-09-21 JDH 요청으로 현재 문구 유지)
+- 순위 서버 `.env` 의 `NSR_PARTNER_CALLBACK_URL` 에 우리 주소 추가 (현재 비어 있어 콜백이 꺼져 있음)
 - `.env` 의 `RANK_API_TOKEN` 실제 값 입력 (서버·로컬 각각)
+- `RANK_UNTRACK_ON_STOP` 을 켤지 — 공용 슬롯 삭제 영향 확인 후 결정

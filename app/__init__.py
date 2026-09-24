@@ -1,7 +1,9 @@
 """Flask application factory, sidebar MENU constant, context processors."""
 from datetime import date, datetime
 
-from flask import Flask, g, request
+from urllib.parse import urlparse
+
+from flask import Flask, g, render_template, request
 
 from .config import Config
 
@@ -149,11 +151,39 @@ def create_app():
     from .services import notify_service
     db.init_app(app)
 
-    from .blueprints import main, auth, notice, campaign, credit, tools, community, my, admin
-    for bp in (main.bp, auth.bp, notice.bp, campaign.bp, campaign.api, campaign.prod, campaign.pop, credit.bp, tools.bp, community.bp, community.notif_bp, my.bp, admin.bp):
+    from .blueprints import main, auth, notice, campaign, credit, tools, community, my, admin, rank_api
+    for bp in (main.bp, auth.bp, notice.bp, campaign.bp, campaign.api, campaign.prod, campaign.pop, rank_api.bp, credit.bp, tools.bp, community.bp, community.notif_bp, my.bp, admin.bp):
         app.register_blueprint(bp)
 
     app.before_request(auth.load_current_user)
+
+    # -- 오류 화면 (2026-09-24). 이전에는 Flask 기본 흰 페이지가 그대로 나갔다. ------
+    ERRORS = {
+        403: ("접근 권한이 없습니다", "이 화면을 볼 수 있는 권한이 없어요.",
+              "운영자 전용 화면이거나, 다른 회원의 자료일 수 있습니다. 계정을 확인해주세요."),
+        404: ("페이지를 찾을 수 없습니다", "주소가 바뀌었거나 삭제된 화면이에요.",
+              "주소를 다시 확인해주세요. 즐겨찾기로 들어오셨다면 대시보드에서 다시 찾아주세요."),
+        500: ("일시적인 오류가 발생했습니다", "요청을 처리하지 못했어요.",
+              "잠시 후 다시 시도해주세요. 계속 같은 화면이 나오면 문의해주시면 바로 확인하겠습니다."),
+    }
+
+    def _render_error(code):
+        title, lede, detail = ERRORS[code]
+        back = request.referrer if request.referrer and urlparse(request.referrer).netloc == request.host else None
+        return render_template("error.html", title=title, lede=lede, detail=detail, back=back), code
+
+    @app.errorhandler(403)
+    def _e403(e):
+        return _render_error(403)
+
+    @app.errorhandler(404)
+    def _e404(e):
+        return _render_error(404)
+
+    @app.errorhandler(500)
+    def _e500(e):
+        app.logger.exception("unhandled error at %s", request.path)
+        return _render_error(500)
 
     @app.context_processor
     def inject_layout():

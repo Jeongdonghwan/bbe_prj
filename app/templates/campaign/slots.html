@@ -13,9 +13,13 @@
   skw.addEventListener('input', function () {
     clearTimeout(t); var v = skw.value.trim(); if (!v) { svol.value = ''; return; }
     t = setTimeout(function () {
-      fetch('/api/campaign/volume?kw=' + encodeURIComponent(v)).then(function (r) { return r.json(); }).then(function (j) {
-        if (j.ok) svol.value = j.total.toLocaleString() + '  → 권장 ' + j.reco + '건/일';
-      });
+      fetch('/api/campaign/volume?kw=' + encodeURIComponent(v), { credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j.ok) { svol.value = j.total.toLocaleString() + '  → 권장 ' + j.reco + '건/일'; }
+          else if (j.error === 'quota') { svol.value = j.message; }   // 하루 조회 한도
+        })
+        .catch(function () { /* 조회 실패해도 수동 입력은 그대로 */ });
     }, 300);
   });
 })();

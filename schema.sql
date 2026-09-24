@@ -80,6 +80,8 @@ CREATE TABLE IF NOT EXISTS campaigns (
   target_url       VARCHAR(500) NOT NULL,
 
   nv_mid           VARCHAR(20) NULL,
+  track_id         INT NULL,
+  track_status     VARCHAR(20) NULL,
   main_keyword     VARCHAR(60) NOT NULL,
   sub_keywords     JSON NULL,
   setting_keywords JSON NULL,
@@ -105,6 +107,7 @@ CREATE TABLE IF NOT EXISTS campaigns (
   updated_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_campaign_user (user_id, channel, status),
   INDEX idx_campaign_status (status, created_at),
+  INDEX idx_campaigns_track (track_id),
   FOREIGN KEY (user_id) REFERENCES users(id),
   FOREIGN KEY (media_id) REFERENCES media(id)
 ) ENGINE=InnoDB;

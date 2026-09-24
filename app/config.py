@@ -46,6 +46,9 @@ class Config:
     # Empty -> preview is skipped and the wizard falls back to manual entry.
     RANK_SERVER_URL = os.getenv("RANK_SERVER_URL", "")
     RANK_API_TOKEN = os.getenv("RANK_API_TOKEN", "")
+    # 추적 슬롯은 순위 서버에서 `partner:bbe` 공용 계정을 쓴다. 우리가 지우면 트리플업 쪽
+    # 추적도 끊기므로 기본은 끈다. 순위 서버 운영자와 합의한 뒤에만 켤 것.
+    RANK_UNTRACK_ON_STOP = os.getenv("RANK_UNTRACK_ON_STOP", "0") == "1"
 
     # Naver Search Ad API (P4-c). Empty -> deterministic dummy data.
     NAVER_AD_ACCESS_LICENSE = os.getenv("NAVER_AD_ACCESS_LICENSE", "")

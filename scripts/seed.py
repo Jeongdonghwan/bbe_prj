@@ -93,15 +93,16 @@ ANON_POSTS = [(f"{ADJ[i]} {NOUN[i]}", ["place", "store", "coupang", "tool", None
 
 
 SAMPLE_CAMPAIGNS = [
-    (2, "place", "테스트 1", "running", "테스트 1", "테스트", 200, 4, 10, "card", [27, 25, 21, 16, 12]),
-    (2, "place", "테스트 2", "running", "테스트 2", "테스트", 300, 3, 10, "card", [41, 38, 35, 33]),
-    (2, "place", "테스트 3", "review", "테스트 3", "테스트", 100, -2, 10, "card", []),
-    (2, "place", "테스트 1", "pay_wait", "테스트 4", "테스트", 150, -2, 5, "bank", []),
-    (2, "place", "테스트 4", "rejected", "테스트 5", "테스트", 200, -1, 7, "card", []),
-    (2, "place", "테스트 6", "done", "테스트 6", "테스트", 100, 20, 10, "card", [38, 30, 22, 15, 9, 6]),
-    (2, "place", "테스트 7", "stopped", "테스트 7", "테스트", 100, 14, 10, "card", [19, 20, 21]),
-    (2, "store", "테스트 9", "running", "테스트 8", "테스트", 60, 2, 10, "card", [74, 40, 20, 8]),
-    (2, "coupang", "테스트 15", "review", "테스트 9", "테스트", 80, -3, 7, "bank", []),
+    # (user, channel, 매체명, 상태, 업체/상품명, 키워드, 일수량, 시작 며칠 전, 기간, 결제수단, 순위 추이)
+    (2, "place", "짱구", "running", "테스트 1", "테스트", 200, 4, 10, "credit", [27, 25, 21, 16, 12]),
+    (2, "place", "비비안", "running", "테스트 2", "테스트", 300, 3, 10, "credit", [41, 38, 35, 33]),
+    (2, "place", "파도", "review", "테스트 3", "테스트", 100, -2, 10, "credit", []),
+    (2, "place", "짱구", "pay_wait", "테스트 4", "테스트", 150, -2, 5, "bank", []),
+    (2, "place", "고스트", "rejected", "테스트 5", "테스트", 200, -1, 7, "credit", []),
+    (2, "place", "허니", "done", "테스트 6", "테스트", 100, 20, 10, "credit", [38, 30, 22, 15, 9, 6]),
+    (2, "place", "유플레이스", "stopped", "테스트 7", "테스트", 100, 14, 10, "credit", [19, 20, 21]),
+    (2, "store", "타이탄", "running", "테스트 8", "테스트", 300, 2, 10, "credit", [74, 40, 20, 8]),
+    (2, "coupang", "탑", "review", "테스트 9", "테스트", 100, -3, 7, "bank", []),
 ]
 
 
@@ -187,12 +188,12 @@ def seed_campaigns(cur, now):
     from datetime import date
     from app.services.campaign_service import quote
     from app.constants import reco_qty
-    cur.execute("SELECT id, name, unit_price FROM media")
-    media = {r[1]: (r[0], r[2]) for r in cur.fetchall()}
+    cur.execute("SELECT id, channel, name, unit_price FROM media")
+    media = {(r[1], r[2]): (r[0], r[3]) for r in cur.fetchall()}   # 스토어·쿠팡에 같은 이름("탑")이 있다
     urls = {"place": "https://m.place.naver.com/restaurant/1234567/home", "store": "https://smartstore.naver.com/aura/products/1",
             "coupang": "https://www.coupang.com/vp/products/1"}
     for i, (uid, ch, mname, st, biz, kw, daily, ago, days, pm, ranks) in enumerate(SAMPLE_CAMPAIGNS):
-        mid, price = media[mname]
+        mid, price = media[(ch, mname)]
         start = date.today() - timedelta(days=ago)
         end = start + timedelta(days=days - 1)
         q = quote(price, daily, days)
@@ -215,17 +216,33 @@ def seed_campaigns(cur, now):
              created if paid else None, refund, ranks[0] if ranks else None, ranks[-1] if ranks else None,
              "테스트" if st == "rejected" else None, memo, created))
         cid = cur.lastrowid
-        pstatus = {"pay_wait": "pending", "rejected": "refunded", "stopped": "partial_refund"}.get(st, "paid")
-        cur.execute(
-            """INSERT INTO payments (campaign_id, user_id, method, amount, status, pg_provider, pg_tid, depositor, bank_due_at, paid_at, refund_amount, created_at)
-               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
-            (cid, uid, pm, q["total"], pstatus, "mock" if pm == "card" else None,
-             f"MOCK-SEED{i:04d}" if paid and pm == "card" else None,
-             "일산갈비" if pm == "bank" else None, now + timedelta(days=3) if pm == "bank" else None,
-             created if paid else None, refund, created))
-        logs = [(None, "pay_wait", ("카드 결제 요청" if pm == "card" else "무통장 입금 대기") + f" · {q['total']:,}원")]
+        # 크레딧 결제(현 모델 v3.3)는 payments 가 아니라 credit_ledger 에 남는다.
+        # payments 는 카드·무통장 레거시 전용이라 method ENUM 에 credit 이 없다.
+        if pm == "credit":
+            bal = 500000 - q["total"] + refund
+            cur.execute(
+                """INSERT INTO credit_ledger (user_id, type, amount, balance_after, ref_type, ref_id, memo, actor_id, created_at)
+                   VALUES (%s,'spend',%s,%s,'campaign',%s,%s,NULL,%s)""",
+                (uid, -q["total"], bal, cid, f"광고비 · {mname} {days}일", created))
+            if refund:
+                cur.execute(
+                    """INSERT INTO credit_ledger (user_id, type, amount, balance_after, ref_type, ref_id, memo, actor_id, created_at)
+                       VALUES (%s,'refund',%s,%s,'campaign',%s,%s,1,%s)""",
+                    (uid, refund, bal, cid, ("반려 · 테스트" if st == "rejected" else "중단 · 잔여분 환불"),
+                     created + timedelta(days=1)))
+        else:
+            pstatus = {"pay_wait": "pending", "rejected": "refunded", "stopped": "partial_refund"}.get(st, "paid")
+            cur.execute(
+                """INSERT INTO payments (campaign_id, user_id, method, amount, status, pg_provider, pg_tid, depositor, bank_due_at, paid_at, refund_amount, created_at)
+                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                (cid, uid, pm, q["total"], pstatus, "mock" if pm == "card" else None,
+                 f"MOCK-SEED{i:04d}" if paid and pm == "card" else None,
+                 "일산갈비" if pm == "bank" else None, now + timedelta(days=3) if pm == "bank" else None,
+                 created if paid else None, refund, created))
+        _pay_label = {"credit": "크레딧 결제", "card": "카드 결제 요청"}.get(pm, "무통장 입금 대기")
+        logs = [(None, "pay_wait", f"{_pay_label} · {q['total']:,}원")]
         if paid:
-            logs.append(("pay_wait", "review", ("카드 결제 승인" if pm == "card" else "입금 확인") + f" · {q['total']:,}원"))
+            logs.append(("pay_wait", "review", ("크레딧 차감" if pm == "credit" else "카드 결제 승인" if pm == "card" else "입금 확인") + f" · {q['total']:,}원"))
         if st in ("approved", "running", "done", "stopped"):
             logs.append(("review", "approved", "운영팀 승인 · 링크·키워드 확인"))
         if st in ("running", "done", "stopped"):
@@ -234,10 +251,10 @@ def seed_campaigns(cur, now):
             logs.append(("running", "done", f"구동 완료 · 누적 {daily * days:,}건"))
         if st == "stopped":
             logs.append(("running", "stopped", "사용자 중단 요청 · 6/10일 진행 · 잔여 4일분 환불"))
-            logs.append(("stopped", "stopped", f"부분 환불 {refund:,}원 (카드 취소) · 중단"))
+            logs.append(("stopped", "stopped", f"부분 환불 {refund:,}원 · 중단"))
         if st == "rejected":
             logs.append(("review", "rejected", "반려 · 테스트"))
-            logs.append(("rejected", "rejected", f"전액 환불 {refund:,}원 (카드 취소) · 반려"))
+            logs.append(("rejected", "rejected", f"전액 환불 {refund:,}원 · 반려"))
         for k, (f, t, m) in enumerate(logs):
             cur.execute("INSERT INTO status_log (campaign_id, from_status, to_status, actor_id, memo, created_at) VALUES (%s,%s,%s,%s,%s,%s)",
                         (cid, f, t, 1 if f else uid, m, created + timedelta(hours=k)))
@@ -251,20 +268,20 @@ def seed_campaigns(cur, now):
 
 
 POPULAR = {
-    "place": [("추천", [("테스트 1", "테스트"), ("테스트 2", "테스트"), ("테스트 3", "테스트")])],
-    "store": [("추천", [("테스트 9", "테스트"), ("테스트 10", "테스트"), ("테스트 11", "테스트")])],
-    "coupang": [("추천", [("테스트 15", "테스트"), ("테스트 16", "테스트"), ("테스트 17", "테스트")])]}
+    "place": [("추천", [("짱구", "테스트"), ("비비안", "테스트"), ("파도", "테스트")])],
+    "store": [("추천", [("타이탄", "테스트"), ("싱크", "테스트"), ("말론", "테스트")])],
+    "coupang": [("추천", [("탑", "테스트"), ("베스트", "테스트")])]}
 
 
 def seed_popular(cur):
-    cur.execute("SELECT id, name FROM media")
-    media = {r[1]: r[0] for r in cur.fetchall()}
+    cur.execute("SELECT id, channel, name FROM media")
+    media = {(r[1], r[2]): r[0] for r in cur.fetchall()}
     for channel, cats in POPULAR.items():
         for i, (name, tops) in enumerate(cats):
             cur.execute("INSERT INTO popular_categories (channel, name, sort, is_active) VALUES (%s,%s,%s,%s)", (channel, name, i, 1 if tops else 0))
             cid = cur.lastrowid
             for rank, (mname, note) in enumerate(tops, 1):
-                cur.execute("INSERT INTO popular_sets (category_id, rank, media_id, note) VALUES (%s,%s,%s,%s)", (cid, rank, media[mname], note))
+                cur.execute("INSERT INTO popular_sets (category_id, rank, media_id, note) VALUES (%s,%s,%s,%s)", (cid, rank, media[(channel, mname)], note))
             cur.execute("INSERT INTO popular_meta (category_id, show_weekly_cnt, updated_by) VALUES (%s,1,1)", (cid,))
     cur.execute("INSERT INTO settings (k, v) VALUES ('bank_due_days','3')")
     cur.executemany("INSERT INTO settings (k, v) VALUES (%s,%s)",

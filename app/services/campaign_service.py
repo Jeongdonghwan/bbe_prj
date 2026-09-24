@@ -134,7 +134,102 @@ def transition(campaign, to_status, actor_id=None, memo=None):
     campaign_model.set_status(campaign["id"], to_status)
     campaign_model.add_log(campaign["id"], frm, to_status, actor_id, memo)
     _notify_status(campaign, frm, to_status, memo)
+    if to_status in ("approved", "running"):
+        spawn_track(campaign)
+    elif to_status in ("done", "stopped", "cancelled", "rejected"):
+        untrack_if_unused(campaign)
     return campaign_model.get(campaign["id"])
+
+
+# ---- 순위 자동 추적 (docs/RANK_INTEGRATION.md 2단계) ------------------------
+def spawn_track(campaign):
+    """순위 서버에 추적 슬롯을 만든다. 쇼핑 채널만, 실패해도 상태 전이는 그대로 간다."""
+    from . import rank_client
+    if campaign["channel"] != "store" or campaign.get("track_id"):
+        return None
+    r = rank_client.register_slot(campaign.get("main_keyword"), campaign.get("target_url"))
+    if not r.get("ok"):
+        return None
+    fields = {"track_id": r["trackId"], "track_status": r.get("status") or "queued"}
+    campaign_model.update(campaign["id"], fields)
+    # 오늘 이미 수집된 키워드면 순위가 바로 들어 있다.
+    if r.get("status") == "collected" and r.get("rank") is not None and r.get("date"):
+        try:
+            apply_rank(campaign["id"], date.fromisoformat(r["date"]), r["rank"])
+        except (ValueError, TypeError):
+            pass
+    return r["trackId"]
+
+
+def untrack_if_unused(campaign):
+    """같은 track_id 를 쓰는 다른 진행 캠페인이 없을 때만 추적을 끊는다.
+
+    순위 서버의 파트너 슬롯은 `partner:bbe` 공용 계정이라 우리가 지우면 트리플업 쪽
+    추적도 끊긴다. 그래서 기본은 끄고(RANK_UNTRACK_ON_STOP), 켠 경우에만 삭제한다.
+    """
+    from flask import current_app
+
+    from . import rank_client
+    tid = campaign.get("track_id")
+    if not tid or not current_app.config.get("RANK_UNTRACK_ON_STOP"):
+        return False
+    if campaign_model.count_active_by_track(tid, exclude_id=campaign["id"]):
+        return False
+    return bool(rank_client.untrack(tid).get("ok"))
+
+
+_BACKFILL_AT = {}          # {campaign_id: datetime} — 프로세스 내 5분 스로틀
+
+
+def backfill_ranks(campaign, throttle_min=5):
+    """순위 화면 진입 시 오늘 순위가 없으면 순위 서버에서 직접 가져와 채운다.
+
+    콜백은 재시도해도 끝내 실패할 수 있어서(배포 중이었다거나) 이 경로가 최종 보정이다.
+    같은 캠페인을 연달아 열어도 서버를 계속 때리지 않도록 스로틀을 건다.
+    """
+    from . import rank_client
+    tid = campaign.get("track_id")
+    if not tid or campaign["status"] not in ("approved", "running", "done"):
+        return False
+    if campaign_model.daily_rank(campaign["id"], date.today()):
+        return False
+    last = _BACKFILL_AT.get(campaign["id"])
+    if last and (datetime.now() - last).total_seconds() < throttle_min * 60:
+        return False
+    _BACKFILL_AT[campaign["id"]] = datetime.now()
+    r = rank_client.slot_ranks(tid)
+    if not r.get("ok"):
+        return False
+    n = 0
+    for row in r.get("ranks") or []:
+        try:
+            day = date.fromisoformat(str(row.get("date")))
+        except (TypeError, ValueError):
+            continue
+        rk = row.get("rank")
+        if rk is None or campaign["start_date"] and day < campaign["start_date"]:
+            continue
+        if campaign["end_date"] and day > campaign["end_date"]:
+            continue
+        if campaign_model.daily_rank(campaign["id"], day):
+            continue
+        apply_rank(campaign["id"], day, int(rk))
+        n += 1
+    return bool(n)
+
+
+def apply_rank(campaign_id, day, rank):
+    """콜백·폴백이 받은 순위를 기록. 어드민 수동 입력(record_rank)과 같은 자리에 쓴다."""
+    c = campaign_model.get(campaign_id)
+    if not c or rank is None:
+        return None
+    prev = campaign_model.daily_rank(campaign_id, day)
+    campaign_model.upsert_daily(campaign_id, day, rank, prev["done_qty"] if prev else c["daily_qty"])
+    fields = {"rank_now": rank}
+    if c["rank_start"] is None:
+        fields["rank_start"] = rank
+    campaign_model.update(campaign_id, fields)
+    return rank
 
 
 _NOTIFY_TITLES = {

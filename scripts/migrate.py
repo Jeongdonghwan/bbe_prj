@@ -277,6 +277,17 @@ def main():
         cur.execute("ALTER TABLE campaigns ADD COLUMN nv_mid VARCHAR(20) NULL AFTER target_url")
         done.append("campaigns.nv_mid")
 
+    # -- 순위 자동 추적 (2026-09-24, docs/RANK_INTEGRATION.md 2단계) --------
+    for name, ddl in (("track_id", "ADD COLUMN track_id INT NULL AFTER nv_mid"),
+                      ("track_status", "ADD COLUMN track_status VARCHAR(20) NULL AFTER track_id")):
+        if not col("campaigns", name):
+            cur.execute("ALTER TABLE campaigns " + ddl)
+            done.append("campaigns." + name)
+    cur.execute("SHOW INDEX FROM campaigns WHERE Key_name = 'idx_campaigns_track'")
+    if not cur.fetchone():
+        cur.execute("CREATE INDEX idx_campaigns_track ON campaigns (track_id)")
+        done.append("idx_campaigns_track")
+
     # -- strip banner settings (2026-09-02, default OFF) -------------------
     for k, v in (("strip_on", "0"), ("strip_text", "테스트 띠배너 문구입니다"), ("strip_link", ""), ("strip_bg", "#2563EB")):
         cur.execute("INSERT IGNORE INTO settings (k, v) VALUES (%s,%s)", (k, v))

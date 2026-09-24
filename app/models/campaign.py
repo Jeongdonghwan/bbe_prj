@@ -322,3 +322,53 @@ def done_rank_stats(media_id, days=30):
         """SELECT COUNT(*) AS n, SUM(rank_start IS NOT NULL AND rank_now IS NOT NULL AND rank_now < rank_start) AS up
            FROM campaigns WHERE media_id = %s AND status = 'done' AND updated_at >= DATE_SUB(NOW(), INTERVAL %s DAY)""", [media_id, days])
     return row["n"], int(row["up"] or 0)
+
+
+# ---- 순위 자동 추적 -------------------------------------------------------
+ACTIVE_TRACK_STATUSES = ("approved", "running")
+
+
+def by_track(track_id):
+    """이 trackId 로 순위를 받아야 하는 진행 중 캠페인들. 같은 키워드·상품이면 여럿일 수 있다."""
+    ph = ",".join(["%s"] * len(ACTIVE_TRACK_STATUSES))
+    return [_decode(r) for r in query(
+        f"SELECT * FROM campaigns WHERE track_id = %s AND status IN ({ph})",
+        [track_id, *ACTIVE_TRACK_STATUSES])]
+
+
+def count_active_by_track(track_id, exclude_id=None):
+    ph = ",".join(["%s"] * len(ACTIVE_TRACK_STATUSES))
+    sql = f"SELECT COUNT(*) AS n FROM campaigns WHERE track_id = %s AND status IN ({ph})"
+    p = [track_id, *ACTIVE_TRACK_STATUSES]
+    if exclude_id:
+        sql += " AND id <> %s"
+        p.append(exclude_id)
+    return query_one(sql, p)["n"]
+
+
+def daily_rank(campaign_id, day):
+    return query_one("SELECT `rank`, done_qty FROM campaign_daily WHERE campaign_id = %s AND date = %s",
+                     [campaign_id, day])
+
+
+def untracked_running(limit=200):
+    """구동 중인데 아직 추적 슬롯이 없는 쇼핑 캠페인 — 등록 실패분 보정용."""
+    return [_decode(r) for r in query(
+        """SELECT * FROM campaigns WHERE channel = 'store' AND status IN ('approved','running')
+           AND track_id IS NULL ORDER BY id LIMIT %s""", [limit])]
+
+
+def mark_tracked(track_id, status):
+    """콜백이 도착했음을 남긴다 (collected / not_found)."""
+    execute("UPDATE campaigns SET track_status = %s WHERE track_id = %s", [status, track_id])
+
+
+def tracked_without_today_rank(limit=200):
+    """추적 슬롯은 있는데 오늘 순위가 안 들어온 구동 캠페인 — 콜백 유실 보정용."""
+    return [_decode(r) for r in query(
+        """SELECT c.* FROM campaigns c
+           WHERE c.track_id IS NOT NULL AND c.status IN ('approved','running')
+             AND c.start_date <= CURDATE() AND c.end_date >= CURDATE()
+             AND NOT EXISTS (SELECT 1 FROM campaign_daily d
+                             WHERE d.campaign_id = c.id AND d.date = CURDATE() AND d.`rank` IS NOT NULL)
+           ORDER BY c.id LIMIT %s""", [limit])]

@@ -381,6 +381,8 @@ def ranks(channel, campaign_id):
     c = _own(channel, campaign_id)
     days, today_rank, delta = [], None, None
     if channel != "coupang":
+        campaign_service.backfill_ranks(c)      # 콜백을 놓쳤으면 순위 서버에서 보정 (5분 스로틀)
+        c = _own(channel, campaign_id)
         rankmap = {d["date"]: d["rank"] for d in campaign_model.list_daily(campaign_id)}
         cur = min(date.today(), c["end_date"])
         while cur >= c["start_date"]:
@@ -553,6 +555,7 @@ def popular_review():
 
 # =============================================================== JSON API
 @api.route("/quote", methods=["POST"])
+@login_required
 def api_quote():
     d = request.get_json(silent=True) or request.form
     media = media_model.get(int(d.get("media_id", 0) or 0))
@@ -578,14 +581,25 @@ def api_product_preview():
 
 
 @api.route("/keywords")
+@login_required
 def api_keywords():
+    """설정 키워드 제안 — 외부 API 를 쓰지 않는 문자열 조합이라 쿼터는 없다."""
     return jsonify(keywords=keyword_service.suggest_setting_keywords(request.args.get("kw", ""), request.args.get("channel", "place")))
 
 
 @api.route("/volume")
+@login_required
 def api_volume():
+    """검색량 조회. 네이버 검색광고 API 를 실제로 부르므로 키워드 도구와 같은 하루 쿼터를 건다
+    (2026-09-24: 로그인·쿼터·로그를 우회하던 구멍을 막음)."""
     kw = (request.args.get("kw") or "").strip()
     if not kw:
         return jsonify(ok=False)
+    q = keyword_service.quota(g.user, request.headers.get("X-Forwarded-For", request.remote_addr))
+    if not q["unlimited"] and q["remaining"] <= 0:
+        return jsonify(ok=False, error="quota", limit=q["limit"],
+                       message=f"검색량 조회는 하루 {q['limit']}회까지입니다. 내일 다시 이용해주세요."), 429
+    keyword_service.log_query(g.user, request.headers.get("X-Forwarded-For", request.remote_addr), "volume", kw)
     pc, mo = keyword_service.search_volume(kw)
-    return jsonify(ok=True, pc=pc, mo=mo, total=pc + mo, daily=round((pc + mo) / 30), reco=reco_qty(pc + mo))
+    return jsonify(ok=True, pc=pc, mo=mo, total=pc + mo, daily=round((pc + mo) / 30), reco=reco_qty(pc + mo),
+                   remaining=max(0, q["remaining"] - 1))
