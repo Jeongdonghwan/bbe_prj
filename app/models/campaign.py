@@ -146,7 +146,8 @@ def last_month_paid(user_id, channel=None):
 def running_today_spend(user_id, channel):
     row = query_one(
         """SELECT COALESCE(SUM(unit_price * daily_qty), 0) AS n FROM campaigns
-           WHERE user_id = %s AND channel = %s AND status = 'running'""", [user_id, channel])
+           WHERE user_id = %s AND channel = %s AND status = 'running'
+             AND start_date <= CURDATE()""", [user_id, channel])
     return int(row["n"])
 
 
@@ -288,7 +289,7 @@ def oldest_review_minutes():
 
 def running_without_today_rank():
     row = query_one(
-        """SELECT COUNT(*) AS n FROM campaigns c WHERE c.status = 'running'
+        """SELECT COUNT(*) AS n FROM campaigns c WHERE c.status = 'running' AND c.start_date <= CURDATE()
            AND NOT EXISTS (SELECT 1 FROM campaign_daily d WHERE d.campaign_id = c.id AND d.date = CURDATE())""")
     return row["n"]
 

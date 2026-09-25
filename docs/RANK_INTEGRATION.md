@@ -146,8 +146,68 @@ POST /api/rank/callback      (app/blueprints/rank_api.py)
 | `app/models/campaign.py` | `by_track` · `count_active_by_track` · `daily_rank` · `untracked_running` · `tracked_without_today_rank` |
 | `scripts/cron.py` | `sync_ranks` (매시) |
 
+## 설정 순서 (실제 값)
+
+토큰은 **순위 서버가 정하고 우리가 받아 적는 값**이다. 우리가 새로 만드는 게 아니다.
+값은 순위 서버 쪽 `rankingbatch_prj/scripts/prod.env`(배포 후에는 순위 서버의 `.env`)의
+**`NSR_PARTNER_TOKEN`** 에 있다. 그 파일이 언제나 정답이다.
+
+토큰 값은 이 문서에 적지 않는다 — 이 저장소는 GitHub 에 올라간다. `.env` 에만 넣는다.
+
+### 1) 우리 서버 `.env` — 받는 쪽
+
+```bash
+cd /root/bbe_prj/bbe_prj
+vi .env
+```
+
+```ini
+RANK_SERVER_URL=https://rank.mbizsquare.com
+RANK_API_TOKEN=<순위 서버의 NSR_PARTNER_TOKEN 과 같은 값>
+RANK_UNTRACK_ON_STOP=0
+```
+
+- `RANK_SERVER_URL` 은 끝에 `/` 를 붙이지 않는다. 경로(`/partner/...`)는 코드가 붙인다.
+- 둘 중 하나라도 비어 있으면 **연동 전체가 조용히 꺼진다**(수동 순위 입력으로 동작).
+- 저장 후 앱 재시작: `systemctl restart bbe` (또는 `bash scripts/deploy.sh`).
+
+확인:
+
+```bash
+cd /root/bbe_prj/bbe_prj && ./venv/bin/python -c "
+from app import create_app
+from app.services import rank_client
+app = create_app()
+with app.app_context():
+    print('설정됨:', rank_client.configured())
+    print(rank_client.product_preview('https://smartstore.naver.com/main/products/1234567890'))"
+```
+
+`설정됨: True` 가 나오고 미리보기 응답에 `ok: True` 가 오면 우리 → 순위 서버 방향은 끝.
+`ok: False` 만 오면 토큰이 틀렸거나 방화벽에 막힌 것이다.
+
+### 2) 순위 서버 `.env` — 보내는 쪽 (콜백)
+
+순위 수집이 끝났을 때 순위 서버가 우리를 호출해 줘야 자동 기록이 된다.
+`NSR_PARTNER_CALLBACK_URL` 은 **콤마로 여러 개**를 넣을 수 있으니, 트리플업 주소가
+이미 있으면 지우지 말고 뒤에 덧붙인다.
+
+```ini
+NSR_PARTNER_CALLBACK_URL=<기존 주소가 있으면 그대로>,http://211.45.175.195:8034/api/rank/callback
+# NSR_PARTNER_TOKEN 은 이미 들어 있는 값을 그대로 쓴다 — 우리 RANK_API_TOKEN 과 같아야 한다.
+```
+
+토큰은 양쪽이 **같은 값**이어야 한다. 우리 콜백은 `X-NSR-Token` 이 다르면 401 로 거절한다.
+순위 서버를 재시작한 뒤, 우리 쪽에서 들어오는지 본다:
+
+```bash
+tail -f /root/bbe_prj/bbe_prj/app.log | grep -i rank
+```
+
+콜백이 아직 안 열렸어도 순위는 들어온다 — 매시 크론 `sync_ranks` 와 화면 진입 폴백이
+순위 서버에서 직접 긁어오기 때문이다. 다만 하루 안에 반영되는 시점이 늦어진다.
+
 ## 확인 필요
 
 - 순위 서버 `.env` 의 `NSR_PARTNER_CALLBACK_URL` 에 우리 주소 추가 (현재 비어 있어 콜백이 꺼져 있음)
-- `.env` 의 `RANK_API_TOKEN` 실제 값 입력 (서버·로컬 각각)
 - `RANK_UNTRACK_ON_STOP` 을 켤지 — 공용 슬롯 삭제 영향 확인 후 결정

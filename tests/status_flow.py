@@ -4,9 +4,10 @@
 
 확인하는 것 (2026-09-25 JDH "과정을 줄여라"):
   1. 등록 → 검수. 결제 대기 단계는 크레딧 모델에 없다.
-  2. 승인했을 때 시작일이 아직 안 왔으면 "구동 대기", 이미 왔으면 그 자리에서 "진행".
-  3. 시작일이 되면 크론(advance_due)이 구동으로, 종료일이 지나면 완료로 알아서 넘긴다.
-  4. 운영자가 승인하기 전, 등록되는 순간 순위 추적 슬롯이 생긴다.
+  2. 승인하면 곧장 "정상"(running). 구동 대기 단계는 없다.
+  3. 시작일 전이면 목록·드로어가 "MM.DD 시작"으로 보이고, 오늘 순위 입력칸은 뜨지 않는다.
+  4. 종료일이 지나면 크론(advance_due)이 완료로 알아서 넘긴다.
+  5. 운영자가 승인하기 전, 등록되는 순간 순위 추적 슬롯이 생긴다.
 """
 import json
 import sys
@@ -96,37 +97,47 @@ def main():
     ok(a and a["status"] == "review", "등록 직후 검수", (a or {}).get("status"))
     ok(a and a["pay_method"] == "credit", "크레딧 결제로 기록", (a or {}).get("pay_method"))
 
-    print("\n=== 2. 승인 — 시작일 전이면 구동 대기 ===")
+    print("\n=== 2. 승인 → 곧장 정상 (구동 대기 단계 없음) ===")
+    admin = app.test_client()
+    admin.post("/auth/admin/login", data={"email": "admin", "password": "1234"})
+    admin.post(f"/admin/orders/{a['id']}/action", data={"action": "approve"}, follow_redirects=True)
     with app.app_context():
-        campaign_service.transition(campaign_model.get(a["id"]), "approved", None, "테스트 승인")
         st = campaign_model.get(a["id"])["status"]
-    ok(st == "approved", f"시작일 {a['start_date']} 이전이라 구동 대기", st)
+        logs = [r["to_status"] for r in query("SELECT to_status FROM status_log WHERE campaign_id = %s ORDER BY id", [a["id"]])]
+    ok(st == "running", "승인 한 번으로 정상", st)
+    ok(logs == ["review", "running"], "이력도 2단계 (approved 안 거침)", " → ".join(logs))
+    from app.constants import STATUS_LABEL
+    ok(STATUS_LABEL["running"] == "정상", "라벨이 '정상'", STATUS_LABEL["running"])
 
-    print("\n=== 3. 시작일 도래 → 자동 구동 / 종료일 경과 → 자동 완료 ===")
+    print("\n=== 3. 시작일 전이면 '시작 예정'으로 보인다 ===")
     with app.app_context():
-        execute("UPDATE campaigns SET start_date = CURDATE() WHERE id = %s", [a["id"]])
-        started, _ = campaign_service.advance_due()
-        st = campaign_model.get(a["id"])["status"]
-    ok(st == "running" and started == 1, "시작일 도래 → 진행", st)
+        c0 = campaign_model.get(a["id"])
+        prog = campaign_service.progress(c0)
+        ok(campaign_service.day_index(c0) == 0, "아직 0일차", campaign_service.day_index(c0))
+        ok(prog["cls"] == "wait" and "시작" in prog["label"], "진행률 대신 시작일 표시", prog)
+    h = admin.get("/admin/orders").get_data(as_text=True)
+    ok(f"{a['start_date']:%m.%d} 시작" in h, "어드민 표에도 시작일", "표에 시작일 문구 없음")
+    ok("일차" not in h.split(a["order_no"])[1][:600], "시작 전에는 N일차 안 띄움")
+
+    print("\n=== 4. 종료일 경과 → 자동 완료 ===")
     with app.app_context():
-        execute("UPDATE campaigns SET end_date = DATE_SUB(CURDATE(), INTERVAL 1 DAY) WHERE id = %s", [a["id"]])
+        execute("UPDATE campaigns SET start_date = CURDATE(), end_date = DATE_SUB(CURDATE(), INTERVAL 1 DAY) WHERE id = %s", [a["id"]])
         _, finished = campaign_service.advance_due()
         st = campaign_model.get(a["id"])["status"]
         logs = [r["to_status"] for r in query("SELECT to_status FROM status_log WHERE campaign_id = %s ORDER BY id", [a["id"]])]
     ok(st == "done" and finished == 1, "종료일 경과 → 완료", st)
-    ok(logs == ["review", "approved", "running", "done"], "이력 4단계", " → ".join(logs))
+    ok(logs == ["review", "running", "done"], "전체 이력 3단계", " → ".join(logs))
 
-    print("\n=== 4. 시작일이 이미 지난 건은 승인 한 번으로 진행까지 ===")
+    print("\n=== 5. approved 로 남은 옛 주문도 크론이 정리 ===")
     with app.app_context():
         b = register(user, media, start, "상태흐름B", "상태흐름B키워드", total)
+        campaign_service.transition(campaign_model.get(b["id"]), "approved", None, "옛 주문 재현")
         execute("UPDATE campaigns SET start_date = CURDATE() WHERE id = %s", [b["id"]])
-        campaign_service.transition(campaign_model.get(b["id"]), "approved", None, "테스트 승인")
+        started, _ = campaign_service.advance_due()
         st = campaign_model.get(b["id"])["status"]
-        logs = [r["to_status"] for r in query("SELECT to_status FROM status_log WHERE campaign_id = %s ORDER BY id", [b["id"]])]
-    ok(st == "running", "승인 = 진행 (구동 시작 버튼 불필요)", st)
-    ok(logs == ["review", "approved", "running"], "승인 이력도 남는다", " → ".join(logs))
+    ok(st == "running" and started == 1, "approved + 시작일 도래 → 정상", st)
 
-    print("\n=== 5. 등록 즉시 순위 추적 ===")
+    print("\n=== 6. 등록 즉시 순위 추적 ===")
     srv = HTTPServer(("127.0.0.1", 5096), StubRank)
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     try:

@@ -140,18 +140,14 @@ def transition(campaign, to_status, actor_id=None, memo=None):
         spawn_track(campaign)
     elif to_status in ("done", "stopped", "cancelled", "rejected"):
         untrack_if_unused(campaign)
-    # 승인했는데 시작일이 이미 됐으면 그 자리에서 구동으로 넘긴다 — 운영자가 "승인" 다음에
-    # "구동 시작"을 또 누를 일이 없게 (2026-09-25 JDH "과정 줄이기").
-    if to_status == "approved" and campaign["start_date"] and campaign["start_date"] <= date.today():
-        return transition(campaign_model.get(campaign["id"]), "running", actor_id, "승인 · 시작일 도래로 바로 구동")
     return campaign_model.get(campaign["id"])
 
 
 def advance_due(actor_id=None):
-    """시작일이 된 승인건을 구동으로, 종료일이 지난 구동건을 완료로 넘긴다 (크론).
+    """종료일이 지난 구동건을 완료로 넘긴다 (크론). approved 로 남은 옛 주문도 함께 정리.
 
-    지금까지는 운영자가 매일 "구동 시작"·"완료"를 눌러야 했다. 승인만 하면 나머지는
-    날짜를 보고 알아서 진행된다.
+    지금은 승인하면 곧장 running 이라 앞쪽 루프는 옛 주문 전용이다. 뒤쪽 루프가 본론 —
+    운영자가 매일 "완료"를 누르지 않아도 종료일이 지나면 알아서 닫힌다.
     """
     started = finished = 0
     for c in campaign_model.due_to_start():
@@ -262,7 +258,8 @@ def apply_rank(campaign_id, day, rank):
 
 
 _NOTIFY_TITLES = {
-    "review": "결제가 확인되어 검수를 시작합니다", "approved": "검수를 통과했습니다 · 곧 구동 시작", "running": "캠페인 구동이 시작되었습니다",
+    "review": "결제가 확인되어 검수를 시작합니다", "approved": "검수를 통과했습니다 · 곧 구동 시작",
+    "running": "검수를 통과했습니다 · 시작일부터 구동됩니다",
     "rejected": "검수 반려 — 결제 금액이 환불됩니다", "done": "캠페인이 완료되었습니다", "stopped": "캠페인이 중단되었습니다 · 잔여일분 환불",
     "cancelled": "주문이 취소되었습니다",
 }
@@ -326,7 +323,8 @@ def progress(campaign, today=None):
     today = today or date.today()
     total = days_between(campaign["start_date"], campaign["end_date"])
     st = campaign["status"]
-    if st in ("pay_wait", "review", "approved"):
+    # 승인 직후에도 상태는 running 이지만 시작일 전이면 "MM.DD 시작" 으로 보여준다.
+    if st in ("pay_wait", "review", "approved") or (st == "running" and today < campaign["start_date"]):
         return {"cls": "wait", "pct": 0, "label": f"{campaign['start_date']:%m.%d} 시작", "sub": f"{total}일", "total": total, "elapsed": 0}
     if st == "rejected":
         return {"cls": "rej", "pct": 0, "label": (campaign.get("reject_reason") or "반려"), "sub": "전액 환불", "total": total, "elapsed": 0}

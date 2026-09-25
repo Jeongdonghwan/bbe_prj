@@ -133,10 +133,9 @@ def _apply_action(c, action, reason=""):
     """Shared by single/bulk actions. Returns (ok, message)."""
     try:
         if action == "approve":
-            c = campaign_service.transition(c, "approved", g.user["id"], "운영팀 승인")
-            if c["start_date"] <= date.today():
-                c = campaign_service.transition(c, "running", g.user["id"], "구동 시작")
-            _log("order_approve", "campaign", c["id"], f"{c['order_no']} 승인 → {c['status']}")
+            # 승인 = 곧장 정상(running). 구동은 시작일부터 돌고, 그 날짜는 목록에 그대로 보인다.
+            c = campaign_service.transition(c, "running", g.user["id"], f"운영팀 승인 · {c['start_date']:%m.%d} 시작")
+            _log("order_approve", "campaign", c["id"], f"{c['order_no']} 승인 → 정상")
         elif action == "reject":
             if not reason.strip():
                 return False, "반려 사유는 필수입니다."

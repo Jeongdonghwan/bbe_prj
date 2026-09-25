@@ -41,15 +41,17 @@ CHANNEL_LABEL = {"place": "플레이스", "store": "쇼핑·스토어", "coupang
 # 인기 트래픽 페이지·위젯의 탭 순서 (2026-09-22 JDH): 쇼핑·스토어 먼저, 기본 선택도 쇼핑·스토어.
 TRAFFIC_CHANNELS = [("store", "쇼핑·스토어"), ("place", "플레이스"), ("coupang", "쿠팡")]
 CHANNEL_CLASS = {"place": "c-place", "store": "c-store", "coupang": "c-coupang"}
-STATUS_LABEL = {"pay_wait": "결제 대기", "review": "검수", "approved": "구동 대기", "running": "진행",
+# 승인하면 곧장 "정상"이다 — 시작일은 목록·드로어에 날짜로 나오니 따로 대기 단계를 두지
+# 않는다 (2026-09-25 JDH). approved 는 옛 주문에만 남아 있어서 같은 라벨·같은 색으로 보인다.
+STATUS_LABEL = {"pay_wait": "결제 대기", "review": "검수", "approved": "정상", "running": "정상",
                 "rejected": "반려", "done": "완료", "stopped": "중단", "cancelled": "취소"}
-STATUS_CLASS = {"pay_wait": "s-wait", "review": "s-review", "approved": "s-appr", "running": "s-run",
+STATUS_CLASS = {"pay_wait": "s-wait", "review": "s-review", "approved": "s-run", "running": "s-run",
                 "rejected": "s-rej", "done": "s-done", "stopped": "s-stop", "cancelled": "s-wait"}
 STATUS_ORDER = ["pay_wait", "review", "approved", "running", "rejected", "done", "stopped", "cancelled"]
-# 크레딧 모델(v3.3)에서 실제로 나오는 상태. pay_wait/cancelled 는 폐기된 건별 PG 결제의
+# 크레딧 모델(v3.3)에서 실제로 나오는 상태. pay_wait/approved/cancelled 는 옛 흐름의
 # 잔재라서 그 상태의 주문이 남아 있을 때만 탭을 보여준다 — 2026-09-25 JDH "과정 줄이기".
-STATUS_LIVE = ["review", "approved", "running", "done", "stopped", "rejected"]
-STATUS_LEGACY = ["pay_wait", "cancelled"]
+STATUS_LIVE = ["review", "running", "done", "stopped", "rejected"]
+STATUS_LEGACY = ["pay_wait", "approved", "cancelled"]
 
 
 def status_tabs(counts):
@@ -60,7 +62,7 @@ def status_tabs(counts):
 # Campaign status transition table (from -> allowed to).
 TRANSITIONS = {
     "pay_wait": {"review", "cancelled"},
-    "review": {"approved", "rejected"},
+    "review": {"running", "approved", "rejected"},   # 승인 = 곧장 running. approved 는 옛 주문용.
     "approved": {"running", "rejected"},
     "running": {"done", "stopped"},
 }

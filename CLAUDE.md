@@ -24,9 +24,10 @@ cp .env.example .env → mysql < schema.sql → python scripts/seed.py → flask
 
 ## 현재 Phase
 - 2026-09-25 상태 흐름 단축 + 운영 삭제 기능 (JDH "과정이 너무 복잡해서 줄일 수 있는 건 줄여라"):
-  - 캠페인은 **검수 → 구동 대기 → 진행 → 완료** 4단계로만 흐른다. 운영자는 **승인만** 누른다. 시작일이 되면 `campaign_service.advance_due()`(크론 `advance_campaigns`, hourly+daily)가 진행으로, 종료일이 지나면 완료로 넘긴다. 승인 시점에 이미 시작일이 지났으면 `transition()`이 그 자리에서 진행까지 보낸다 — 어드민 주문 표의 "지금 시작"·"완료"는 앞당길 때만 쓰는 수동 override.
-  - `STATUS_LABEL["approved"]`는 "승인"이 아니라 **"구동 대기"**. 상태 라벨·클래스는 `app/__init__.py` 컨텍스트 프로세서가 전역(`status_label`/`status_class`)으로 주므로 템플릿에서 라벨 맵을 새로 만들지 말 것.
-  - 목록 상태 탭은 `constants.status_tabs(counts)`로 만든다 — 현행 6개(검수·구동 대기·진행·완료·중단·반려)만 보이고, 폐기된 건별 PG 잔재(`pay_wait`/`cancelled`)는 해당 건수가 남아 있을 때만 탭이 뜬다.
+  - 캠페인은 **검수 → 정상 → 완료** 3단계로만 흐른다. 운영자는 **승인만** 누르고, 승인은 곧장 `running`이다 (`approved`를 거치지 않는다 — 2026-09-25 JDH "승인 누르면 그냥 정상이라고 나오고, 어차피 시작일자가 캠페인 관리에서 나오니 상관없다"). 종료일이 지나면 `campaign_service.advance_due()`(크론 `advance_campaigns`, hourly+daily)가 완료로 넘긴다. 어드민 주문 표의 "완료"·"중단"은 앞당길 때만 쓰는 수동 override.
+  - `running`이지만 **시작일 전**인 구간이 정상적으로 존재한다. 그래서 `progress()`는 `today < start_date`면 진행률 대신 "MM.DD 시작"을 돌려주고, `day_index()`는 0이다 — 어드민 표의 순위 입력칸·"N일차"·"완료" 버튼과 드로어의 일차 표시는 모두 `day_idx`가 0이 아닐 때만 그린다. 진행 중 집계(`running_today_spend`, `running_without_today_rank`)도 `start_date <= CURDATE()`로 걸러야 한다.
+  - `STATUS_LABEL`: `running`·`approved` 모두 **"정상"**(`approved`는 옛 주문에만 남는다, 클래스도 `s-run`으로 동일). 상태 라벨·클래스는 `app/__init__.py` 컨텍스트 프로세서가 전역(`status_label`/`status_class`)으로 주므로 템플릿에서 라벨 맵을 새로 만들지 말 것.
+  - 목록 상태 탭은 `constants.status_tabs(counts)`로 만든다 — 현행 5개(검수·정상·완료·중단·반려)만 보이고, 옛 흐름의 잔재(`pay_wait`/`approved`/`cancelled`)는 해당 건수가 남아 있을 때만 탭이 뜬다.
   - 순위 추적은 **등록 즉시** 시작한다. `create_with_credit()`이 캠페인 행을 만든 직후 `spawn_track()`을 부른다(검수 결과를 기다리지 않음). `transition()`의 approved/running 훅은 백업 경로.
   - 삭제: 주문(`/admin/orders/<id>/delete`, 미환불 크레딧은 자동 환불) · 회원(`/admin/users/<id>/delete`, `user.deletable_blockers()` 검사) · 공지·콘텐츠 일괄(`/admin/content/bulk-delete`) · 대행 의뢰/제안/인증신청(`agency.purge_*`) · 커뮤니티 게시글(신설 화면 `/admin/posts`, `post.purge()`가 댓글·좋아요·신고까지 지움).
   - 회귀 테스트 `tests/status_flow.py`.

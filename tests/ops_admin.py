@@ -57,17 +57,14 @@ def main():
     h = body(admin.get("/admin"))
     check("검수" in h or "대기" in h, "대시보드 위젯")
 
-    print("\n=== 2. 주문 관리 — 승인 → 구동 → 순위 → 완료 ===")
+    print("\n=== 2. 주문 관리 — 승인 → 순위 → 완료 ===")
     h = body(admin.get("/admin/orders?status=review"))
     check("어드민점검 1" in h, "검수 대기 목록에 노출")
-    r = admin.post(f"/admin/orders/{ok_c['id']}/action", data={"action": "status", "status": "approved"}, follow_redirects=True)
-    with app.app_context():
-        st = query_one("SELECT status FROM campaigns WHERE id=%s", [ok_c["id"]])["status"]
-    check(st == "approved", "승인", st)
+    # 승인 = 곧장 정상(running). 중간에 "구동 시작"을 누르는 단계는 없다.
     r = admin.post(f"/admin/orders/{ok_c['id']}/action", data={"action": "status", "status": "running"}, follow_redirects=True)
     with app.app_context():
         st = query_one("SELECT status FROM campaigns WHERE id=%s", [ok_c["id"]])["status"]
-    check(st == "running", "구동 시작", st)
+    check(st == "running", "승인 → 정상", st)
     r = admin.post(f"/admin/orders/{ok_c['id']}/rank", data={"rank": "17", "done_qty": "300"}, follow_redirects=True)
     with app.app_context():
         c2 = query_one("SELECT rank_start, rank_now FROM campaigns WHERE id=%s", [ok_c["id"]])
