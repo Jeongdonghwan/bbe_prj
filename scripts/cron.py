@@ -69,8 +69,15 @@ def sync_ranks():
     return f"신규 등록 {spawned} · 순위 보정 {filled}"
 
 
+def backfill_nvmid():
+    """등록 때 못 채운 nvMid 를 순위 서버 검색결과에서 찾아 메운다."""
+    from app.services import campaign_service
+    return f"nvMid 보정 {campaign_service.backfill_nv_mid()}건"
+
+
 JOBS = {
     "expire_unpaid": expire_unpaid,
+    "backfill_nvmid": backfill_nvmid,
     "refresh_efficiency": refresh_efficiency,
     "refresh_slots": refresh_slots,
     "close_agency": close_agency,
@@ -78,7 +85,8 @@ JOBS = {
     "advance_campaigns": advance_campaigns,
 }
 GROUPS = {
-    "daily": ["advance_campaigns", "expire_unpaid", "refresh_efficiency", "refresh_slots", "close_agency"],
+    "daily": ["advance_campaigns", "expire_unpaid", "refresh_efficiency", "refresh_slots", "close_agency",
+              "backfill_nvmid"],
     "hourly": ["advance_campaigns", "sync_ranks"],
 }
 

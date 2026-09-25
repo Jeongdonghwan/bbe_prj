@@ -221,7 +221,8 @@ def list_log(campaign_id):
 
 # ---- admin ---------------------------------------------------------------
 ADMIN_SELECT = """SELECT c.*, m.name AS media_name, m.color AS media_color, u.nickname, u.phone AS user_phone,
-                         u.email AS user_email, u.biz_name AS user_biz, u.kakao_id AS user_kakao
+                         u.email AS user_email, u.username AS user_username, u.biz_name AS user_biz,
+                         u.kakao_id AS user_kakao
                   FROM campaigns c JOIN media m ON m.id = c.media_id JOIN users u ON u.id = c.user_id"""
 
 
@@ -249,8 +250,11 @@ def _admin_filters(status, channel, media_id, period, q, user_id=None, ids=None,
     elif period == "month":
         where.append("c.created_at >= DATE_FORMAT(CURDATE(), '%%Y-%%m-01')")
     if q:
-        where.append("(c.order_no LIKE %s OR u.nickname LIKE %s OR c.biz_name LIKE %s OR c.main_keyword LIKE %s)")
-        params += [f"%{q}%"] * 4
+        # 화면에 보이는 값으로 찾을 수 있어야 한다 — 아이디(이메일·운영자 아이디·카카오)도 포함.
+        from .user import search_term
+        where.append("(c.order_no LIKE %s OR u.nickname LIKE %s OR c.biz_name LIKE %s OR c.main_keyword LIKE %s "
+                     "OR u.email LIKE %s OR u.username LIKE %s OR u.kakao_id LIKE %s)")
+        params += [f"%{search_term(q)}%"] * 7
     return " AND ".join(where), params
 
 
@@ -376,6 +380,14 @@ def untracked_running(limit=200):
     return [_decode(r) for r in query(
         """SELECT * FROM campaigns WHERE channel IN ('store','place') AND status IN ('review','approved','running')
            AND track_id IS NULL ORDER BY id LIMIT %s""", [limit])]
+
+
+def store_without_nv_mid(limit=100):
+    """nvMid 가 비어 있는 쇼핑 캠페인 — 등록 때 미리보기가 못 채운 건을 나중에 메운다."""
+    return [_decode(r) for r in query(
+        """SELECT * FROM campaigns WHERE channel = 'store' AND nv_mid IS NULL
+             AND status IN ('review','approved','running','done')
+           ORDER BY id DESC LIMIT %s""", [limit])]
 
 
 def mark_tracked(track_id, status):

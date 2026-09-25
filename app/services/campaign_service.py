@@ -190,6 +190,28 @@ def spawn_track(campaign):
     return r["trackId"]
 
 
+def backfill_nv_mid(limit=100):
+    """비어 있는 nvMid 를 순위 서버 미리보기로 메운다 (크론).
+
+    등록 화면의 미리보기는 사용자가 주소를 붙여넣은 그 순간에만 돈다 — 토큰이 없었거나,
+    네이버가 상품 페이지를 막았거나(429), 미리보기가 끝나기 전에 제출하면 빈 채로 저장된다.
+    순위 서버는 매일 수집한 검색결과에서 진짜 nvMid 를 찾아줄 수 있으므로 나중에 채워진다.
+    """
+    from . import rank_client
+    if not rank_client.configured():
+        return 0
+    filled = 0
+    for c in campaign_model.store_without_nv_mid(limit):
+        r = rank_client.product_preview(c["target_url"])
+        nv = str(r.get("nvMid") or "")
+        # 경로에서 주워온 스토어 상품번호는 nvMid 가 아니다 — 그건 이미 별도 열로 뽑고 있다.
+        if not r.get("ok") or not nv.isdigit() or r.get("nvMidSource") == "path":
+            continue
+        campaign_model.update(c["id"], {"nv_mid": nv[:20]})
+        filled += 1
+    return filled
+
+
 def spawn_track_async(campaign_id):
     """추적 등록을 요청 밖으로 뺀다 — 사용자를 순위 서버 응답까지 기다리게 하지 않는다.
 

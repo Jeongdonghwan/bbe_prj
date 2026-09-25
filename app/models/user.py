@@ -93,6 +93,12 @@ def login_id(email=None, username=None, kakao_id=None, user_id=None):
     return f"#{user_id}" if user_id else "-"
 
 
+def search_term(q):
+    """화면에 보이는 아이디를 그대로 검색창에 넣어도 찾히게 한다 — kakao:<id> 의 접두사를 뗀다."""
+    q = (q or "").strip()
+    return q[6:] if q[:6].lower() == "kakao:" else q
+
+
 def list_admin(q=None, status=None, page=1, per_page=20):
     from ..db import query, query_one  # local import keeps top clean
     where, params = ["1=1"], []
@@ -100,7 +106,7 @@ def list_admin(q=None, status=None, page=1, per_page=20):
         # 아이디로도 찾을 수 있어야 한다 — 어드민이 보는 값이 곧 검색어다.
         where.append("(nickname LIKE %s OR phone LIKE %s OR biz_name LIKE %s "
                      "OR email LIKE %s OR username LIKE %s OR kakao_id LIKE %s)")
-        params += [f"%{q}%"] * 6
+        params += [f"%{search_term(q)}%"] * 6
     if status:
         where.append("status = %s"); params.append(status)
     w = " AND ".join(where)

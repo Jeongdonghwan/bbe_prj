@@ -100,6 +100,8 @@ def orders():
     page, per_page = _page()
     rows = campaign_model.admin_list(status, channel, media_id, period, q, page, per_page, **flt)
     for r in rows:
+        r["login_id"] = user_model.login_id(r.get("user_email"), r.get("user_username"),
+                                            r.get("user_kakao"), r["user_id"])
         r["warn"] = forbidden_service.check([r["biz_name"], r["product_name"], r["main_keyword"], *(r["setting_keywords"] or [])], r["channel"])
         r["day_idx"] = campaign_service.day_index(r)
         r["total_days"] = campaign_service.days_between(r["start_date"], r["end_date"])

@@ -13,7 +13,7 @@
     <select class="in" name="user" onchange="this.form.submit()"><option value="">모든 계정</option>{% for a in accounts %}<option value="{{ a.id }}"{% if user_id == a.id %} selected{% endif %}>{{ a.biz_name or a.nickname }}{% if a.email %} · {{ a.email }}{% endif %} ({{ a.n }})</option>{% endfor %}</select>
     <input class="in" type="date" name="from" value="{{ date_from.isoformat() if date_from else '' }}" onchange="this.form.submit()" title="등록일 시작" style="width:150px"><span class="mut">~</span><input class="in" type="date" name="to" value="{{ date_to.isoformat() if date_to else '' }}" onchange="this.form.submit()" title="등록일 끝" style="width:150px">
     <select class="in" name="period" onchange="this.form.submit()"><option value="">전체 기간</option><option value="today"{% if period == 'today' %} selected{% endif %}>오늘 접수</option><option value="week"{% if period == 'week' %} selected{% endif %}>이번 주</option><option value="month"{% if period == 'month' %} selected{% endif %}>이번 달</option></select>
-    <div class="search"><i data-lucide="search" class="i"></i><input class="in" name="q" value="{{ q or '' }}" placeholder="주문번호 · 회원 · 업체명"></div></form>
+    <div class="search"><i data-lucide="search" class="i"></i><input class="in" name="q" value="{{ q or '' }}" placeholder="주문번호 · 아이디 · 회원 · 업체명"></div></form>
   <form method="post" action="/admin/orders/bulk" id="bulkForm"><input type="hidden" name="back" value="{{ request.full_path }}">
   <div class="bulk" id="bulkBar" style="display:none"><span class="chk on"><i></i></span><span id="bulkCount">0</span>건 선택됨 <button class="btn pri sm" style="margin-left:auto" name="action" value="approve" type="submit">선택 승인</button><button class="btn sec sm" type="button" id="bulkReject">선택 반려</button><button class="btn sec sm" type="submit" formaction="/admin/orders/export?{{ request.query_string.decode() }}" formmethod="post" formtarget="_blank">선택 엑셀 내보내기</button></div>
   <div style="overflow-x:auto;margin:0 -18px"><table><thead><tr><th><input type="checkbox" id="chkAll"></th><th>주문</th><th>회원</th><th>채널</th><th>업체 · 키워드</th><th>매체</th><th>기간 · 수량</th><th>링크</th><th>상태</th><th>순위</th><th></th></tr></thead><tbody>
@@ -21,7 +21,7 @@
     <tr{% if r.warn.block %} style="background:var(--danger-soft)"{% endif %}>
       <td><input type="checkbox" name="ids" value="{{ r.id }}" class="rowchk"></td>
       <td class="ord">{{ r.order_no }}<br><span class="mut" style="font-size:11px">{{ pay_method_label[r.pay_method] }} {{ r.paid_amount | fmt_num }}</span></td>
-      <td>{{ r.nickname }}</td>
+      <td><a class="lnk" href="/admin/users?q={{ r.login_id | urlencode }}">{{ r.nickname }}</a><br><span class="mut mono" style="font-size:11px">{{ r.login_id }}</span>{% if r.user_biz %}<br><span class="mut" style="font-size:11px">{{ r.user_biz }}</span>{% endif %}</td>
       <td><span class="pill p-{{ r.channel }}">{{ channel_label[r.channel] }}</span></td>
       <td><b>{{ r.biz_name }}</b><br>{% if r.warn.block %}<span style="color:var(--danger);font-size:12px">⚠ 금지 문구 "{{ r.warn.block | join(', ') }}" 감지</span>{% elif r.warn.warn %}<span style="color:var(--warn);font-size:12px">주의 "{{ r.warn.warn | join(', ') }}"</span> <span class="mut">{{ r.main_keyword }}</span>{% else %}<span class="mut">{{ r.main_keyword }}</span>{% endif %}</td>
       <td>{{ r.media_name }}</td>
