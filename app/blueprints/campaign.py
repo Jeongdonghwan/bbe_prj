@@ -383,8 +383,10 @@ def ranks(channel, campaign_id):
         campaign_service.backfill_ranks(c)      # 콜백을 놓쳤으면 순위 서버에서 보정 (5분 스로틀)
         c = _own(channel, campaign_id)
         rankmap = {d["date"]: d["rank"] for d in campaign_model.list_daily(campaign_id)}
+        # 구동 전 기준 순위도 기록되므로 시작일보다 이른 기록이 있으면 거기서부터 보여준다.
+        first = min([c["start_date"], *rankmap]) if rankmap else c["start_date"]
         cur = min(date.today(), c["end_date"])
-        while cur >= c["start_date"]:
+        while cur >= first:
             days.append({"date": cur, "rank": rankmap.get(cur)})
             cur -= timedelta(days=1)
         today_rank = rankmap.get(date.today())

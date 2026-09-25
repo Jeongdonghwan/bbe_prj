@@ -1,6 +1,7 @@
 """Campaign orders: quote, create (campaign + payment in one transaction), transition (state table + status_log)."""
 import math
 import secrets
+import threading
 from datetime import date, datetime, timedelta
 
 from ..constants import DISCOUNT_RULES, TRANSITIONS, VAT_RATE
@@ -95,8 +96,7 @@ def create_with_credit(user, media, form):
         campaign_model.delete(cid)
         raise CampaignError("크레딧 잔액이 부족합니다. 충전 후 다시 시도해주세요.")
     campaign_model.add_log(cid, None, "review", user["id"], f"크레딧 결제 {cost:,}원 · 검수 대기")
-    c = campaign_model.get(cid)
-    spawn_track(c)          # 등록 즉시 순위 추적 시작 (검수 결과를 기다리지 않는다)
+    spawn_track_async(cid)  # 등록 즉시 순위 추적 시작 (검수 결과를 기다리지 않는다)
     return campaign_model.get(cid)
 
 
@@ -137,7 +137,7 @@ def transition(campaign, to_status, actor_id=None, memo=None):
     campaign_model.add_log(campaign["id"], frm, to_status, actor_id, memo)
     _notify_status(campaign, frm, to_status, memo)
     if to_status in ("approved", "running"):
-        spawn_track(campaign)
+        spawn_track_async(campaign["id"])
     elif to_status in ("done", "stopped", "cancelled", "rejected"):
         untrack_if_unused(campaign)
     return campaign_model.get(campaign["id"])
@@ -188,6 +188,30 @@ def spawn_track(campaign):
         except (ValueError, TypeError):
             pass
     return r["trackId"]
+
+
+def spawn_track_async(campaign_id):
+    """추적 등록을 요청 밖으로 뺀다 — 사용자를 순위 서버 응답까지 기다리게 하지 않는다.
+
+    순위 서버는 슬롯을 만들면서 상품·플레이스 페이지를 직접 읽어보기 때문에 몇 초씩 걸린다
+    (네이버가 데이터센터 IP 를 막아 타임아웃까지 가는 일도 있다). 캠페인 저장은 이미 끝났으니
+    붙잡아 둘 이유가 없다. 실패해도 cron 의 sync_ranks 가 검수 단계부터 다시 줍는다.
+    """
+    from flask import current_app, has_request_context
+    app = current_app._get_current_object()
+    # 크론·CLI 는 기다리는 사람이 없고, 데몬 스레드는 프로세스가 끝나면 잘려나간다 → 그대로 동기.
+    if app.config.get("TESTING") or not has_request_context():
+        return spawn_track(campaign_model.get(campaign_id))
+
+    def run():
+        with app.app_context():
+            try:
+                spawn_track(campaign_model.get(campaign_id))
+            except Exception:
+                app.logger.exception("추적 등록 실패 campaign=%s", campaign_id)
+
+    threading.Thread(target=run, name=f"spawn-track-{campaign_id}", daemon=True).start()
+    return None
 
 
 def untrack_if_unused(campaign):
