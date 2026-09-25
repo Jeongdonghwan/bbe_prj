@@ -18,6 +18,10 @@ def get_by_email(email):
     return query_one("SELECT * FROM users WHERE email = %s", [email])
 
 
+def set_email(user_id, email):
+    execute("UPDATE users SET email = %s WHERE id = %s", [email or None, user_id])
+
+
 def get_by_login(login):
     """운영자 로그인: 아이디(username) 또는 이메일 어느 쪽이든 받는다."""
     return query_one("SELECT * FROM users WHERE username = %s OR email = %s LIMIT 1", [login, login])

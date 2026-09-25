@@ -1,7 +1,7 @@
 {% extends "layout/base.html" %}
 {% block title %}운영자 관리{% endblock %}
 {% block content %}
-<div class="ph"><div><h1>운영자 관리</h1><p>운영자 로그인은 <code>/auth/admin/login</code> 입니다. 아이디나 이메일 중 하나로 로그인합니다.</p></div></div>
+<div class="ph"><div><h1>운영자 관리</h1><p>운영자 계정을 만들고 아이디·비밀번호를 관리합니다.</p></div></div>
 
 {% if new_pw %}
 <div class="card" style="margin-bottom:14px;border-color:var(--accent)"><div class="cb" style="padding-top:16px">
@@ -32,9 +32,14 @@
       {% for u in rows %}
       <tr>
         <td>
-          <form method="post" action="/admin/operators/{{ u.id }}/login-id" class="inline-f">
-            <input class="in" name="username" value="{{ u.username or '' }}" placeholder="아이디 없음" maxlength="30">
+          <div class="inline-f" data-idview>
+            {% if u.username %}<b class="mono">{{ u.username }}</b>{% else %}<span class="mut">아이디 없음</span>{% endif %}
+            <button class="btn sec sm" type="button" data-idedit style="margin-left:auto">수정</button>
+          </div>
+          <form method="post" action="/admin/operators/{{ u.id }}/login-id" class="inline-f" data-idform hidden>
+            <input class="in" name="username" value="{{ u.username or '' }}" maxlength="30" autocomplete="off">
             <button class="btn sec sm" type="submit">저장</button>
+            <button class="btn sec sm" type="button" data-idcancel>취소</button>
           </form>
         </td>
         <td class="mut" style="font-size:12px">{{ u.email or '—' }}{% if u.id == me %} <span class="tag t-pin">나</span>{% endif %}</td>
@@ -73,18 +78,32 @@
       <div class="f"><label>비밀번호<small>비우면 안전한 값을 자동 생성</small></label><input class="in" type="text" name="password" maxlength="72" placeholder="비우면 자동 생성"></div>
       <button class="btn pri" type="submit" style="width:100%">계정 만들기</button>
     </form>
-    <p class="thin" style="margin-top:12px">서버에서 <code>python scripts/admin_user.py</code> 로도 같은 작업을 할 수 있습니다.</p>
   </div></div>
 </div>
 {% endblock %}
 {% block scripts %}<script>
 (function () {
   var b = document.getElementById('copyPw');
-  if (!b) { return; }
-  b.addEventListener('click', function () {
-    var i = document.getElementById('newPw');
-    i.select();
-    try { document.execCommand('copy'); b.textContent = '복사됨'; } catch (e) { /* 수동 복사 */ }
+  if (b) {
+    b.addEventListener('click', function () {
+      var i = document.getElementById('newPw');
+      i.select();
+      try { document.execCommand('copy'); b.textContent = '복사됨'; } catch (e) { /* 수동 복사 */ }
+    });
+  }
+  // 아이디는 평소엔 글자로만 보이고 "수정"을 눌러야 고칠 수 있다 — 실수로 바꾸는 일이 없게.
+  document.querySelectorAll('[data-idedit]').forEach(function (btn) {
+    var cell = btn.closest('td'), view = cell.querySelector('[data-idview]'), form = cell.querySelector('[data-idform]');
+    var input = form.querySelector('input'), was = input.value;
+    btn.addEventListener('click', function () {
+      view.hidden = true; form.hidden = false; input.focus(); input.select();
+    });
+    form.querySelector('[data-idcancel]').addEventListener('click', function () {
+      input.value = was; form.hidden = true; view.hidden = false;
+    });
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { input.value = was; form.hidden = true; view.hidden = false; }
+    });
   });
 }());
 </script>{% endblock %}

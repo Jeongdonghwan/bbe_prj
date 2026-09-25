@@ -876,7 +876,8 @@ def users():
     rows, total = user_model.list_admin(q, status if status in ("active", "suspended") else None, page, per_page)
     from ..constants import GRADE_LABEL
     return render_template("admin/users.html", rows=rows, q=q, status=status, page=page, total_pages=max(1, -(-total // per_page)),
-                           counts=user_model.count_by_status(), open_id=request.args.get("open", type=int), grade_label=GRADE_LABEL)
+                           counts=user_model.count_by_status(), open_id=request.args.get("open", type=int), grade_label=GRADE_LABEL,
+                           new_pw=session.pop("new_user_pw", None))
 
 
 # =============================================================== operators
@@ -1039,6 +1040,39 @@ def user_drawer(user_id):
     return render_template("admin/_user_drawer.html", u=u, campaigns=campaign_model.list_by_user(user_id, 20),
                            posts=post_model.list_by_user(user_id, 20), paid_total=campaign_model.total_paid(user_id),
                            status_label=STATUS_LABEL, status_class=STATUS_CLASS, channel_label=CHANNEL_LABEL)
+
+
+@bp.route("/users/<int:user_id>/passwd", methods=["POST"])
+@admin_required
+def user_passwd(user_id):
+    """회원 비밀번호 설정. 회원 로그인은 이메일로만 되므로 이메일이 없으면 같이 받는다."""
+    u = user_model.get_by_id(user_id) or abort(404)
+    if u["role"] == "admin":
+        flash("운영자 계정의 비밀번호는 운영자 관리에서 바꿔주세요.")
+        return _back(url_for("admin.users"))
+    back = _back(url_for("admin.users", q=request.args.get("q")))
+    email = (request.form.get("email") or "").strip().lower()[:120] or u["email"]
+    if not email:
+        flash(f"{u['nickname']}은(는) 이메일이 없어 비밀번호만으로는 로그인할 수 없습니다. 이메일을 같이 입력해주세요.")
+        return back
+    if not EMAIL_RE.match(email):
+        flash("이메일 형식이 올바르지 않습니다.")
+        return back
+    other = user_model.get_by_email(email)
+    if other and other["id"] != user_id:
+        flash("다른 회원이 쓰고 있는 이메일입니다.")
+        return back
+    pw, err = _read_password(request.form)
+    if err:
+        flash(err)
+        return back
+    if email != u["email"]:
+        user_model.set_email(user_id, email)
+    user_model.set_password(user_id, generate_password_hash(pw))
+    _log("user_passwd", "user", user_id, f"{u['nickname']}({email}) 비밀번호 설정")
+    session["new_user_pw"] = {"who": u["nickname"], "email": email, "pw": pw}
+    flash(f"{u['nickname']}의 비밀번호를 설정했습니다. 아래에서 한 번만 확인할 수 있습니다.")
+    return back
 
 
 @bp.route("/users/<int:user_id>/delete", methods=["POST"])
