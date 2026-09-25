@@ -12,7 +12,7 @@
   <div class="dsec"><h6>순위 변동 <span style="font-weight:500;color:var(--text-3)">· 낮을수록 좋음</span></h6>
     {% if ranks %}<div class="rankchart">{% for d in ranks %}<i data-r="{{ d.rank }}" style="height:{{ d.h }}%"{% if loop.last %} class="now"{% endif %}></i>{% endfor %}</div>
     <div class="spark-lb"><span>{{ ranks[0].date | fmt_date }}</span><span>{{ ranks[-1].date | fmt_date }}</span></div>
-    {% else %}<div class="empty" style="padding:16px 0">아직 순위 데이터가 없습니다.{% if c.status in ('running','approved') %} 운영팀이 매일 입력합니다.{% endif %}</div>{% endif %}</div>
+    {% else %}<div class="empty" style="padding:16px 0">아직 순위 데이터가 없습니다.{% if c.status in ('review','running','approved') %} 등록과 함께 추적을 시작했고, 수집되는 대로 채워집니다.{% endif %}</div>{% endif %}</div>
 
   <div class="dsec"><h6>결제</h6>
     {% if p %}<div class="kv"><span>{{ pay_method_label[p.method] }}</span><b>{{ pay_status_label[p.status] }}{% if p.pg_tid %} <span class="mono thin">{{ p.pg_tid }}</span>{% endif %}</b></div>

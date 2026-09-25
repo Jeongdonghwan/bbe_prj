@@ -155,6 +155,34 @@ def main():
     finally:
         srv.shutdown()
 
+    print("\n=== 7. 시작일 전 순위도 기록된다 (유입 전 기준값) ===")
+    from datetime import date, timedelta
+    with app.app_context():
+        c = campaign_model.get(query_one("SELECT id FROM campaigns WHERE biz_name = '추적즉시'")["id"])
+        today = date.today()
+        ok(c["start_date"] > today, "아직 시작 전인 캠페인", c["start_date"])
+        ok(campaign_service.in_rank_window(c, today), "오늘 날짜는 기록 구간 안")
+        ok(not campaign_service.in_rank_window(c, today - timedelta(days=1)),
+           "등록 전 날짜는 버린다 (슬롯을 공유하므로)")
+        ok(not campaign_service.in_rank_window(c, c["end_date"] + timedelta(days=1)), "종료일 이후도 버린다")
+        campaign_service.apply_rank(c["id"], today, 52)
+        c2 = campaign_model.get(c["id"])
+        row = campaign_model.daily_rank(c["id"], today)
+    ok(row and row["rank"] == 52, "구동 전 순위 기록", row)
+    ok(row and row["done_qty"] == 0, "구동 전이라 작업량은 0", row and row["done_qty"])
+    ok(c2["rank_start"] == 52 and c2["rank_now"] == 52, "기준 순위로 잡힘",
+       f"start={c2['rank_start']} now={c2['rank_now']}")
+    with app.app_context():
+        campaign_service.apply_rank(c["id"], c["start_date"] + timedelta(days=1), 12)
+        c3 = campaign_model.get(c["id"])
+    ok(c3["rank_start"] == 52 and c3["rank_now"] == 12, "이후 순위는 현재값만 갱신",
+       f"start={c3['rank_start']} now={c3['rank_now']}")
+    with app.app_context():
+        campaign_service.apply_rank(c["id"], today, 60)    # 늦게 도착한 옛 날짜
+        c4 = campaign_model.get(c["id"])
+    ok(c4["rank_now"] == 12 and c4["rank_start"] == 60, "늦게 온 옛 날짜가 현재 순위를 덮지 않음",
+       f"start={c4['rank_start']} now={c4['rank_now']}")
+
     cleanup(app)
     print("\n" + ("전부 통과" if not fails else f"{len(fails)}건 실패: " + ", ".join(fails)))
     return 1 if fails else 0

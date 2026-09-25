@@ -116,11 +116,28 @@ POST /api/rank/callback      (app/blueprints/rank_api.py)
 순위 서버 쪽 `.env` 의 `NSR_PARTNER_CALLBACK_URL` 에 우리 주소를 **콤마로 덧붙여야** 한다
 (트리플업 주소를 지우지 말 것): `http://<트리플업>:8034/api/rank/callback,http://211.45.175.195:8034/api/rank/callback`
 
+### 기록 구간 — 시작일 전 순위도 남긴다
+
+추적은 등록 즉시 시작하므로 **시작일 전에 들어온 순위도 기록한다.** 그게 유입 전 기준값이고,
+일찍 추적을 거는 이유 자체다. 판정은 `campaign_service.in_rank_window()` 한 곳:
+
+| | 경계 |
+| --- | --- |
+| 이른 쪽 | 캠페인 **등록일**(`created_at`), 시작일이 더 이르면 시작일 |
+| 늦은 쪽 | **종료일**(`end_date`) |
+
+등록 전 날짜를 버리는 이유는 파트너 슬롯이 캠페인보다 오래 살고 `track_id` 를 다른 건과
+공유하기 때문이다 — 그 구간은 남의 기간이다. 구동 전 `campaign_daily` 행은 `done_qty = 0`
+(작업한 건 없다). `rank_start` 는 "처음 쓴 값"이 아니라 `campaign_model.first_rank()` 로 가장
+이른 날짜를 다시 읽고, `rank_now` 는 가장 최근 날짜일 때만 갱신한다 — 순위가 뒤섞여 도착해도
+기준값과 현재값이 뒤집히지 않게.
+
 ### 폴백
 
 - 순위 화면 진입 시 오늘 순위가 없으면 `GET /partner/slots/<trackId>/ranks` 로 보정
-  (`campaign_service.backfill_ranks`, 캠페인당 5분 스로틀).
-- `scripts/cron.py hourly` 가 ① 슬롯 없는 구동 캠페인 등록 ② 오늘 순위 빈 캠페인 보정을 돌린다.
+  (`campaign_service.backfill_ranks`, 캠페인당 5분 스로틀). 검수 중인 건도 대상이다.
+- `scripts/cron.py hourly` 가 ① 슬롯 없는 캠페인 등록 ② 오늘 순위 빈 캠페인 보정을 돌린다.
+  둘 다 `review`(검수) 상태를 포함한다 — 추적이 그때부터 돌기 때문이다.
 
 ### 중단·삭제 — 기본으로 하지 않는다
 

@@ -189,6 +189,21 @@ def list_daily(campaign_id):
     return query("SELECT * FROM campaign_daily WHERE campaign_id = %s ORDER BY date", [campaign_id])
 
 
+def first_rank(campaign_id):
+    """가장 이른 날짜의 순위 — 유입 전 기준값. 순위가 늦게·뒤섞여 도착해도 흔들리지 않는다."""
+    row = query_one(
+        "SELECT `rank` FROM campaign_daily WHERE campaign_id = %s AND `rank` IS NOT NULL "
+        "ORDER BY date LIMIT 1", [campaign_id])
+    return row["rank"] if row else None
+
+
+def latest_ranked_date(campaign_id):
+    row = query_one(
+        "SELECT MAX(date) AS d FROM campaign_daily WHERE campaign_id = %s AND `rank` IS NOT NULL",
+        [campaign_id])
+    return row["d"] if row else None
+
+
 def total_done_qty(campaign_id):
     return int(query_one("SELECT COALESCE(SUM(done_qty), 0) AS n FROM campaign_daily WHERE campaign_id = %s", [campaign_id])["n"])
 
@@ -369,11 +384,15 @@ def mark_tracked(track_id, status):
 
 
 def tracked_without_today_rank(limit=200):
-    """추적 슬롯은 있는데 오늘 순위가 안 들어온 구동 캠페인 — 콜백 유실 보정용."""
+    """추적 슬롯은 있는데 오늘 순위가 안 들어온 캠페인 — 콜백 유실 보정용.
+
+    시작일 전(검수·구동 대기)도 대상이다. 추적은 등록 즉시 시작하고, 그때 잡히는 순위가
+    유입 전 기준값이라 빠뜨리면 안 된다.
+    """
     return [_decode(r) for r in query(
         """SELECT c.* FROM campaigns c
-           WHERE c.track_id IS NOT NULL AND c.status IN ('approved','running')
-             AND c.start_date <= CURDATE() AND c.end_date >= CURDATE()
+           WHERE c.track_id IS NOT NULL AND c.status IN ('review','approved','running')
+             AND c.end_date >= CURDATE()
              AND NOT EXISTS (SELECT 1 FROM campaign_daily d
                              WHERE d.campaign_id = c.id AND d.date = CURDATE() AND d.`rank` IS NOT NULL)
            ORDER BY c.id LIMIT %s""", [limit])]

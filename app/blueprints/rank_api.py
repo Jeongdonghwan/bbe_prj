@@ -50,10 +50,9 @@ def callback():
         return jsonify(ok=True, matched=0)          # 남의 슬롯 — 조용히 200
     applied = 0
     for c in rows:
-        # 구동 기간 밖의 날짜는 기록하지 않는다 (슬롯은 캠페인보다 오래 산다).
-        if c["start_date"] and day < c["start_date"]:
-            continue
-        if c["end_date"] and day > c["end_date"]:
+        # 등록일 ~ 종료일 밖의 날짜는 기록하지 않는다 (슬롯은 캠페인보다 오래 산다).
+        # 시작일 전은 기록한다 — 그게 유입 전 기준 순위다.
+        if not campaign_service.in_rank_window(c, day):
             continue
         if rank is None:                            # 300위 밖 — 순위는 남기지 않고 상태만 갱신
             continue

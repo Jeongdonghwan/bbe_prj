@@ -214,7 +214,7 @@ def backfill_ranks(campaign, throttle_min=5):
     """
     from . import rank_client
     tid = campaign.get("track_id")
-    if not tid or campaign["status"] not in ("approved", "running", "done"):
+    if not tid or campaign["status"] not in ("review", "approved", "running", "done"):
         return False
     if campaign_model.daily_rank(campaign["id"], date.today()):
         return False
@@ -232,9 +232,7 @@ def backfill_ranks(campaign, throttle_min=5):
         except (TypeError, ValueError):
             continue
         rk = row.get("rank")
-        if rk is None or campaign["start_date"] and day < campaign["start_date"]:
-            continue
-        if campaign["end_date"] and day > campaign["end_date"]:
+        if rk is None or not in_rank_window(campaign, day):
             continue
         if campaign_model.daily_rank(campaign["id"], day):
             continue
@@ -243,17 +241,50 @@ def backfill_ranks(campaign, throttle_min=5):
     return bool(n)
 
 
+def rank_window(campaign):
+    """순위를 기록해도 되는 날짜 구간 (등록일 ~ 종료일).
+
+    추적은 등록 즉시 시작하므로 **시작일 전 순위도 남긴다** — 그게 유입 전 기준값이고,
+    일찍 추적을 거는 이유 자체다. 다만 파트너 슬롯은 캠페인보다 오래 살고 track_id 를
+    다른 건과 공유하기도 해서, 등록 전 날짜는 남의 기간이라 버린다.
+    """
+    created = campaign.get("created_at")
+    first = created.date() if hasattr(created, "date") else created
+    start = campaign.get("start_date")
+    if start and (first is None or start < first):
+        first = start
+    return first, campaign.get("end_date")
+
+
+def in_rank_window(campaign, day):
+    first, last = rank_window(campaign)
+    return not ((first and day < first) or (last and day > last))
+
+
 def apply_rank(campaign_id, day, rank):
     """콜백·폴백이 받은 순위를 기록. 어드민 수동 입력(record_rank)과 같은 자리에 쓴다."""
     c = campaign_model.get(campaign_id)
     if not c or rank is None:
         return None
     prev = campaign_model.daily_rank(campaign_id, day)
-    campaign_model.upsert_daily(campaign_id, day, rank, prev["done_qty"] if prev else c["daily_qty"])
-    fields = {"rank_now": rank}
-    if c["rank_start"] is None:
-        fields["rank_start"] = rank
-    campaign_model.update(campaign_id, fields)
+    if prev:
+        done = prev["done_qty"]
+    elif c["start_date"] and day < c["start_date"]:
+        done = 0                       # 구동 전 기준 순위 — 작업한 건 없다
+    else:
+        done = c["daily_qty"]
+    campaign_model.upsert_daily(campaign_id, day, rank, done)
+    fields = {}
+    # 늦게 도착한 옛 날짜가 "현재 순위"를 덮어쓰지 않게 — 가장 최근 날짜만 rank_now.
+    latest = campaign_model.latest_ranked_date(campaign_id)
+    if latest is None or day >= latest:
+        fields["rank_now"] = rank
+    # 기준 순위는 가장 이른 기록(대개 구동 전)이라, 순서와 무관하게 다시 읽어 맞춘다.
+    first = campaign_model.first_rank(campaign_id)
+    if first is not None and first != c["rank_start"]:
+        fields["rank_start"] = first
+    if fields:
+        campaign_model.update(campaign_id, fields)
     return rank
 
 
