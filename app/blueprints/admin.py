@@ -2,10 +2,12 @@
 import csv
 import io
 import re
+import secrets
 from datetime import date, datetime, timedelta
 
 from flask import (Blueprint, abort, current_app, flash, g, jsonify, redirect, render_template, request, send_file,
-                   url_for)
+                   session, url_for)
+from werkzeug.security import generate_password_hash
 
 from ..constants import (CHANNEL_LABEL, MEDIA_SECTIONS, PAY_METHOD_LABEL, PAYMENT_STATUS_LABEL, STATUS_CLASS, STATUS_LABEL,
                          STATUS_ORDER)
@@ -27,7 +29,7 @@ bp = Blueprint("admin", __name__, url_prefix="/admin")
 
 PAGES = {
     "": "운영 현황", "orders": "주문 관리", "payments": "결제 내역", "credits": "크레딧 관리", "media": "매체사 관리", "popular": "인기 트래픽 설정",
-    "content": "공지 · 정보글", "banners": "배너 관리", "users": "회원 목록", "agency": "대행의뢰 · 제안", "reports": "신고 · 블라인드",
+    "content": "공지 · 정보글", "banners": "배너 관리", "users": "회원 목록", "operators": "운영자 관리", "agency": "대행의뢰 · 제안", "reports": "신고 · 블라인드",
 }
 
 
@@ -856,6 +858,93 @@ def users():
     from ..constants import GRADE_LABEL
     return render_template("admin/users.html", rows=rows, q=q, status=status, page=page, total_pages=max(1, -(-total // per_page)),
                            counts=user_model.count_by_status(), open_id=request.args.get("open", type=int), grade_label=GRADE_LABEL)
+
+
+# =============================================================== operators
+EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$")
+# 헷갈리는 글자(l·1·I·O·0)와 HTML 에서 이스케이프되는 글자(& < > " ')를 빼서
+# 화면에 보여주고 받아 적기 좋게 만든다.
+PW_ALPHABET = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%^*-_"
+
+
+def _gen_password(n=14):
+    return "".join(secrets.choice(PW_ALPHABET) for _ in range(n))
+
+
+@bp.route("/operators")
+@admin_required
+def operators():
+    """운영자 계정 관리. 발급한 비밀번호는 한 번만 보여주고 저장하지 않는다."""
+    return render_template("admin/operators.html", rows=user_model.list_admins(),
+                           me=g.user["id"], new_pw=session.pop("new_admin_pw", None))
+
+
+@bp.route("/operators/create", methods=["POST"])
+@admin_required
+def operators_create():
+    email = (request.form.get("email") or "").strip().lower()[:120]
+    nickname = (request.form.get("nickname") or "").strip()[:20] or "운영팀"
+    if not EMAIL_RE.match(email):
+        flash("이메일 형식이 올바르지 않습니다.")
+        return redirect(url_for("admin.operators"))
+    if user_model.get_by_email(email):
+        flash("이미 쓰고 있는 이메일입니다. 기존 계정의 비밀번호를 재설정하세요.")
+        return redirect(url_for("admin.operators"))
+    pw = _gen_password()
+    uid = user_model.create_admin(email, generate_password_hash(pw), nickname)
+    _log("admin_create", "user", uid, f"운영자 추가 {email}")
+    session["new_admin_pw"] = {"email": email, "pw": pw, "what": "발급"}
+    flash(f"운영자 계정을 만들었습니다: {email}")
+    return redirect(url_for("admin.operators"))
+
+
+@bp.route("/operators/<int:user_id>/passwd", methods=["POST"])
+@admin_required
+def operators_passwd(user_id):
+    u = user_model.get_by_id(user_id) or abort(404)
+    if u["role"] != "admin":
+        abort(400)
+    pw = _gen_password()
+    user_model.set_password(user_id, generate_password_hash(pw))
+    _log("admin_passwd", "user", user_id, f"{u['email'] or u['nickname']} 비밀번호 재설정")
+    session["new_admin_pw"] = {"email": u["email"] or u["nickname"], "pw": pw, "what": "재설정"}
+    flash("비밀번호를 재설정했습니다.")
+    return redirect(url_for("admin.operators"))
+
+
+@bp.route("/operators/<int:user_id>/revoke", methods=["POST"])
+@admin_required
+def operators_revoke(user_id):
+    u = user_model.get_by_id(user_id) or abort(404)
+    if u["role"] != "admin":
+        abort(400)
+    if user_id == g.user["id"]:
+        flash("본인 권한은 회수할 수 없습니다. 다른 운영자에게 요청하세요.")
+    elif user_model.active_admin_count() <= 1:
+        flash("마지막 운영자라 회수할 수 없습니다. 다른 운영자를 먼저 추가하세요.")
+    else:
+        user_model.set_role(user_id, "user")
+        _log("admin_revoke", "user", user_id, f"{u['email'] or u['nickname']} 운영 권한 회수")
+        flash(f"{u['nickname']}의 운영 권한을 회수했습니다. 계정은 일반 회원으로 남습니다.")
+    return redirect(url_for("admin.operators"))
+
+
+@bp.route("/operators/<int:user_id>/status", methods=["POST"])
+@admin_required
+def operators_status(user_id):
+    u = user_model.get_by_id(user_id) or abort(404)
+    if u["role"] != "admin":
+        abort(400)
+    if user_id == g.user["id"]:
+        flash("본인 계정은 정지할 수 없습니다.")
+    elif u["status"] == "active" and user_model.active_admin_count() <= 1:
+        flash("마지막 운영자라 정지할 수 없습니다.")
+    else:
+        new = "active" if u["status"] == "suspended" else "suspended"
+        user_model.set_status(user_id, new)
+        _log("admin_status", "user", user_id, f"{u['email'] or u['nickname']} → {'정상' if new == 'active' else '정지'}")
+        flash(f"{u['nickname']}을(를) {'정상 처리' if new == 'active' else '정지'}했습니다.")
+    return redirect(url_for("admin.operators"))
 
 
 @bp.route("/users/<int:user_id>/grade", methods=["POST"])

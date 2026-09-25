@@ -82,3 +82,36 @@ def set_status(user_id, status):
 def count_by_status():
     from ..db import query
     return {r["status"]: r["n"] for r in query("SELECT status, COUNT(*) AS n FROM users GROUP BY status")}
+
+
+# ---- 운영자 관리 (2026-09-25) ---------------------------------------------
+def touch_login(user_id):
+    execute("UPDATE users SET last_login_at = NOW() WHERE id = %s", [user_id])
+
+
+def list_admins():
+    return query(
+        """SELECT id, email, nickname, status, last_login_at, created_at,
+                  (password_hash IS NOT NULL) AS has_pw
+           FROM users WHERE role = 'admin' ORDER BY id""")
+
+
+def active_admin_count():
+    return query_one("SELECT COUNT(*) AS n FROM users WHERE role = 'admin' AND status = 'active'")["n"]
+
+
+def create_admin(email, password_hash, nickname):
+    return execute(
+        """INSERT INTO users (email, password_hash, nickname, role, status, notify_event)
+           VALUES (%s,%s,%s,'admin','active',0)""", [email, password_hash, nickname])
+
+
+def set_password(user_id, password_hash):
+    execute("UPDATE users SET password_hash = %s WHERE id = %s", [password_hash, user_id])
+
+
+def set_role(user_id, role):
+    """role 은 users.role ENUM('user','admin'). 사업자 등급(grade)과 다른 축이다."""
+    if role not in ("user", "admin"):
+        raise ValueError(role)
+    execute("UPDATE users SET role = %s WHERE id = %s", [role, user_id])

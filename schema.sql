@@ -28,6 +28,8 @@ CREATE TABLE IF NOT EXISTS users (
   notify_event    TINYINT(1) NOT NULL DEFAULT 0,
   is_agency       TINYINT(1) NOT NULL DEFAULT 0,
   status          ENUM('active','suspended') NOT NULL DEFAULT 'active',
+
+  last_login_at  DATETIME NULL,
   created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 

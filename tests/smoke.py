@@ -13,7 +13,7 @@ USER_URLS = ['/', '/notice', '/community/anon', '/community/qna', '/community/in
              '/my', '/my?ct=usage', '/tools/keyword', '/notifications']
 ADMIN_URLS = ['/admin', '/admin/orders', '/admin/orders?user=2', '/admin/payments', '/admin/credits',
               '/admin/media', '/admin/media?channel=store', '/admin/media?channel=coupang',
-              '/admin/banners', '/admin/users', '/admin/popular', '/admin/content', '/admin/agency', '/admin/reports']
+              '/admin/banners', '/admin/users', '/admin/operators', '/admin/popular', '/admin/content', '/admin/agency', '/admin/reports']
 
 
 def main():

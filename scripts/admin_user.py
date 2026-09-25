@@ -11,7 +11,6 @@
 """
 import argparse
 import secrets
-import string
 import sys
 from pathlib import Path
 
@@ -23,7 +22,9 @@ from werkzeug.security import generate_password_hash  # noqa: E402
 from app import create_app  # noqa: E402
 from app.db import execute, query, query_one  # noqa: E402
 
-ALPHABET = string.ascii_letters + string.digits + "!@#$%^&*"
+# 헷갈리는 글자(l·1·I·O·0)와 HTML 에서 이스케이프되는 글자(& < > " ')를 빼서
+# 화면에 보여주고 받아 적기 좋게 만든다.
+ALPHABET = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%^*-_"
 
 
 def gen_password(n=16):
@@ -81,7 +82,7 @@ def cmd_revoke(email):
     if query_one("SELECT COUNT(*) AS n FROM users WHERE role='admin' AND status='active'")["n"] <= 1:
         print("마지막 운영자 계정이라 회수할 수 없습니다. 다른 운영자를 먼저 만드세요.")
         return 1
-    execute("UPDATE users SET role = 'biz' WHERE id = %s", [u["id"]])
+    execute("UPDATE users SET role = 'user' WHERE id = %s", [u["id"]])
     print(f"운영 권한을 회수했습니다: {email} (계정은 일반 회원으로 남습니다)")
     return 0
 

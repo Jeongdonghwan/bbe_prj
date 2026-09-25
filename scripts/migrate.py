@@ -288,6 +288,11 @@ def main():
         cur.execute("CREATE INDEX idx_campaigns_track ON campaigns (track_id)")
         done.append("idx_campaigns_track")
 
+    # -- 운영자 관리 (2026-09-25) ------------------------------------------
+    if not col("users", "last_login_at"):
+        cur.execute("ALTER TABLE users ADD COLUMN last_login_at DATETIME NULL AFTER status")
+        done.append("users.last_login_at")
+
     # -- strip banner settings (2026-09-02, default OFF) -------------------
     for k, v in (("strip_on", "0"), ("strip_text", "테스트 띠배너 문구입니다"), ("strip_link", ""), ("strip_bg", "#2563EB")):
         cur.execute("INSERT IGNORE INTO settings (k, v) VALUES (%s,%s)", (k, v))

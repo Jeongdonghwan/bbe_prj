@@ -58,6 +58,7 @@ def needs_onboarding(user):
 def _login(user_id, next_url=None):
     session.clear()
     session["uid"] = user_id
+    user_model.touch_login(user_id)
     return redirect(next_url if next_url and next_url.startswith("/") else "/")
 
 

@@ -86,6 +86,7 @@ MENU = {
             "title": "회원 · 커뮤니티",
             "items": [
                 {"label": "회원 목록", "icon": "circle-help", "href": "/admin/users"},
+                {"label": "운영자 관리", "icon": "venetian-mask", "href": "/admin/operators"},
                 {"label": "대행의뢰 · 제안", "icon": "message-circle", "href": "/admin/agency"},
                 {"label": "신고 · 블라인드", "icon": "venetian-mask", "href": "/admin/reports"},
             ],
