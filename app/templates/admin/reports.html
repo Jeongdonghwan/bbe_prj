@@ -12,7 +12,8 @@
       <td class="num" style="text-align:right"><b{% if r.cnt >= 3 %} style="color:var(--danger)"{% endif %}>{{ r.cnt }}</b></td><td class="mut" style="white-space:normal">{{ r.reasons or '-' }}</td>
       <td>{% if r.cnt >= 3 %}<a class="lnk" href="/admin/users?open={{ r.user_id }}">user #{{ r.user_id }}</a>{% else %}<span class="mut">비공개</span>{% endif %}</td>
       <td>{% if r.is_blind %}<span class="st s-rej">블라인드</span>{% else %}<span class="st s-run">노출</span>{% endif %}</td>
-      <td><div class="rowact" style="opacity:1"><form method="post" action="/admin/reports/{{ r.target_type }}/{{ r.target_id }}/blind"><input type="hidden" name="blind" value="{{ 0 if r.is_blind else 1 }}"><button type="submit"{% if not r.is_blind %} style="color:var(--danger)"{% endif %}>{% if r.is_blind %}해제{% else %}블라인드{% endif %}</button></form></div></td></tr>
+      <td><div class="rowact" style="opacity:1"><form method="post" action="/admin/reports/{{ r.target_type }}/{{ r.target_id }}/blind"><input type="hidden" name="blind" value="{{ 0 if r.is_blind else 1 }}"><button type="submit"{% if not r.is_blind %} style="color:var(--danger)"{% endif %}>{% if r.is_blind %}해제{% else %}블라인드{% endif %}</button></form>
+        <form method="post" action="/admin/reports/{{ r.target_type }}/{{ r.target_id }}/delete" onsubmit="return confirm('완전히 삭제할까요? 되돌릴 수 없습니다.')"><button type="submit" style="color:var(--danger)">삭제</button></form></div></td></tr>
     {% else %}<tr><td colspan="8"><div class="empty">신고된 글·댓글이 없습니다.</div></td></tr>{% endfor %}
   </tbody></table></div>
   {{ pager(page, total_pages, 'admin.reports', type=tt) }}

@@ -379,3 +379,15 @@ def purge(campaign_id):
     for t in ("campaign_daily", "status_log", "payments", "reviews"):
         execute(f"DELETE FROM {t} WHERE campaign_id = %s", [campaign_id])
     execute("DELETE FROM campaigns WHERE id = %s", [campaign_id])
+
+
+def due_to_start():
+    """시작일이 된 승인 캠페인."""
+    return [_decode(r) for r in query(
+        "SELECT * FROM campaigns WHERE status = 'approved' AND start_date <= CURDATE() ORDER BY id")]
+
+
+def due_to_finish():
+    """종료일이 지난 구동 캠페인."""
+    return [_decode(r) for r in query(
+        "SELECT * FROM campaigns WHERE status = 'running' AND end_date < CURDATE() ORDER BY id")]

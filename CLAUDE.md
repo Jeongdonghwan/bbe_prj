@@ -23,6 +23,13 @@
 cp .env.example .env → mysql < schema.sql → python scripts/seed.py → flask run
 
 ## 현재 Phase
+- 2026-09-25 상태 흐름 단축 + 운영 삭제 기능 (JDH "과정이 너무 복잡해서 줄일 수 있는 건 줄여라"):
+  - 캠페인은 **검수 → 구동 대기 → 진행 → 완료** 4단계로만 흐른다. 운영자는 **승인만** 누른다. 시작일이 되면 `campaign_service.advance_due()`(크론 `advance_campaigns`, hourly+daily)가 진행으로, 종료일이 지나면 완료로 넘긴다. 승인 시점에 이미 시작일이 지났으면 `transition()`이 그 자리에서 진행까지 보낸다 — 어드민 주문 표의 "지금 시작"·"완료"는 앞당길 때만 쓰는 수동 override.
+  - `STATUS_LABEL["approved"]`는 "승인"이 아니라 **"구동 대기"**. 상태 라벨·클래스는 `app/__init__.py` 컨텍스트 프로세서가 전역(`status_label`/`status_class`)으로 주므로 템플릿에서 라벨 맵을 새로 만들지 말 것.
+  - 목록 상태 탭은 `constants.status_tabs(counts)`로 만든다 — 현행 6개(검수·구동 대기·진행·완료·중단·반려)만 보이고, 폐기된 건별 PG 잔재(`pay_wait`/`cancelled`)는 해당 건수가 남아 있을 때만 탭이 뜬다.
+  - 순위 추적은 **등록 즉시** 시작한다. `create_with_credit()`이 캠페인 행을 만든 직후 `spawn_track()`을 부른다(검수 결과를 기다리지 않음). `transition()`의 approved/running 훅은 백업 경로.
+  - 삭제: 주문(`/admin/orders/<id>/delete`, 미환불 크레딧은 자동 환불) · 회원(`/admin/users/<id>/delete`, `user.deletable_blockers()` 검사) · 공지·콘텐츠 일괄(`/admin/content/bulk-delete`) · 대행 의뢰/제안/인증신청(`agency.purge_*`) · 커뮤니티 게시글(신설 화면 `/admin/posts`, `post.purge()`가 댓글·좋아요·신고까지 지움).
+  - 회귀 테스트 `tests/status_flow.py`.
 - 2026-09-21 캠페인 위저드 개편(CAMPAIGN_WIZARD_SPEC.md): 5스텝(상품 정보 / [광고 설정] 광고 유형·유입 설정 / 일정 / 최종 확인), 폭 1000px·높이 가변, 통과한 스텝만 클릭 이동. macro 4종 재사용(macros/wizard_steps·ad_type_list·count_stepper·period_picker·cost_summary) + css/wizard.css + js/wizard.js. 광고 유형은 라디오 1열(단가 우측). 일일 목표 유입수는 직접 입력 가능, 최소 100·상한 없음(media.max_daily=0이면 무제한). **접수 24시간, 구동은 익일부터(constants.ORDER_CUTOFF=16:00 이후 접수는 익익일, 당일 시작 없음 — campaign_service.earliest_start)**, 시작일은 사용자가 선택. 제출 시 서버가 단가를 다시 읽어 총액 재계산하고 client_total과 다르면 거부. URL은 채널별 경로 패턴 검증(constants.URL_PATTERNS, 쿼리 보존). 매체 카탈로그는 constants.MEDIA_CATALOG(실서비스 목록). 카피 규칙: 이모지 금지, "생성" 대신 "만들기".
 - 2026-09-16 크레딧 전환: 충전 위저드 /credit/charge(3스텝: 금액+입금자명 → 세금계산서 사업자정보 → 확인, templates/credit/charge.html, .wiz 공용 위저드 CSS). 마이페이지 = My 크레딧 카드 + 충전 요청/사용 내역 탭. 캠페인 생성 = 4스텝 위저드(상품 URL·이름 수동 입력 → 매체 타일·키워드·일일 유입수(100단위) · 요청사항(extra.request_note) → 기간 10/20/30일(DATE_PRESETS, 시작일 서버 계산) → 비용 요약+보유 크레딧, 부족 시 충전 유도). campaign_service.create_with_credit(). 어드민 /admin/credits: 충전 요청 승인·거절 + 회원 직접 충전·차감 + 최근 원장. deploy 시 migrate.py가 스키마 반영.
 P4 완료 (2026-08-30, a·b·c 전부) → 다음 P5 운영(배치·실 PG·알림톡·리포트·배포)

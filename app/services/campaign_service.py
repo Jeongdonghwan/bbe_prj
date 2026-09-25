@@ -95,6 +95,8 @@ def create_with_credit(user, media, form):
         campaign_model.delete(cid)
         raise CampaignError("크레딧 잔액이 부족합니다. 충전 후 다시 시도해주세요.")
     campaign_model.add_log(cid, None, "review", user["id"], f"크레딧 결제 {cost:,}원 · 검수 대기")
+    c = campaign_model.get(cid)
+    spawn_track(c)          # 등록 즉시 순위 추적 시작 (검수 결과를 기다리지 않는다)
     return campaign_model.get(cid)
 
 
@@ -138,7 +140,34 @@ def transition(campaign, to_status, actor_id=None, memo=None):
         spawn_track(campaign)
     elif to_status in ("done", "stopped", "cancelled", "rejected"):
         untrack_if_unused(campaign)
+    # 승인했는데 시작일이 이미 됐으면 그 자리에서 구동으로 넘긴다 — 운영자가 "승인" 다음에
+    # "구동 시작"을 또 누를 일이 없게 (2026-09-25 JDH "과정 줄이기").
+    if to_status == "approved" and campaign["start_date"] and campaign["start_date"] <= date.today():
+        return transition(campaign_model.get(campaign["id"]), "running", actor_id, "승인 · 시작일 도래로 바로 구동")
     return campaign_model.get(campaign["id"])
+
+
+def advance_due(actor_id=None):
+    """시작일이 된 승인건을 구동으로, 종료일이 지난 구동건을 완료로 넘긴다 (크론).
+
+    지금까지는 운영자가 매일 "구동 시작"·"완료"를 눌러야 했다. 승인만 하면 나머지는
+    날짜를 보고 알아서 진행된다.
+    """
+    started = finished = 0
+    for c in campaign_model.due_to_start():
+        try:
+            transition(c, "running", actor_id, "시작일 도래 · 자동 구동")
+            started += 1
+        except CampaignError:
+            pass
+    for c in campaign_model.due_to_finish():
+        try:
+            transition(c, "done", actor_id,
+                       f"종료일 경과 · 자동 완료 (누적 {campaign_model.total_done_qty(c['id']):,}건)")
+            finished += 1
+        except CampaignError:
+            pass
+    return started, finished
 
 
 # ---- 순위 자동 추적 (docs/RANK_INTEGRATION.md 2단계) ------------------------

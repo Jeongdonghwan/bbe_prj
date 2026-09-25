@@ -87,6 +87,7 @@ MENU = {
             "items": [
                 {"label": "회원 목록", "icon": "circle-help", "href": "/admin/users"},
                 {"label": "운영자 관리", "icon": "venetian-mask", "href": "/admin/operators"},
+                {"label": "게시글 관리", "icon": "message-circle", "href": "/admin/posts"},
                 {"label": "대행의뢰 · 제안", "icon": "message-circle", "href": "/admin/agency"},
                 {"label": "신고 · 블라인드", "icon": "venetian-mask", "href": "/admin/reports"},
             ],
@@ -199,10 +200,13 @@ def create_app():
             sv = {}
         strip = {"on": sv.get("strip_on") == "1", "text": sv.get("strip_text") or "",
                  "link": sv.get("strip_link") or "", "bg": sv.get("strip_bg") or "#2563EB"}
+        from .constants import STATUS_CLASS, STATUS_LABEL
         return {
             "APP_NAME": app.config["APP_NAME"], "strip": strip,
             "KAKAO_CHAT_URL": app.config["KAKAO_CHAT_URL"],
             "MENU": MENU,
+            # 상태 라벨은 어느 화면에서도 같아야 해서 전역으로 준다 (라우트가 넘기면 그쪽이 이긴다).
+            "status_label": STATUS_LABEL, "status_class": STATUS_CLASS,
             "current_user": user,
             "unread_count": notify_service.unread_count(user["id"]) if user else 0,
             "needs_onboarding": auth.needs_onboarding(user),

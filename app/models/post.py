@@ -133,3 +133,48 @@ def get_comment(comment_id):
 
 def count_comments_by_user(user_id):
     return query_one("SELECT COUNT(*) AS n FROM comments WHERE user_id = %s", [user_id])["n"]
+
+
+# ---- 어드민 관리 (2026-09-25) ---------------------------------------------
+def list_admin(slug=None, q=None, blind=None, page=1, per_page=20):
+    """게시글 관리 목록. slug 를 주면 그 게시판만, blind=True 면 블라인드 처리된 글만."""
+    where, params = ["1=1"], []
+    if slug:
+        where.append("b.slug = %s"); params.append(slug)
+    if q:
+        where.append("(p.title LIKE %s OR p.body LIKE %s OR p.anon_nick LIKE %s)"); params += [f"%{q}%"] * 3
+    if blind is not None:
+        where.append("p.is_blind = %s"); params.append(1 if blind else 0)
+    w = " AND ".join(where)
+    rows = query(
+        f"""SELECT p.*, b.slug, b.name AS board_name,
+                   (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) AS comment_cnt
+            FROM posts p JOIN boards b ON b.id = p.board_id
+            WHERE {w} ORDER BY p.created_at DESC, p.id DESC LIMIT %s OFFSET %s""",
+        params + [per_page, (page - 1) * per_page])
+    total = query_one(f"SELECT COUNT(*) AS n FROM posts p JOIN boards b ON b.id = p.board_id WHERE {w}", params)["n"]
+    return rows, total
+
+
+def admin_counts():
+    rows = query(
+        """SELECT b.slug, COUNT(*) AS n FROM posts p JOIN boards b ON b.id = p.board_id GROUP BY b.slug""")
+    out = {r["slug"]: r["n"] for r in rows}
+    out["all"] = sum(out.values())
+    out["blind"] = query_one("SELECT COUNT(*) AS n FROM posts WHERE is_blind = 1")["n"]
+    return out
+
+
+def purge(post_id):
+    """글과 딸린 댓글·추천·신고·닉네임을 지운다."""
+    for sql in ("DELETE FROM comments WHERE post_id = %s",
+                "DELETE FROM post_likes WHERE post_id = %s",
+                "DELETE FROM post_nicks WHERE post_id = %s",
+                "DELETE FROM reports WHERE target_type = 'post' AND target_id = %s",
+                "DELETE FROM posts WHERE id = %s"):
+        execute(sql, [post_id])
+
+
+def purge_comment(comment_id):
+    execute("DELETE FROM reports WHERE target_type = 'comment' AND target_id = %s", [comment_id])
+    execute("DELETE FROM comments WHERE id = %s", [comment_id])

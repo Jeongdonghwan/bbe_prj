@@ -10,7 +10,7 @@ from flask import (Blueprint, abort, current_app, flash, g, jsonify, redirect, r
 from werkzeug.security import generate_password_hash
 
 from ..constants import (CHANNEL_LABEL, MEDIA_SECTIONS, PAY_METHOD_LABEL, PAYMENT_STATUS_LABEL, STATUS_CLASS, STATUS_LABEL,
-                         STATUS_ORDER)
+                         status_tabs)
 from ..models import admin_log
 from ..models import banner as banner_model
 from ..models import campaign as campaign_model
@@ -29,7 +29,7 @@ bp = Blueprint("admin", __name__, url_prefix="/admin")
 
 PAGES = {
     "": "운영 현황", "orders": "주문 관리", "payments": "결제 내역", "credits": "크레딧 관리", "media": "매체사 관리", "popular": "인기 트래픽 설정",
-    "content": "공지 · 정보글", "banners": "배너 관리", "users": "회원 목록", "operators": "운영자 관리", "agency": "대행의뢰 · 제안", "reports": "신고 · 블라인드",
+    "content": "공지 · 정보글", "banners": "배너 관리", "users": "회원 목록", "operators": "운영자 관리", "posts": "게시글 관리", "agency": "대행의뢰 · 제안", "reports": "신고 · 블라인드",
 }
 
 
@@ -111,7 +111,7 @@ def orders():
     return render_template(
         "admin/orders.html", rows=rows, page=page, total_pages=max(1, -(-total // per_page)), counts=counts,
         total_all=sum(counts.values()), status=status, channel=channel, media_id=media_id, period=period, q=q, medias=medias,
-        status_order=STATUS_ORDER, status_label=STATUS_LABEL, status_class=STATUS_CLASS, channel_label=CHANNEL_LABEL,
+        status_order=status_tabs(counts), status_label=STATUS_LABEL, status_class=STATUS_CLASS, channel_label=CHANNEL_LABEL,
         pay_method_label=PAY_METHOD_LABEL, accounts=campaign_model.accounts_with_campaigns(),
         user_id=flt.get("user_id"), date_from=flt.get("date_from"), date_to=flt.get("date_to"),
     )
@@ -741,6 +741,21 @@ def content_delete(content_id):
     return redirect(url_for("admin.content"))
 
 
+@bp.route("/content/bulk-delete", methods=["POST"])
+@admin_required
+def content_bulk_delete():
+    ids = [int(i) for i in request.form.getlist("ids") if str(i).isdigit()]
+    n = 0
+    for cid in ids:
+        if content_model.get_any(cid):
+            content_model.delete(cid)
+            n += 1
+    if n:
+        _log("content_bulk_delete", "content", None, f"글 {n}건 일괄 삭제")
+    flash(f"{n}건을 삭제했습니다." if n else "선택된 글이 없습니다.")
+    return _back(url_for("admin.content"))
+
+
 @bp.route("/content/upload", methods=["POST"])
 @admin_required
 def content_upload():
@@ -1057,6 +1072,61 @@ def user_status(user_id):
 
 
 # =============================================================== reports
+# =============================================================== 게시글 관리
+@bp.route("/posts")
+@admin_required
+def posts():
+    """익명 게시판·질문답변 글 관리. 블라인드는 신고 화면, 완전 삭제는 여기서."""
+    from ..models import post as post_model
+    tab = request.args.get("tab") or "all"
+    q = (request.args.get("q") or "").strip()[:40] or None
+    page, per_page = _page()
+    slug = tab if tab in ("anon", "qna") else None
+    rows, total = post_model.list_admin(slug, q, True if tab == "blind" else None, page, per_page)
+    return render_template("admin/posts.html", rows=rows, tab=tab, q=q, page=page,
+                           total_pages=max(1, -(-total // per_page)), counts=post_model.admin_counts(),
+                           channel_label=CHANNEL_LABEL)
+
+
+@bp.route("/posts/<int:post_id>/delete", methods=["POST"])
+@admin_required
+def post_delete(post_id):
+    from ..models import post as post_model
+    p = post_model.get(post_id) or abort(404)
+    post_model.purge(post_id)
+    _log("post_delete", "post", post_id, f"게시글 삭제 · {p['title'][:40]}")
+    flash("게시글을 삭제했습니다. 댓글도 함께 지워집니다.")
+    return _back(url_for("admin.posts"))
+
+
+@bp.route("/posts/bulk-delete", methods=["POST"])
+@admin_required
+def posts_bulk_delete():
+    from ..models import post as post_model
+    ids = [int(i) for i in request.form.getlist("ids") if str(i).isdigit()]
+    n = 0
+    for pid in ids:
+        if post_model.get(pid):
+            post_model.purge(pid)
+            n += 1
+    if n:
+        _log("post_bulk_delete", "post", None, f"게시글 {n}건 일괄 삭제")
+    flash(f"{n}건을 삭제했습니다." if n else "선택된 글이 없습니다.")
+    return _back(url_for("admin.posts"))
+
+
+@bp.route("/posts/<int:post_id>/blind", methods=["POST"])
+@admin_required
+def post_blind(post_id):
+    from ..models import post as post_model
+    p = post_model.get(post_id) or abort(404)
+    blind = not p["is_blind"]
+    report_model.set_blind("post", post_id, blind)
+    _log("post_blind" if blind else "post_unblind", "post", post_id, f"{p['title'][:30]} {'블라인드' if blind else '해제'}")
+    flash("블라인드 처리했습니다." if blind else "블라인드를 해제했습니다.")
+    return _back(url_for("admin.posts"))
+
+
 @bp.route("/reports")
 @admin_required
 def reports():
@@ -1064,6 +1134,21 @@ def reports():
     page, per_page = _page()
     rows, total = report_model.list_reported(tt if tt in ("post", "comment") else None, page, per_page)
     return render_template("admin/reports.html", rows=rows, tt=tt, page=page, total_pages=max(1, -(-total // per_page)))
+
+
+@bp.route("/reports/<target_type>/<int:target_id>/delete", methods=["POST"])
+@admin_required
+def report_delete(target_type, target_id):
+    from ..models import post as post_model
+    if target_type == "post":
+        post_model.purge(target_id)
+    elif target_type == "comment":
+        post_model.purge_comment(target_id)
+    else:
+        abort(404)
+    _log("report_delete", target_type, target_id, f"{target_type}#{target_id} 삭제")
+    flash("삭제했습니다.")
+    return _back(url_for("admin.reports"))
 
 
 @bp.route("/reports/<target_type>/<int:target_id>/blind", methods=["POST"])
@@ -1117,6 +1202,38 @@ def agency_apply_review(apply_id):
     notify_service.push(a["user_id"], "agency", "대행사 인증이 " + ("승인되었습니다. 이제 의뢰에 제안을 보낼 수 있어요." if approve else "반려되었습니다."), "/community/agency")
     flash("처리했습니다.")
     return redirect(url_for("admin.agency", tab="applies"))
+
+
+@bp.route("/agency/requests/<int:req_id>/delete", methods=["POST"])
+@admin_required
+def agency_request_delete(req_id):
+    from ..models import agency as agency_model
+    r = agency_model.get_request(req_id) or abort(404)
+    agency_model.purge_request(req_id)
+    _log("agency_delete", "agency", req_id, f"의뢰 삭제 · {r.get('industry') or r.get('channel')}")
+    flash("의뢰를 삭제했습니다. 딸린 제안도 함께 지워집니다.")
+    return _back(url_for("admin.agency"))
+
+
+@bp.route("/agency/proposals/<int:pid>/delete", methods=["POST"])
+@admin_required
+def agency_proposal_delete(pid):
+    from ..models import agency as agency_model
+    p = agency_model.get_proposal(pid) or abort(404)
+    agency_model.purge_proposal(pid)
+    _log("agency_proposal_delete", "agency", pid, f"제안 삭제 (의뢰 #{p['request_id']})")
+    flash("제안을 삭제했습니다.")
+    return _back(url_for("admin.agency"))
+
+
+@bp.route("/agency/applies/<int:apply_id>/delete", methods=["POST"])
+@admin_required
+def agency_apply_delete(apply_id):
+    from ..models import agency as agency_model
+    agency_model.purge_apply(apply_id)
+    _log("agency_apply_delete", "agency", apply_id, "대행사 인증 신청 삭제")
+    flash("인증 신청을 삭제했습니다.")
+    return _back(url_for("admin.agency"))
 
 
 @bp.route("/agency/close-stale", methods=["POST"])

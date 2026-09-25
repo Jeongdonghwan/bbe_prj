@@ -41,11 +41,21 @@ CHANNEL_LABEL = {"place": "플레이스", "store": "쇼핑·스토어", "coupang
 # 인기 트래픽 페이지·위젯의 탭 순서 (2026-09-22 JDH): 쇼핑·스토어 먼저, 기본 선택도 쇼핑·스토어.
 TRAFFIC_CHANNELS = [("store", "쇼핑·스토어"), ("place", "플레이스"), ("coupang", "쿠팡")]
 CHANNEL_CLASS = {"place": "c-place", "store": "c-store", "coupang": "c-coupang"}
-STATUS_LABEL = {"pay_wait": "결제 대기", "review": "검수", "approved": "승인", "running": "진행",
+STATUS_LABEL = {"pay_wait": "결제 대기", "review": "검수", "approved": "구동 대기", "running": "진행",
                 "rejected": "반려", "done": "완료", "stopped": "중단", "cancelled": "취소"}
 STATUS_CLASS = {"pay_wait": "s-wait", "review": "s-review", "approved": "s-appr", "running": "s-run",
                 "rejected": "s-rej", "done": "s-done", "stopped": "s-stop", "cancelled": "s-wait"}
 STATUS_ORDER = ["pay_wait", "review", "approved", "running", "rejected", "done", "stopped", "cancelled"]
+# 크레딧 모델(v3.3)에서 실제로 나오는 상태. pay_wait/cancelled 는 폐기된 건별 PG 결제의
+# 잔재라서 그 상태의 주문이 남아 있을 때만 탭을 보여준다 — 2026-09-25 JDH "과정 줄이기".
+STATUS_LIVE = ["review", "approved", "running", "done", "stopped", "rejected"]
+STATUS_LEGACY = ["pay_wait", "cancelled"]
+
+
+def status_tabs(counts):
+    """목록 화면 상태 탭 — 현행 흐름 + 건수가 남아 있는 레거시 상태만."""
+    counts = counts or {}
+    return STATUS_LIVE + [s for s in STATUS_LEGACY if counts.get(s)]
 
 # Campaign status transition table (from -> allowed to).
 TRANSITIONS = {

@@ -9,9 +9,13 @@
   <div>
     <div class="card" style="margin-bottom:16px"><div class="cb" style="padding-top:6px">
       <div class="tabs">{% for key, label in [('all','전체'),('notice','공지'),('info','마케팅 정보'),('series','입문 시리즈'),('draft','임시저장')] %}<a href="/admin/content?tab={{ key }}"><button type="button"{% if tab == key %} class="on"{% endif %}>{{ label }}<em>{{ counts[key] }}</em></button></a>{% endfor %}</div>
-      <div style="margin:0 -18px;overflow-x:auto"><table><thead><tr><th>게시판</th><th>분류</th><th>제목</th><th>상태</th><th>조회</th><th>일자</th><th></th></tr></thead><tbody>
+      <form method="post" action="/admin/content/bulk-delete" onsubmit="return confirm('선택한 글을 삭제할까요? 되돌릴 수 없습니다.')">
+      <input type="hidden" name="back" value="{{ request.full_path }}">
+      <div class="bulk" id="bulkBar" style="display:none"><span class="chk on"><i></i></span><span id="bulkCount">0</span>건 선택됨
+        <button class="btn sec sm" style="margin-left:auto;color:var(--danger)" type="submit">선택 삭제</button></div>
+      <div style="margin:0 -18px;overflow-x:auto"><table><thead><tr><th style="width:34px"><input type="checkbox" id="chkAll"></th><th>게시판</th><th>분류</th><th>제목</th><th>상태</th><th>조회</th><th>일자</th><th></th></tr></thead><tbody>
         {% for r in rows %}
-        <tr><td>{{ board_label[r.board] }}{% if r.channel %} <span class="thin">({{ channel_label[r.channel] }})</span>{% endif %}</td>
+        <tr><td><input type="checkbox" name="ids" value="{{ r.id }}" class="rowchk"></td><td>{{ board_label[r.board] }}{% if r.channel %} <span class="thin">({{ channel_label[r.channel] }})</span>{% endif %}</td>
           <td>{% if r.board == 'notice' %}<span class="tag {{ tag_cls.get(r.category, 't-mnt') }}">{{ notice_categories.get(r.category, r.category) }}</span>{% elif r.board == 'info' %}<span class="pill p-tool">{{ info_categories.get(r.category, r.category) }}</span>{% else %}<span class="mut">{{ r.series_no }}편</span>{% endif %}</td>
           <td style="white-space:normal"><b>{{ r.title }}</b>{% if r.is_pinned %} <span class="tag t-pin">고정</span>{% endif %}</td>
           <td>{% if r.status == 'published' %}<span class="st s-run">발행</span>{% elif r.status == 'scheduled' %}<span class="st s-appr">예약 {{ r.publish_at | fmt_date('%m.%d %H:%M') }}</span>{% else %}<span class="st s-wait">임시저장</span>{% endif %}</td>
@@ -19,9 +23,10 @@
           <td><div class="rowact" style="opacity:1"><a href="/admin/content?tab={{ tab }}&edit={{ r.id }}"><button type="button">{% if r.status == 'draft' %}이어쓰기{% else %}수정{% endif %}</button></a>
             {% if r.board != 'series' %}<form method="post" action="/admin/content/{{ r.id }}/pin"><input type="hidden" name="back" value="{{ request.full_path }}"><button type="submit">{% if r.is_pinned %}고정 해제{% else %}고정{% endif %}</button></form>
             {% else %}<form method="post" action="/admin/content/{{ r.id }}/order/up"><button type="submit" title="위로">↑</button></form><form method="post" action="/admin/content/{{ r.id }}/order/down"><button type="submit" title="아래로">↓</button></form>{% endif %}
-            <form method="post" action="/admin/content/{{ r.id }}/delete" onsubmit="return confirm('삭제할까요?')"><button type="submit" style="color:var(--danger)">삭제</button></form></div></td></tr>
-        {% else %}<tr><td colspan="7"><div class="empty">글이 없습니다.</div></td></tr>{% endfor %}
+            <button class="btn sec sm" type="submit" formaction="/admin/content/{{ r.id }}/delete" style="color:var(--danger)" onclick="return confirm('삭제할까요?')">삭제</button></div></td></tr>
+        {% else %}<tr><td colspan="8"><div class="empty">글이 없습니다.</div></td></tr>{% endfor %}
       </tbody></table></div>
+      </form>
       {{ pager(page, total_pages, 'admin.content', tab=tab) }}
     </div></div>
     {% if new %}{% set e = edit or {} %}

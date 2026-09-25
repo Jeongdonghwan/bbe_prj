@@ -123,3 +123,17 @@ def review_apply(apply_id, approve, admin_id):
 
 def pending_applies_count():
     return query_one("SELECT COUNT(*) AS n FROM agency_applies WHERE status = 'pending'")["n"]
+
+
+def purge_request(req_id):
+    """의뢰와 딸린 제안을 함께 지운다 (어드민 삭제)."""
+    execute("DELETE FROM agency_proposals WHERE request_id = %s", [req_id])
+    execute("DELETE FROM agency_requests WHERE id = %s", [req_id])
+
+
+def purge_proposal(pid):
+    execute("DELETE FROM agency_proposals WHERE id = %s", [pid])
+
+
+def purge_apply(apply_id):
+    execute("DELETE FROM agency_applies WHERE id = %s", [apply_id])

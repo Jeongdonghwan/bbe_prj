@@ -8,6 +8,7 @@ python tests/ops_user.py    # 사용자 흐름 — 글쓰기·댓글·캠페인 
 python tests/ops_admin.py   # 어드민 흐름 — 승인·반려·환불·순위·크레딧·콘텐츠·배너
 python tests/ops_guard.py   # 권한 경계 — 비로그인·남의 자료·회원의 어드민 접근
 python tests/rank_e2e.py    # 순위 추적 연동 (스텁 순위 서버를 띄워 확인)
+python tests/status_flow.py # 상태 단축 — 등록 즉시 추적, 시작·종료일 자동 전환
 ```
 
 주의: `ops_user`/`ops_admin` 은 실제로 캠페인을 만들고 크레딧을 차감·환불한다.

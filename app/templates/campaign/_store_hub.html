@@ -25,7 +25,7 @@
   <div>
     <div class="card"><div class="ch"><h3>쇼핑 진행 캠페인</h3><a class="more" href="/campaign/store">관리<i data-lucide="chevron-right" class="i i14"></i></a></div><div class="cb"><ul class="list">
       {% for c in store.running %}
-      <li><span class="st {{ 's-run' if c.status == 'running' else ('s-review' if c.status in ('review','approved') else 's-wait') }}">{{ {'running':'진행','review':'검수','approved':'승인','pay_wait':'결제 대기'}[c.status] }}</span><a href="/campaign/store?open={{ c.id }}">{{ c.main_keyword }} · {{ c.media_name }}</a><span class="dt num">{% if c.rank_now %}{{ c.rank_now }}위{% else %}{{ c.start_date | fmt_date }}~{% endif %}</span></li>
+      <li><span class="st {{ 's-run' if c.status == 'running' else ('s-review' if c.status in ('review','approved') else 's-wait') }}">{{ status_label[c.status] }}</span><a href="/campaign/store?open={{ c.id }}">{{ c.main_keyword }} · {{ c.media_name }}</a><span class="dt num">{% if c.rank_now %}{{ c.rank_now }}위{% else %}{{ c.start_date | fmt_date }}~{% endif %}</span></li>
       {% else %}
       <li><span class="dt">진행 중인 쇼핑 캠페인이 없습니다.</span></li>
       {% endfor %}

@@ -1,0 +1,46 @@
+{% extends "layout/base.html" %}
+{% from "macros/pagination.html" import pager %}
+{% block title %}게시글 관리{% endblock %}
+{% block content %}
+<div class="ph"><div><h1>게시글 관리</h1><p>익명 게시판·질문답변 글을 숨기거나 완전히 지웁니다. 삭제하면 댓글도 함께 지워집니다.</p></div></div>
+<div class="card"><div class="cb" style="padding-top:6px">
+  <div class="tabs">
+    {% for key, label in [('all','전체'),('anon','익명 게시판'),('qna','질문답변'),('blind','블라인드')] %}
+    <a href="/admin/posts?tab={{ key }}"><button type="button"{% if tab == key %} class="on"{% endif %}>{{ label }}<em>{{ counts.get(key, 0) }}</em></button></a>
+    {% endfor %}
+  </div>
+  <form class="tbar" method="get">{% if tab != 'all' %}<input type="hidden" name="tab" value="{{ tab }}">{% endif %}
+    <div class="search"><i data-lucide="search" class="i"></i><input class="in" name="q" value="{{ q or '' }}" placeholder="제목 · 본문 · 닉네임"></div></form>
+
+  <form method="post" action="/admin/posts/bulk-delete" id="postBulk" onsubmit="return confirm('선택한 글을 삭제할까요? 댓글도 함께 지워지며 되돌릴 수 없습니다.')">
+    <input type="hidden" name="back" value="{{ request.full_path }}">
+    <div class="bulk" id="bulkBar" style="display:none"><span class="chk on"><i></i></span><span id="bulkCount">0</span>건 선택됨
+      <button class="btn sec sm" style="margin-left:auto;color:var(--danger)" type="submit">선택 삭제</button></div>
+    <div style="margin:0 -18px;overflow-x:auto"><table>
+      <thead><tr><th style="width:34px"><input type="checkbox" id="chkAll"></th><th>게시판</th><th>제목</th><th>작성자</th><th>댓글</th><th>조회</th><th>신고</th><th>상태</th><th>작성일</th><th></th></tr></thead>
+      <tbody>
+      {% for r in rows %}
+      <tr>
+        <td><input type="checkbox" name="ids" value="{{ r.id }}" class="rowchk"></td>
+        <td>{{ r.board_name }}{% if r.channel_tag %} <span class="thin">{{ channel_label.get(r.channel_tag, r.channel_tag) }}</span>{% endif %}</td>
+        <td style="white-space:normal"><a class="lnk" href="/community/{{ r.slug }}/{{ r.id }}" target="_blank"><b>{{ r.title }}</b></a></td>
+        <td class="mut">{{ r.anon_nick }}</td>
+        <td class="num">{{ r.comment_cnt }}</td>
+        <td class="num mut">{{ r.views }}</td>
+        <td class="num">{% if r.report_cnt %}<span style="color:var(--danger);font-weight:700">{{ r.report_cnt }}</span>{% else %}—{% endif %}</td>
+        <td>{% if r.is_blind %}<span class="st s-rej">블라인드</span>{% else %}<span class="st s-run">노출</span>{% endif %}</td>
+        <td class="num mut">{{ r.created_at | fmt_date('%Y.%m.%d') }}</td>
+        <td><div class="inline-f" style="justify-content:flex-end">
+          <button class="btn sec sm" type="submit" formaction="/admin/posts/{{ r.id }}/blind" formnovalidate{% if not r.is_blind %} style="color:var(--danger)"{% endif %}>{{ '해제' if r.is_blind else '블라인드' }}</button>
+          <button class="btn sec sm" type="submit" formaction="/admin/posts/{{ r.id }}/delete" style="color:var(--danger)"
+                  onclick="return confirm('이 글을 삭제할까요? 댓글도 함께 지워집니다.')">삭제</button>
+        </div></td>
+      </tr>
+      {% else %}<tr><td colspan="10"><div class="empty">글이 없습니다.</div></td></tr>{% endfor %}
+      </tbody>
+    </table></div>
+  </form>
+  {{ pager(page, total_pages, 'admin.posts', tab=tab, q=q) }}
+</div></div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/admin.js') }}"></script>{% endblock %}

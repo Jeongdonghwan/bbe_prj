@@ -42,6 +42,13 @@ def close_agency():
     return agency_model.close_stale(30)
 
 
+def advance_campaigns():
+    """시작일이 된 승인건 → 구동, 종료일이 지난 구동건 → 완료."""
+    from app.services import campaign_service
+    started, finished = campaign_service.advance_due()
+    return f"구동 시작 {started} · 완료 {finished}"
+
+
 def sync_ranks():
     """순위 추적 보정: 슬롯이 없는 구동 캠페인을 등록하고, 오늘 순위가 빈 건을 채운다.
 
@@ -68,10 +75,11 @@ JOBS = {
     "refresh_slots": refresh_slots,
     "close_agency": close_agency,
     "sync_ranks": sync_ranks,
+    "advance_campaigns": advance_campaigns,
 }
 GROUPS = {
-    "daily": ["expire_unpaid", "refresh_efficiency", "refresh_slots", "close_agency"],
-    "hourly": ["sync_ranks"],
+    "daily": ["advance_campaigns", "expire_unpaid", "refresh_efficiency", "refresh_slots", "close_agency"],
+    "hourly": ["advance_campaigns", "sync_ranks"],
 }
 
 

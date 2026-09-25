@@ -6,7 +6,7 @@ from flask import (Blueprint, abort, current_app, flash, g, jsonify, redirect, r
                    url_for)
 
 from ..constants import (CHANNEL_LABEL, DATE_PRESETS, PAY_METHOD_LABEL, PAYMENT_STATUS_LABEL, PLACE_CATEGORIES, TRAFFIC_CHANNELS,
-                         STATUS_CLASS, STATUS_LABEL, STATUS_ORDER, STORE_SLOT_MAX, reco_qty)
+                         STATUS_CLASS, STATUS_LABEL, STORE_SLOT_MAX, reco_qty, status_tabs)
 from ..models import campaign as campaign_model
 from ..models import content as content_model
 from ..models import media as media_model
@@ -346,7 +346,7 @@ def manage(channel):
         total_pages=max(1, -(-total // per_page)), counts=counts, total_all=sum(counts.values()),
         status=status, period=period, media_id=media_id, q=q, stats=stats,
         media_options=campaign_model.media_used(uid, channel),
-        status_order=STATUS_ORDER, status_label=STATUS_LABEL, status_class=STATUS_CLASS,
+        status_order=status_tabs(counts), status_label=STATUS_LABEL, status_class=STATUS_CLASS,
         open_id=request.args.get("open", type=int),
     )
 
