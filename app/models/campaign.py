@@ -368,13 +368,13 @@ def daily_rank(campaign_id, day):
 
 
 def untracked_running(limit=200):
-    """아직 추적 슬롯이 없는 살아 있는 쇼핑 캠페인 — 등록 실패분 보정용.
+    """아직 추적 슬롯이 없는 살아 있는 캠페인 — 등록 실패분 보정용.
 
     추적은 등록(검수) 시점에 시작하므로 review 도 포함한다. 순위 서버가 꺼져 있거나
-    토큰이 없던 동안 들어온 건은 여기서 주워 담는다.
+    토큰이 없던 동안 들어온 건은 여기서 주워 담는다. 쿠팡은 순위 서버에 수집기가 없어 제외.
     """
     return [_decode(r) for r in query(
-        """SELECT * FROM campaigns WHERE channel = 'store' AND status IN ('review','approved','running')
+        """SELECT * FROM campaigns WHERE channel IN ('store','place') AND status IN ('review','approved','running')
            AND track_id IS NULL ORDER BY id LIMIT %s""", [limit])]
 
 

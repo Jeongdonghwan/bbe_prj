@@ -64,17 +64,22 @@ def product_preview(url):
     return body
 
 
-def register_slot(keyword, url):
+# 우리 채널 → 순위 서버 플랫폼. 쿠팡은 순위 서버에 수집기가 없어 값이 없다.
+TRACK_PLATFORM = {"store": "shop", "place": "place"}
+
+
+def register_slot(keyword, url, platform="shop"):
     """추적 등록(get-or-create): {"ok", "trackId", "status", "rank", "prodNm", "date"}.
 
-    status 는 "collected"(오늘 수집 완료) 또는 "queued" 둘뿐이다. collected 면 rank 가
-    바로 들어 있어 그 자리에서 기록할 수 있다. rank=None 은 300위 밖이거나 아직 미수집.
+    platform 은 "shop"(쇼핑·스토어) 또는 "place". status 는 "collected"(오늘 수집 완료)
+    또는 "queued" 둘뿐이다. collected 면 rank 가 바로 들어 있어 그 자리에서 기록할 수 있다.
+    rank=None 은 300위 밖이거나 아직 미수집.
     """
     keyword = " ".join((keyword or "").split())[:100]
     url = (url or "").strip()
-    if not configured() or not keyword or not url:
+    if not configured() or not keyword or not url or platform not in TRACK_PLATFORM.values():
         return {"ok": False}
-    body = _call("POST", "/partner/slots", body={"keyword": keyword, "url": url})
+    body = _call("POST", "/partner/slots", body={"keyword": keyword, "url": url, "platform": platform})
     if not isinstance(body, dict) or not body.get("ok") or not body.get("trackId"):
         if isinstance(body, dict) and body.get("message"):
             current_app.logger.info("rank_client register_slot rejected: %s", body["message"])

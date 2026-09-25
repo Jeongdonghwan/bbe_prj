@@ -116,10 +116,21 @@ def main():
         ok(c["rank_now"] == 7 and c["rank_start"] == 7, "collected 응답의 rank 즉시 기록 (%s)" % c["rank_now"])
         STATE["collected_today"] = False
 
-        # 4) 플레이스 채널은 등록하지 않는다 (파트너 API 는 쇼핑 전용)
+        # 4) 채널별 플랫폼 — 쇼핑·플레이스는 등록, 쿠팡은 순위 서버에 수집기가 없어 제외
         SEEN.clear()
-        pc = dict(c, channel="place", track_id=None)
-        ok(cs.spawn_track(pc) is None and not SEEN, "쇼핑 외 채널은 등록 안 함")
+        pc = dict(c, channel="place", track_id=None,
+                  target_url="https://m.place.naver.com/restaurant/1234567890/home")
+        ok(cs.spawn_track(pc) is not None, "플레이스도 등록한다")
+        sent = SEEN[-1][2] if SEEN else {}
+        ok(sent.get("platform") == "place", "platform=place 로 보낸다 (%s)" % sent.get("platform"))
+        SEEN.clear()
+        cc = dict(c, channel="coupang", track_id=None)
+        ok(cs.spawn_track(cc) is None and not SEEN, "쿠팡은 등록 안 함")
+        SEEN.clear()
+        sc = dict(c, channel="store", track_id=None)
+        cs.spawn_track(sc)
+        sent = SEEN[-1][2] if SEEN else {}
+        ok(sent.get("platform") == "shop", "쇼핑은 platform=shop (%s)" % sent.get("platform"))
 
     # 5) 콜백 수신
     tc = app.test_client()

@@ -83,14 +83,28 @@ UA가 아니라 화이트리스트한 실제 서버 IP로 검증). 그래서 ran
 (migrate 가 자동 반영). 순위 자체는 기존 `campaign_daily(date, rank, done_qty)` 에 그대로 쌓는다 —
 어드민 수동 입력과 같은 자리라 화면을 새로 만들 필요가 없다.
 
+### 지원 채널
+
+| 채널 | 순위 추적 | 순위 서버 |
+| --- | --- | --- |
+| 쇼핑·스토어 | O | 슬롯 `ST002`, `platform: "shop"` |
+| 플레이스 | O (2026-09-25 개통) | 슬롯 `ST001`, `platform: "place"` |
+| 쿠팡 | X | `ST007` 은 **수집기 자체가 없다**. 순위 서버에 쿠팡 수집기를 만드는 일이 선행돼야 한다. |
+
+채널 → 플랫폼 매핑은 `rank_client.TRACK_PLATFORM` 한 곳이고, `spawn_track()` 이 이 표에
+없는 채널이면 조용히 건너뛴다.
+
 ### 슬롯 등록
 
-`campaign_service.transition()` 이 `approved` / `running` 으로 갈 때 `spawn_track()` 을 부른다.
+캠페인 **등록 즉시** `spawn_track()` 을 부른다 (`create_with_credit`). `transition()` 의
+approved/running 훅은 등록이 실패했을 때를 위한 백업 경로다.
 
 ```
-POST /partner/slots   {"keyword": ..., "url": ...}
+POST /partner/slots   {"keyword": ..., "url": ..., "platform": "shop" | "place"}
 → {"ok", "trackId", "status", "rank", "prodNm", "date"}
 ```
+
+- `platform` 을 생략하면 순위 서버는 쇼핑으로 본다 (platform 없이 부르던 트리플업과의 호환).
 
 - `status` 는 **`"collected"` 또는 `"queued"` 둘뿐**이다 (`pending` 같은 값은 오지 않는다).
 - `collected` 면 `rank` 가 그 자리에 들어 있어 바로 기록한다. `rank: null` 은 300위 밖.

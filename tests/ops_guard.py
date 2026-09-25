@@ -59,11 +59,14 @@ def main():
     for u in ["/admin", "/admin/orders", "/admin/credits", "/admin/media", "/admin/users"]:
         r = member.get(u)
         check(r.status_code == 403, f"회원 → {u} 403", r.status_code)
+    # 절대 금액이 아니라 "전후가 같은지"를 본다 — 계정 잔액은 다른 점검·운영으로 얼마든 달라진다.
+    with app.app_context():
+        before = query_one("SELECT credit_balance FROM users WHERE id=%s", [u1])["credit_balance"]
     r = member.post("/admin/credits/adjust", data={"user_id": u1, "amount": "999999", "memo": "탈취"})
     check(r.status_code == 403, "회원의 크레딧 조작 차단", r.status_code)
     with app.app_context():
-        bal = query_one("SELECT credit_balance FROM users WHERE id=%s", [u1])["credit_balance"]
-    check(bal < 900000, "잔액 변화 없음", bal)
+        after = query_one("SELECT credit_balance FROM users WHERE id=%s", [u1])["credit_balance"]
+    check(after == before, "잔액 변화 없음", f"{before} → {after}")
 
     print("\n=== 5. 남의 캠페인 접근 ===")
     if camp:

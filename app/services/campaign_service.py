@@ -168,11 +168,15 @@ def advance_due(actor_id=None):
 
 # ---- 순위 자동 추적 (docs/RANK_INTEGRATION.md 2단계) ------------------------
 def spawn_track(campaign):
-    """순위 서버에 추적 슬롯을 만든다. 쇼핑 채널만, 실패해도 상태 전이는 그대로 간다."""
+    """순위 서버에 추적 슬롯을 만든다.
+
+    쇼핑·스토어와 플레이스만. 쿠팡은 순위 서버에 수집기가 없다. 실패해도 상태 전이는 그대로 간다.
+    """
     from . import rank_client
-    if campaign["channel"] != "store" or campaign.get("track_id"):
+    platform = rank_client.TRACK_PLATFORM.get(campaign["channel"])
+    if not platform or campaign.get("track_id"):
         return None
-    r = rank_client.register_slot(campaign.get("main_keyword"), campaign.get("target_url"))
+    r = rank_client.register_slot(campaign.get("main_keyword"), campaign.get("target_url"), platform)
     if not r.get("ok"):
         return None
     fields = {"track_id": r["trackId"], "track_status": r.get("status") or "queued"}
