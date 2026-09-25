@@ -521,13 +521,6 @@ def media_save():
     else:
         mid = media_model.insert(fields)
         _log("media_create", "media", mid, f"{fields['name']} 추가")
-    try:
-        if request.files.get("logo") and request.files["logo"].filename:
-            media_service.save_logo(mid, request.files["logo"])
-            _log("media_logo", "media", mid, f"{fields['name']} 로고 업로드")
-    except media_service.MediaError as e:
-        flash(f"저장됨. 로고 오류: {e}")
-        return redirect(url_for("admin.media", channel=channel, edit=mid))
     flash(f"{fields['name']} 저장")
     return redirect(url_for("admin.media", channel=channel, edit=mid))
 
@@ -558,16 +551,6 @@ def media_delete(media_id):
     return redirect(url_for("admin.media", channel=m["channel"]))
 
 
-@bp.route("/media/<int:media_id>/logo/delete", methods=["POST"])
-@admin_required
-def media_logo_delete(media_id):
-    m = media_model.get(media_id) or abort(404)
-    media_service.delete_logo(media_id)
-    _log("media_logo_delete", "media", media_id, f"{m['name']} 로고 삭제")
-    return redirect(url_for("admin.media", channel=m["channel"], edit=media_id))
-
-
-# =============================================================== popular
 @bp.route("/popular")
 @admin_required
 def popular():

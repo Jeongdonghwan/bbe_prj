@@ -17,36 +17,48 @@
 
 <div class="form2">
   <div class="card"><div class="cb" style="padding-top:14px">
-    <div style="overflow-x:auto;margin:0 -18px"><table>
-      <thead><tr><th>아이디 / 이메일</th><th>이름</th><th>로그인</th><th>마지막 접속</th><th>상태</th><th></th></tr></thead>
+    <div style="overflow-x:auto;margin:0 -18px"><table class="optable">
+      <thead><tr>
+        <th style="width:190px">아이디</th>
+        <th style="width:150px">이메일</th>
+        <th style="width:80px">이름</th>
+        <th style="width:90px">로그인</th>
+        <th style="width:120px">마지막 접속</th>
+        <th style="width:70px">상태</th>
+        <th style="width:210px">비밀번호</th>
+        <th style="width:130px"></th>
+      </tr></thead>
       <tbody>
       {% for u in rows %}
       <tr>
         <td>
-          <form method="post" action="/admin/operators/{{ u.id }}/login-id" style="display:flex;gap:4px;align-items:center">
-            <input class="in" name="username" value="{{ u.username or '' }}" placeholder="아이디 없음" maxlength="30" style="width:130px;height:30px;font-size:12.5px">
+          <form method="post" action="/admin/operators/{{ u.id }}/login-id" class="inline-f">
+            <input class="in" name="username" value="{{ u.username or '' }}" placeholder="아이디 없음" maxlength="30">
             <button class="btn sec sm" type="submit">저장</button>
           </form>
-          <span class="mut" style="font-size:11.5px">{{ u.email or '이메일 없음' }}</span>
-          {% if u.id == me %}<span class="tag t-pin">나</span>{% endif %}
         </td>
+        <td class="mut" style="font-size:12px">{{ u.email or '—' }}{% if u.id == me %} <span class="tag t-pin">나</span>{% endif %}</td>
         <td>{{ u.nickname }}</td>
-        <td>{% if u.has_pw and (u.username or u.email) %}<span class="st s-run">가능</span>{% else %}<span class="st s-rej">불가</span><br><span class="mut" style="font-size:11px">{{ '아이디·이메일 없음' if not (u.username or u.email) else '비밀번호 없음' }}</span>{% endif %}</td>
-        <td class="num mut">{{ u.last_login_at | fmt_date('%Y.%m.%d %H:%M') if u.last_login_at else '—' }}</td>
+        <td>{% if u.has_pw and (u.username or u.email) %}<span class="st s-run">가능</span>{% else %}<span class="st s-rej">불가</span>{% endif %}</td>
+        <td class="num mut" style="font-size:12px">{{ u.last_login_at | fmt_date('%Y.%m.%d %H:%M') if u.last_login_at else '—' }}</td>
         <td>{% if u.status == 'active' %}<span class="st s-run">정상</span>{% else %}<span class="st s-rej">정지</span>{% endif %}</td>
-        <td><div class="rowact" style="opacity:1;gap:4px;flex-wrap:wrap;justify-content:flex-end">
-          <form method="post" action="/admin/operators/{{ u.id }}/passwd" style="display:flex;gap:4px;align-items:center" onsubmit="return confirm('비밀번호를 새로 정할까요? 기존 비밀번호는 즉시 못 쓰게 됩니다.')">
-            <input class="in" type="text" name="password" placeholder="비우면 자동" maxlength="72" style="width:110px;height:30px;font-size:12.5px">
-            <button type="submit">비밀번호 변경</button>
+        <td>
+          <form method="post" action="/admin/operators/{{ u.id }}/passwd" class="inline-f" onsubmit="return confirm('비밀번호를 새로 정할까요? 기존 비밀번호는 즉시 못 쓰게 됩니다.')">
+            <input class="in" type="text" name="password" placeholder="비우면 자동 생성" maxlength="72">
+            <button class="btn sec sm" type="submit">변경</button>
           </form>
+        </td>
+        <td>
           {% if u.id != me %}
-          <form method="post" action="/admin/operators/{{ u.id }}/status" onsubmit="return confirm('상태를 변경할까요?')"><button type="submit"{% if u.status == 'active' %} style="color:var(--danger)"{% endif %}>{{ '정지' if u.status == 'active' else '정지 해제' }}</button></form>
-          <form method="post" action="/admin/operators/{{ u.id }}/revoke" onsubmit="return confirm('운영 권한을 회수할까요? 계정은 일반 회원으로 남습니다.')"><button type="submit" style="color:var(--danger)">권한 회수</button></form>
+          <div class="inline-f" style="justify-content:flex-end">
+            <form method="post" action="/admin/operators/{{ u.id }}/status" onsubmit="return confirm('상태를 변경할까요?')"><button class="btn sec sm" type="submit"{% if u.status == 'active' %} style="color:var(--danger)"{% endif %}>{{ '정지' if u.status == 'active' else '해제' }}</button></form>
+            <form method="post" action="/admin/operators/{{ u.id }}/revoke" onsubmit="return confirm('운영 권한을 회수할까요? 계정은 일반 회원으로 남습니다.')"><button class="btn sec sm" type="submit" style="color:var(--danger)">권한 회수</button></form>
+          </div>
           {% endif %}
-        </div></td>
+        </td>
       </tr>
       {% else %}
-      <tr><td colspan="6"><div class="empty">운영자 계정이 없습니다.</div></td></tr>
+      <tr><td colspan="8"><div class="empty">운영자 계정이 없습니다.</div></td></tr>
       {% endfor %}
       </tbody>
     </table></div>
