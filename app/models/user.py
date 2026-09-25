@@ -18,6 +18,23 @@ def get_by_email(email):
     return query_one("SELECT * FROM users WHERE email = %s", [email])
 
 
+def get_by_login(login):
+    """운영자 로그인: 아이디(username) 또는 이메일 어느 쪽이든 받는다."""
+    return query_one("SELECT * FROM users WHERE username = %s OR email = %s LIMIT 1", [login, login])
+
+
+def username_taken(username, exclude_id=None):
+    sql, p = "SELECT id FROM users WHERE username = %s", [username]
+    if exclude_id:
+        sql += " AND id <> %s"
+        p.append(exclude_id)
+    return query_one(sql, p) is not None
+
+
+def set_username(user_id, username):
+    execute("UPDATE users SET username = %s WHERE id = %s", [username or None, user_id])
+
+
 def create_local(email, password_hash, nickname, phone, notify_event=False):
     return execute(
         "INSERT INTO users (email, password_hash, nickname, phone, notify_event) VALUES (%s,%s,%s,%s,%s)",
@@ -91,7 +108,7 @@ def touch_login(user_id):
 
 def list_admins():
     return query(
-        """SELECT id, email, nickname, status, last_login_at, created_at,
+        """SELECT id, email, username, nickname, status, last_login_at, created_at,
                   (password_hash IS NOT NULL) AS has_pw
            FROM users WHERE role = 'admin' ORDER BY id""")
 
@@ -100,10 +117,10 @@ def active_admin_count():
     return query_one("SELECT COUNT(*) AS n FROM users WHERE role = 'admin' AND status = 'active'")["n"]
 
 
-def create_admin(email, password_hash, nickname):
+def create_admin(email, username, password_hash, nickname):
     return execute(
-        """INSERT INTO users (email, password_hash, nickname, role, status, notify_event)
-           VALUES (%s,%s,%s,'admin','active',0)""", [email, password_hash, nickname])
+        """INSERT INTO users (email, username, password_hash, nickname, role, status, notify_event)
+           VALUES (%s,%s,%s,%s,'admin','active',0)""", [email or None, username or None, password_hash, nickname])
 
 
 def set_password(user_id, password_hash):

@@ -289,6 +289,9 @@ def main():
         done.append("idx_campaigns_track")
 
     # -- 운영자 관리 (2026-09-25) ------------------------------------------
+    if not col("users", "username"):
+        cur.execute("ALTER TABLE users ADD COLUMN username VARCHAR(30) NULL UNIQUE AFTER email")
+        done.append("users.username")
     if not col("users", "last_login_at"):
         cur.execute("ALTER TABLE users ADD COLUMN last_login_at DATETIME NULL AFTER status")
         done.append("users.last_login_at")

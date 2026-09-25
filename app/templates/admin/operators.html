@@ -1,15 +1,15 @@
 {% extends "layout/base.html" %}
 {% block title %}운영자 관리{% endblock %}
 {% block content %}
-<div class="ph"><div><h1>운영자 관리</h1><p>운영자 로그인은 <code>/auth/admin/login</code> 입니다. 비밀번호는 발급·재설정할 때 한 번만 보여줍니다.</p></div></div>
+<div class="ph"><div><h1>운영자 관리</h1><p>운영자 로그인은 <code>/auth/admin/login</code> 입니다. 아이디나 이메일 중 하나로 로그인합니다.</p></div></div>
 
 {% if new_pw %}
 <div class="card" style="margin-bottom:14px;border-color:var(--accent)"><div class="cb" style="padding-top:16px">
   <h3 style="margin:0 0 8px;font-size:15px">비밀번호 {{ new_pw.what }} 완료 — 지금 복사해 두세요</h3>
   <p class="thin" style="margin:0 0 12px">이 화면을 벗어나면 다시 볼 수 없습니다. 잃어버리면 재설정하면 됩니다.</p>
   <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-    <div class="f" style="margin:0;flex:1;min-width:220px"><label>이메일</label><input class="in" value="{{ new_pw.email }}" readonly></div>
-    <div class="f" style="margin:0;flex:1;min-width:220px"><label>비밀번호</label><input class="in mono" id="newPw" value="{{ new_pw.pw }}" readonly></div>
+    <div class="f" style="margin:0;flex:1;min-width:200px"><label>아이디</label><input class="in" value="{{ new_pw.email }}" readonly></div>
+    <div class="f" style="margin:0;flex:1;min-width:200px"><label>비밀번호</label><input class="in mono" id="newPw" value="{{ new_pw.pw }}" readonly></div>
     <button class="btn sec" type="button" id="copyPw" style="margin-bottom:8px">복사</button>
   </div>
 </div></div>
@@ -18,17 +18,27 @@
 <div class="form2">
   <div class="card"><div class="cb" style="padding-top:14px">
     <div style="overflow-x:auto;margin:0 -18px"><table>
-      <thead><tr><th>이메일</th><th>이름</th><th>로그인</th><th>마지막 접속</th><th>상태</th><th></th></tr></thead>
+      <thead><tr><th>아이디 / 이메일</th><th>이름</th><th>로그인</th><th>마지막 접속</th><th>상태</th><th></th></tr></thead>
       <tbody>
       {% for u in rows %}
       <tr>
-        <td><b>{{ u.email or '—' }}</b>{% if u.id == me %} <span class="tag t-pin">나</span>{% endif %}</td>
+        <td>
+          <form method="post" action="/admin/operators/{{ u.id }}/login-id" style="display:flex;gap:4px;align-items:center">
+            <input class="in" name="username" value="{{ u.username or '' }}" placeholder="아이디 없음" maxlength="30" style="width:130px;height:30px;font-size:12.5px">
+            <button class="btn sec sm" type="submit">저장</button>
+          </form>
+          <span class="mut" style="font-size:11.5px">{{ u.email or '이메일 없음' }}</span>
+          {% if u.id == me %}<span class="tag t-pin">나</span>{% endif %}
+        </td>
         <td>{{ u.nickname }}</td>
-        <td>{% if u.has_pw and u.email %}<span class="st s-run">가능</span>{% else %}<span class="st s-rej">불가</span><br><span class="mut" style="font-size:11px">{{ '이메일 없음' if not u.email else '비밀번호 없음' }}</span>{% endif %}</td>
+        <td>{% if u.has_pw and (u.username or u.email) %}<span class="st s-run">가능</span>{% else %}<span class="st s-rej">불가</span><br><span class="mut" style="font-size:11px">{{ '아이디·이메일 없음' if not (u.username or u.email) else '비밀번호 없음' }}</span>{% endif %}</td>
         <td class="num mut">{{ u.last_login_at | fmt_date('%Y.%m.%d %H:%M') if u.last_login_at else '—' }}</td>
         <td>{% if u.status == 'active' %}<span class="st s-run">정상</span>{% else %}<span class="st s-rej">정지</span>{% endif %}</td>
-        <td><div class="rowact" style="opacity:1;gap:4px">
-          <form method="post" action="/admin/operators/{{ u.id }}/passwd" onsubmit="return confirm('비밀번호를 새로 발급할까요? 기존 비밀번호는 즉시 못 쓰게 됩니다.')"><button type="submit">비밀번호 재설정</button></form>
+        <td><div class="rowact" style="opacity:1;gap:4px;flex-wrap:wrap;justify-content:flex-end">
+          <form method="post" action="/admin/operators/{{ u.id }}/passwd" style="display:flex;gap:4px;align-items:center" onsubmit="return confirm('비밀번호를 새로 정할까요? 기존 비밀번호는 즉시 못 쓰게 됩니다.')">
+            <input class="in" type="text" name="password" placeholder="비우면 자동" maxlength="72" style="width:110px;height:30px;font-size:12.5px">
+            <button type="submit">비밀번호 변경</button>
+          </form>
           {% if u.id != me %}
           <form method="post" action="/admin/operators/{{ u.id }}/status" onsubmit="return confirm('상태를 변경할까요?')"><button type="submit"{% if u.status == 'active' %} style="color:var(--danger)"{% endif %}>{{ '정지' if u.status == 'active' else '정지 해제' }}</button></form>
           <form method="post" action="/admin/operators/{{ u.id }}/revoke" onsubmit="return confirm('운영 권한을 회수할까요? 계정은 일반 회원으로 남습니다.')"><button type="submit" style="color:var(--danger)">권한 회수</button></form>
@@ -40,16 +50,18 @@
       {% endfor %}
       </tbody>
     </table></div>
-    <p class="thin" style="padding:8px 0 0">로그인 <b>불가</b>인 계정은 이메일이나 비밀번호가 없는 계정입니다. 재설정하면 바로 쓸 수 있습니다.</p>
+    <p class="thin" style="padding:8px 0 0">아이디는 영문 소문자·숫자 3~30자(<code>. _ -</code> 가능). 비밀번호 칸을 비우고 변경하면 안전한 값이 자동으로 만들어집니다.</p>
   </div></div>
 
   <div class="card"><div class="ch"><h3>운영자 추가</h3></div><div class="cb">
     <form method="post" action="/admin/operators/create">
-      <div class="f"><label>이메일<small>로그인 아이디로 씁니다</small></label><input class="in" type="email" name="email" required placeholder="ops@회사도메인"></div>
+      <div class="f"><label>아이디<small>로그인에 씁니다. 예) admin</small></label><input class="in" name="username" maxlength="30" placeholder="admin"></div>
+      <div class="f"><label>이메일<small>선택 — 아이디 대신 써도 됩니다</small></label><input class="in" type="email" name="email" placeholder="ops@회사도메인"></div>
       <div class="f"><label>이름</label><input class="in" name="nickname" maxlength="20" placeholder="운영팀" value="운영팀"></div>
+      <div class="f"><label>비밀번호<small>비우면 안전한 값을 자동 생성</small></label><input class="in" type="text" name="password" maxlength="72" placeholder="비우면 자동 생성"></div>
       <button class="btn pri" type="submit" style="width:100%">계정 만들기</button>
     </form>
-    <p class="thin" style="margin-top:12px">비밀번호는 자동으로 만들어 한 번만 보여드립니다. 서버에서 <code>python scripts/admin_user.py</code> 로도 같은 작업을 할 수 있습니다.</p>
+    <p class="thin" style="margin-top:12px">서버에서 <code>python scripts/admin_user.py</code> 로도 같은 작업을 할 수 있습니다.</p>
   </div></div>
 </div>
 {% endblock %}

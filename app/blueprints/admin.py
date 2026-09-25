@@ -879,22 +879,67 @@ def operators():
                            me=g.user["id"], new_pw=session.pop("new_admin_pw", None))
 
 
+USERNAME_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{2,29}$")
+
+
+def _read_password(form):
+    """(비밀번호, 오류). 비우면 자동 생성."""
+    pw = (form.get("password") or "").strip()
+    if not pw:
+        return _gen_password(), None
+    if len(pw) < 4 or len(pw) > 72:
+        return None, "비밀번호는 4~72자로 입력해주세요."
+    return pw, None
+
+
 @bp.route("/operators/create", methods=["POST"])
 @admin_required
 def operators_create():
     email = (request.form.get("email") or "").strip().lower()[:120]
+    username = (request.form.get("username") or "").strip().lower()[:30]
     nickname = (request.form.get("nickname") or "").strip()[:20] or "운영팀"
-    if not EMAIL_RE.match(email):
+    if not username and not email:
+        flash("아이디나 이메일 중 하나는 있어야 합니다.")
+        return redirect(url_for("admin.operators"))
+    if username and not USERNAME_RE.match(username):
+        flash("아이디는 영문 소문자·숫자로 3~30자, . _ - 만 쓸 수 있습니다.")
+        return redirect(url_for("admin.operators"))
+    if email and not EMAIL_RE.match(email):
         flash("이메일 형식이 올바르지 않습니다.")
         return redirect(url_for("admin.operators"))
-    if user_model.get_by_email(email):
+    if username and user_model.username_taken(username):
+        flash("이미 쓰고 있는 아이디입니다.")
+        return redirect(url_for("admin.operators"))
+    if email and user_model.get_by_email(email):
         flash("이미 쓰고 있는 이메일입니다. 기존 계정의 비밀번호를 재설정하세요.")
         return redirect(url_for("admin.operators"))
-    pw = _gen_password()
-    uid = user_model.create_admin(email, generate_password_hash(pw), nickname)
-    _log("admin_create", "user", uid, f"운영자 추가 {email}")
-    session["new_admin_pw"] = {"email": email, "pw": pw, "what": "발급"}
-    flash(f"운영자 계정을 만들었습니다: {email}")
+    pw, err = _read_password(request.form)
+    if err:
+        flash(err)
+        return redirect(url_for("admin.operators"))
+    uid = user_model.create_admin(email, username, generate_password_hash(pw), nickname)
+    _log("admin_create", "user", uid, f"운영자 추가 {username or email}")
+    session["new_admin_pw"] = {"email": username or email, "pw": pw, "what": "발급"}
+    flash(f"운영자 계정을 만들었습니다: {username or email}")
+    return redirect(url_for("admin.operators"))
+
+
+@bp.route("/operators/<int:user_id>/login-id", methods=["POST"])
+@admin_required
+def operators_login_id(user_id):
+    """로그인 아이디 지정·변경. 이메일 없이 만들어진 기존 계정을 살릴 때도 쓴다."""
+    u = user_model.get_by_id(user_id) or abort(404)
+    if u["role"] != "admin":
+        abort(400)
+    username = (request.form.get("username") or "").strip().lower()[:30]
+    if username and not USERNAME_RE.match(username):
+        flash("아이디는 영문 소문자·숫자로 3~30자, . _ - 만 쓸 수 있습니다.")
+    elif username and user_model.username_taken(username, exclude_id=user_id):
+        flash("이미 쓰고 있는 아이디입니다.")
+    else:
+        user_model.set_username(user_id, username)
+        _log("admin_login_id", "user", user_id, f"{u['nickname']} 아이디 → {username or '없음'}")
+        flash("아이디를 저장했습니다." if username else "아이디를 지웠습니다.")
     return redirect(url_for("admin.operators"))
 
 
@@ -904,10 +949,13 @@ def operators_passwd(user_id):
     u = user_model.get_by_id(user_id) or abort(404)
     if u["role"] != "admin":
         abort(400)
-    pw = _gen_password()
+    pw, err = _read_password(request.form)
+    if err:
+        flash(err)
+        return redirect(url_for("admin.operators"))
     user_model.set_password(user_id, generate_password_hash(pw))
-    _log("admin_passwd", "user", user_id, f"{u['email'] or u['nickname']} 비밀번호 재설정")
-    session["new_admin_pw"] = {"email": u["email"] or u["nickname"], "pw": pw, "what": "재설정"}
+    _log("admin_passwd", "user", user_id, f"{u['username'] or u['email'] or u['nickname']} 비밀번호 재설정")
+    session["new_admin_pw"] = {"email": u["username"] or u["email"] or u["nickname"], "pw": pw, "what": "재설정"}
     flash("비밀번호를 재설정했습니다.")
     return redirect(url_for("admin.operators"))
 

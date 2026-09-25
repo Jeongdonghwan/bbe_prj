@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS users (
   id              INT AUTO_INCREMENT PRIMARY KEY,
   kakao_id        VARCHAR(40) UNIQUE,
   email           VARCHAR(120) UNIQUE,
+
+  username       VARCHAR(30) NULL UNIQUE,
   password_hash   VARCHAR(255) NULL,
   nickname        VARCHAR(30) NOT NULL,
   phone           VARCHAR(20),

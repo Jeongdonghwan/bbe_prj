@@ -1,6 +1,7 @@
 """/auth — Kakao login, first-login profile modal, dev login, logout."""
 import re
 import secrets
+import time
 from functools import wraps
 
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -52,7 +53,8 @@ def admin_required(view):
 
 
 def needs_onboarding(user):
-    return bool(user) and not user.get("phone")
+    """최초 로그인 프로필 모달 — 운영자에게는 띄우지 않는다 (알림톡 수신 동의를 받을 대상이 아니다)."""
+    return bool(user) and user.get("role") != "admin" and not user.get("phone")
 
 
 def _login(user_id, next_url=None):
@@ -92,6 +94,30 @@ def login():
 
 
 # ---- admin sign-in (운영자 전용 화면) ----------------------------------------
+# 무차별 대입 차단. 같은 IP 에서 연속 실패가 쌓이면 잠근다 (프로세스 메모리 — 워커별로 따로
+# 세지지만 없는 것보다 낫다. 더 엄격히 하려면 nginx/fail2ban 을 앞에 둘 것).
+_ADMIN_FAILS = {}
+ADMIN_MAX_FAILS = 5
+ADMIN_LOCK_SEC = 300
+
+
+def _admin_login_blocked(ip):
+    n, until = _ADMIN_FAILS.get(ip, (0, 0))
+    left = int(until - time.time())
+    return left if n >= ADMIN_MAX_FAILS and left > 0 else 0
+
+
+def _admin_login_fail(ip):
+    n, _ = _ADMIN_FAILS.get(ip, (0, 0))
+    n += 1
+    _ADMIN_FAILS[ip] = (n, time.time() + ADMIN_LOCK_SEC if n >= ADMIN_MAX_FAILS else 0)
+
+
+def _admin_login_ok(ip):
+    _ADMIN_FAILS.pop(ip, None)
+
+
+
 @bp.route("/admin/login", methods=["GET", "POST"])
 def admin_login():
     """운영자 전용 로그인. 일반 회원 화면(/auth/login)과 분리해 두고, 여기서는 role=admin 만 통과."""
@@ -102,16 +128,22 @@ def admin_login():
     if g.get("user") and g.user["role"] == "admin":
         return redirect(next_url)
     if request.method == "POST":
-        email = (request.form.get("email") or "").strip().lower()
+        login = (request.form.get("email") or "").strip().lower()
         password = request.form.get("password") or ""
-        user = user_model.get_by_email(email) if email else None
+        ip = request.headers.get("X-Forwarded-For", request.remote_addr) or "-"
+        blocked = _admin_login_blocked(ip)
+        if blocked:
+            flash(f"로그인 시도가 너무 많습니다. {blocked}초 후 다시 시도해주세요.")
+            return redirect(url_for("auth.admin_login", next=next_url))
+        user = user_model.get_by_login(login) if login else None
         ok = bool(user and user["password_hash"] and check_password_hash(user["password_hash"], password))
         if not ok or user["role"] != "admin":
-            # 일반 회원 계정인지 비밀번호가 틀렸는지 구분해서 알려주지 않는다.
-            current_app.logger.warning("admin login failed: %s from %s", email[:40],
-                                       request.headers.get("X-Forwarded-For", request.remote_addr))
+            # 아이디가 없는지 비밀번호가 틀렸는지 구분해서 알려주지 않는다.
+            _admin_login_fail(ip)
+            current_app.logger.warning("admin login failed: %s from %s", login[:40], ip)
             flash("운영자 계정이 아니거나 비밀번호가 올바르지 않습니다.")
             return redirect(url_for("auth.admin_login", next=next_url))
+        _admin_login_ok(ip)
         if user["status"] != "active":
             flash("이용이 제한된 계정입니다.")
             return redirect(url_for("auth.admin_login"))

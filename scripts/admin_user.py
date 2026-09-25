@@ -1,9 +1,10 @@
 """운영자 계정 발급·비밀번호 재설정.
 
     python scripts/admin_user.py list
-    python scripts/admin_user.py create ops@bbene.co.kr            # 비밀번호 자동 생성
-    python scripts/admin_user.py create ops@bbene.co.kr --nickname 운영팀
-    python scripts/admin_user.py passwd ops@bbene.co.kr            # 재설정
+    python scripts/admin_user.py create admin                      # 아이디로 (비밀번호 자동)
+    python scripts/admin_user.py create ops@bbene.co.kr             # 이메일로
+    python scripts/admin_user.py create admin --password 1234       # 비밀번호 직접
+    python scripts/admin_user.py passwd admin                       # 재설정
     python scripts/admin_user.py revoke ops@bbene.co.kr            # 운영 권한 회수(일반 회원으로)
 
 비밀번호는 화면에 한 번만 보여주고 저장하지 않는다. 직접 정하려면 --password 로 주되,
@@ -32,37 +33,39 @@ def gen_password(n=16):
 
 
 def cmd_list():
-    rows = query("SELECT id, email, nickname, status, (password_hash IS NOT NULL) AS pw FROM users WHERE role='admin' ORDER BY id")
+    rows = query("SELECT id, email, username, nickname, status, (password_hash IS NOT NULL) AS pw FROM users WHERE role='admin' ORDER BY id")
     if not rows:
         print("운영자 계정이 없습니다. create 로 만드세요.")
         return 1
-    print(f"{'id':>4}  {'이메일':<30} {'이름':<12} {'상태':<8} 비밀번호")
+    print(f"{'id':>4}  {'아이디':<16} {'이메일':<26} {'이름':<10} {'상태':<8} 비밀번호")
     for r in rows:
-        print(f"{r['id']:>4}  {(r['email'] or '-'):<30} {(r['nickname'] or '-'):<12} {r['status']:<8} "
-              f"{'설정됨' if r['pw'] else '없음 (로그인 불가)'}")
+        print(f"{r['id']:>4}  {(r['username'] or '-'):<16} {(r['email'] or '-'):<26} {(r['nickname'] or '-'):<10} "
+              f"{r['status']:<8} {'설정됨' if r['pw'] else '없음 (로그인 불가)'}")
     return 0
 
 
-def cmd_create(email, nickname, password):
-    if query_one("SELECT id FROM users WHERE email = %s", [email]):
-        print(f"이미 있는 이메일입니다: {email}\n비밀번호를 바꾸려면 passwd 를 쓰세요.")
+def cmd_create(login, nickname, password):
+    """login 에 @ 가 있으면 이메일, 없으면 로그인 아이디로 만든다."""
+    if query_one("SELECT id FROM users WHERE email = %s OR username = %s", [login, login]):
+        print(f"이미 쓰고 있는 아이디/이메일입니다: {login}\n비밀번호를 바꾸려면 passwd 를 쓰세요.")
         return 1
+    email, username = (login, None) if "@" in login else (None, login)
     shown = password or gen_password()
     uid = execute(
-        """INSERT INTO users (email, password_hash, nickname, role, status, notify_event)
-           VALUES (%s,%s,%s,'admin','active',0)""",
-        [email, generate_password_hash(shown), nickname])
+        """INSERT INTO users (email, username, password_hash, nickname, role, status, notify_event)
+           VALUES (%s,%s,%s,%s,'admin','active',0)""",
+        [email, username, generate_password_hash(shown), nickname])
     print(f"운영자 계정을 만들었습니다 (id {uid})")
-    print(f"  이메일   {email}")
+    print(f"  아이디   {login}")
     print(f"  비밀번호 {shown}")
     print("\n로그인: /auth/admin/login  — 이 비밀번호는 다시 볼 수 없습니다.")
     return 0
 
 
 def cmd_passwd(email, password):
-    u = query_one("SELECT id, role FROM users WHERE email = %s", [email])
+    u = query_one("SELECT id, role FROM users WHERE email = %s OR username = %s", [email, email])
     if not u:
-        print(f"없는 이메일입니다: {email}")
+        print(f"없는 아이디/이메일입니다: {email}")
         return 1
     shown = password or gen_password()
     execute("UPDATE users SET password_hash = %s WHERE id = %s", [generate_password_hash(shown), u["id"]])
@@ -75,7 +78,7 @@ def cmd_passwd(email, password):
 
 
 def cmd_revoke(email):
-    u = query_one("SELECT id, role FROM users WHERE email = %s", [email])
+    u = query_one("SELECT id, role FROM users WHERE email = %s OR username = %s", [email, email])
     if not u or u["role"] != "admin":
         print(f"운영자 계정이 아닙니다: {email}")
         return 1
@@ -92,7 +95,7 @@ def main():
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("list", help="운영자 계정 목록")
     c = sub.add_parser("create", help="운영자 계정 발급")
-    c.add_argument("email")
+    c.add_argument("email", metavar="아이디|이메일")
     c.add_argument("--nickname", default="운영팀")
     c.add_argument("--password", help="직접 지정 (비우면 자동 생성)")
     p = sub.add_parser("passwd", help="비밀번호 재설정")

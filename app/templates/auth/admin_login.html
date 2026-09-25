@@ -33,7 +33,7 @@
     {% endif %}{% endwith %}
 
     <form method="post" action="/auth/admin/login?next={{ next_url | urlencode }}">
-      <div class="f"><label>이메일</label><input class="in" type="email" name="email" required autocomplete="username" autofocus></div>
+      <div class="f"><label>아이디 또는 이메일</label><input class="in" name="email" required autocomplete="username" autofocus></div>
       <div class="f"><label>비밀번호</label><input class="in" type="password" name="password" required autocomplete="current-password"></div>
       <button class="btn pri lg" type="submit" style="width:100%">로그인</button>
     </form>
