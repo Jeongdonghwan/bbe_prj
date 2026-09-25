@@ -148,6 +148,8 @@ def _apply_action(c, action, reason=""):
         elif action == "stop":
             c = campaign_service.stop(c, g.user["id"], "운영팀 중단")
             _log("order_stop", "campaign", c["id"], f"{c['order_no']} 중단 · {c['refund_amount']:,}원 환불")
+        elif action == "delete":
+            return False, "삭제는 행마다 확인이 필요합니다."
         elif action == "done":
             c = campaign_service.transition(c, "done", g.user["id"], f"구동 완료 · 누적 {campaign_model.total_done_qty(c['id']):,}건")
             _log("order_done", "campaign", c["id"], f"{c['order_no']} 완료")
@@ -196,6 +198,26 @@ def order_rank(campaign_id):
         flash("순위/수량을 숫자로 입력해주세요.")
     except campaign_service.CampaignError as e:
         flash(str(e))
+    return _back(url_for("admin.orders"))
+
+
+@bp.route("/orders/<int:campaign_id>/delete", methods=["POST"])
+@admin_required
+def order_delete(campaign_id):
+    """주문 완전 삭제. 아직 안 돌려준 크레딧이 있으면 먼저 환불하고 지운다."""
+    from ..services import credit_service
+    c = campaign_model.get(campaign_id) or abort(404)
+    outstanding = (c["paid_amount"] or 0) - (c["refund_amount"] or 0)
+    refunded = 0
+    # 구동이 끝난 건(done/stopped)은 이미 정산된 매출이라 돌려주지 않는다.
+    if c["status"] in ("review", "approved", "running") and c["pay_method"] == "credit" and outstanding > 0:
+        credit_service.refund(c["user_id"], outstanding, campaign_id, f"주문 삭제 · {c['order_no']}")
+        refunded = outstanding
+    campaign_model.purge(campaign_id)
+    _log("order_delete", "campaign", campaign_id,
+         f"{c['order_no']} 삭제 ({STATUS_LABEL.get(c['status'], c['status'])})"
+         + (f" · {refunded:,}원 환불" if refunded else ""))
+    flash(f"{c['order_no']} 주문을 삭제했습니다." + (f" 잔여 {refunded:,}원을 환불했습니다." if refunded else ""))
     return _back(url_for("admin.orders"))
 
 
@@ -1000,6 +1022,24 @@ def user_drawer(user_id):
     return render_template("admin/_user_drawer.html", u=u, campaigns=campaign_model.list_by_user(user_id, 20),
                            posts=post_model.list_by_user(user_id, 20), paid_total=campaign_model.total_paid(user_id),
                            status_label=STATUS_LABEL, status_class=STATUS_CLASS, channel_label=CHANNEL_LABEL)
+
+
+@bp.route("/users/<int:user_id>/delete", methods=["POST"])
+@admin_required
+def user_delete(user_id):
+    """빈 계정만 삭제한다. 캠페인·크레딧·글이 있으면 기록이 깨지므로 정지를 쓰게 한다."""
+    u = user_model.get_by_id(user_id) or abort(404)
+    if u["role"] == "admin":
+        flash("운영자 계정은 운영자 관리에서 권한을 회수한 뒤 삭제하세요.")
+        return _back(url_for("admin.users"))
+    blockers = user_model.deletable_blockers(user_id)
+    if blockers:
+        flash(f"{u['nickname']}은(는) {', '.join(blockers)}이 있어 삭제할 수 없습니다. 정지를 이용하세요.")
+        return _back(url_for("admin.users"))
+    user_model.purge(user_id)
+    _log("user_delete", "user", user_id, f"{u['nickname']} 회원 삭제")
+    flash(f"{u['nickname']} 회원을 삭제했습니다.")
+    return _back(url_for("admin.users"))
 
 
 @bp.route("/users/<int:user_id>/status", methods=["POST"])

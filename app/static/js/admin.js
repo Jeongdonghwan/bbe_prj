@@ -30,6 +30,24 @@
       var f = $('actForm'); f.action = '/admin/orders/' + b.dataset.id + '/action'; $('actName').value = b.dataset.act; f.submit();
     });
   });
+  // ---- 행 삭제. 아직 안 돌려준 크레딧이 있으면 금액까지 알려주고 묻는다.
+  document.querySelectorAll('[data-del]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var refund = +(b.dataset.refund || 0);
+      var msg = b.dataset.order + ' 주문을 삭제할까요? 되돌릴 수 없습니다.';
+      if (refund > 0) { msg += ' 남은 ' + refund.toLocaleString() + '원은 회원 크레딧으로 환불됩니다.'; }
+      if (!confirm(msg)) { return; }
+      var f = document.createElement('form');
+      f.method = 'post';
+      f.action = b.dataset.del;
+      var back = document.createElement('input');
+      back.type = 'hidden'; back.name = 'back'; back.value = location.pathname + location.search;
+      f.appendChild(back);
+      document.body.appendChild(f);
+      f.submit();
+    });
+  });
+
   // status select -> submit (reject asks reason)
   document.querySelectorAll('.statusForm select').forEach(function (s) {
     s.addEventListener('change', function () {

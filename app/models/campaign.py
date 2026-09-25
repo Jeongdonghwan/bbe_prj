@@ -372,3 +372,10 @@ def tracked_without_today_rank(limit=200):
              AND NOT EXISTS (SELECT 1 FROM campaign_daily d
                              WHERE d.campaign_id = c.id AND d.date = CURDATE() AND d.`rank` IS NOT NULL)
            ORDER BY c.id LIMIT %s""", [limit])]
+
+
+def purge(campaign_id):
+    """캠페인과 딸린 기록을 완전히 지운다 (어드민 삭제). 크레딧 원장은 회계 기록이라 남긴다."""
+    for t in ("campaign_daily", "status_log", "payments", "reviews"):
+        execute(f"DELETE FROM {t} WHERE campaign_id = %s", [campaign_id])
+    execute("DELETE FROM campaigns WHERE id = %s", [campaign_id])

@@ -132,3 +132,34 @@ def set_role(user_id, role):
     if role not in ("user", "admin"):
         raise ValueError(role)
     execute("UPDATE users SET role = %s WHERE id = %s", [role, user_id])
+
+
+def deletable_blockers(user_id):
+    """회원 삭제를 막는 사유 목록. 비어 있으면 지워도 안전하다."""
+    out = []
+    n = query_one("SELECT COUNT(*) AS n FROM campaigns WHERE user_id = %s", [user_id])["n"]
+    if n:
+        out.append(f"캠페인 {n}건")
+    n = query_one("SELECT COUNT(*) AS n FROM credit_ledger WHERE user_id = %s", [user_id])["n"]
+    if n:
+        out.append(f"크레딧 내역 {n}건")
+    n = query_one("SELECT COUNT(*) AS n FROM posts WHERE user_id = %s", [user_id])["n"]
+    if n:
+        out.append(f"게시글 {n}건")
+    bal = query_one("SELECT credit_balance FROM users WHERE id = %s", [user_id])
+    if bal and bal["credit_balance"]:
+        out.append(f"잔여 크레딧 {bal['credit_balance']:,}원")
+    return out
+
+
+def purge(user_id):
+    """딸린 흔적까지 지운다. deletable_blockers 가 빈 경우에만 부를 것."""
+    for sql in ("DELETE FROM comments WHERE user_id = %s",
+                "DELETE FROM post_likes WHERE user_id = %s",
+                "DELETE FROM reports WHERE user_id = %s",
+                "DELETE FROM notifications WHERE user_id = %s",
+                "DELETE FROM store_slots WHERE user_id = %s",
+                "DELETE FROM charge_requests WHERE user_id = %s",
+                "DELETE FROM series_reads WHERE user_id = %s",
+                "DELETE FROM users WHERE id = %s"):
+        execute(sql, [user_id])

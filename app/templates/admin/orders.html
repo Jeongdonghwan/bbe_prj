@@ -15,11 +15,11 @@
     <select class="in" name="period" onchange="this.form.submit()"><option value="">전체 기간</option><option value="today"{% if period == 'today' %} selected{% endif %}>오늘 접수</option><option value="week"{% if period == 'week' %} selected{% endif %}>이번 주</option><option value="month"{% if period == 'month' %} selected{% endif %}>이번 달</option></select>
     <div class="search"><i data-lucide="search" class="i"></i><input class="in" name="q" value="{{ q or '' }}" placeholder="주문번호 · 회원 · 업체명"></div></form>
   <form method="post" action="/admin/orders/bulk" id="bulkForm"><input type="hidden" name="back" value="{{ request.full_path }}">
-  <div class="bulk" id="bulkBar" style="display:none"><span class="chk on"><i></i></span><span id="bulkCount">0</span>건 선택됨 <button class="btn pri sm" style="margin-left:auto" name="action" value="approve" type="submit">선택 승인</button><button class="btn sec sm" type="button" id="bulkReject">선택 반려</button><button class="btn sec sm" type="submit" formaction="/admin/orders/export?{{ request.query_string.decode() }}" formmethod="post" formtarget="_blank">선택 엑셀</button></div>
+  <div class="bulk" id="bulkBar" style="display:none"><span class="chk on"><i></i></span><span id="bulkCount">0</span>건 선택됨 <button class="btn pri sm" style="margin-left:auto" name="action" value="approve" type="submit">선택 승인</button><button class="btn sec sm" type="button" id="bulkReject">선택 반려</button><button class="btn sec sm" type="submit" formaction="/admin/orders/export?{{ request.query_string.decode() }}" formmethod="post" formtarget="_blank">선택 엑셀 내보내기</button></div>
   <div style="overflow-x:auto;margin:0 -18px"><table><thead><tr><th><input type="checkbox" id="chkAll"></th><th>주문</th><th>회원</th><th>채널</th><th>업체 · 키워드</th><th>매체</th><th>기간 · 수량</th><th>링크</th><th>상태</th><th>순위</th><th></th></tr></thead><tbody>
     {% for r in rows %}
     <tr{% if r.warn.block %} style="background:var(--danger-soft)"{% endif %}>
-      <td>{% if r.status in ('review','approved') %}<input type="checkbox" name="ids" value="{{ r.id }}" class="rowchk">{% endif %}</td>
+      <td><input type="checkbox" name="ids" value="{{ r.id }}" class="rowchk"></td>
       <td class="ord">{{ r.order_no }}<br><span class="mut" style="font-size:11px">{{ pay_method_label[r.pay_method] }} {{ r.paid_amount | fmt_num }}</span></td>
       <td>{{ r.nickname }}</td>
       <td><span class="pill p-{{ r.channel }}">{{ channel_label[r.channel] }}</span></td>
@@ -35,6 +35,7 @@
         {% elif r.status == 'running' %}<button type="button" data-act="done" data-id="{{ r.id }}">완료</button><button type="button" style="color:var(--warn)" data-act="stop" data-id="{{ r.id }}" data-confirm="중단하면 잔여일분이 환불됩니다. 중단할까요?">중단</button>
         {% elif r.status == 'pay_wait' and r.pay_method == 'bank' %}<button type="button" style="color:var(--success)" data-act="paid" data-id="{{ r.id }}">입금 확인</button>{% endif %}
         <button type="button" data-memo="{{ r.id }}" data-order="{{ r.order_no }}" data-text="{{ r.admin_memo or '' }}">메모</button>
+        <button type="button" style="color:var(--danger)" data-del="/admin/orders/{{ r.id }}/delete" data-order="{{ r.order_no }}" data-refund="{% if r.status in ('review','approved','running') and r.pay_method == 'credit' %}{{ (r.paid_amount or 0) - (r.refund_amount or 0) }}{% else %}0{% endif %}">삭제</button>
       </div></td>
     </tr>
     {% else %}<tr><td colspan="11"><div class="empty">조건에 맞는 주문이 없습니다.</div></td></tr>{% endfor %}
