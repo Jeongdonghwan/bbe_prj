@@ -75,11 +75,28 @@ def suspend(user_id):
 
 
 # ---- admin ---------------------------------------------------------------
+def login_id(email=None, username=None, kakao_id=None, user_id=None):
+    """회원의 로그인 아이디 한 줄 표기 — 화면과 엑셀이 같은 문자열을 쓰도록 여기서만 만든다.
+
+    운영자는 username, 이메일 가입은 email, 카카오 가입은 kakao:<id>. 아무것도 없으면 #번호.
+    """
+    if username:
+        return username
+    if email:
+        return email
+    if kakao_id:
+        return f"kakao:{kakao_id}"
+    return f"#{user_id}" if user_id else "-"
+
+
 def list_admin(q=None, status=None, page=1, per_page=20):
     from ..db import query, query_one  # local import keeps top clean
     where, params = ["1=1"], []
     if q:
-        where.append("(nickname LIKE %s OR phone LIKE %s OR biz_name LIKE %s)"); params += [f"%{q}%"] * 3
+        # 아이디로도 찾을 수 있어야 한다 — 어드민이 보는 값이 곧 검색어다.
+        where.append("(nickname LIKE %s OR phone LIKE %s OR biz_name LIKE %s "
+                     "OR email LIKE %s OR username LIKE %s OR kakao_id LIKE %s)")
+        params += [f"%{q}%"] * 6
     if status:
         where.append("status = %s"); params.append(status)
     w = " AND ".join(where)
@@ -88,6 +105,10 @@ def list_admin(q=None, status=None, page=1, per_page=20):
                    (SELECT COALESCE(SUM(paid_amount - refund_amount), 0) FROM campaigns c WHERE c.user_id = u.id AND paid_at IS NOT NULL) AS paid_total
             FROM users u WHERE {w} ORDER BY u.created_at DESC, u.id DESC LIMIT %s OFFSET %s""",
         params + [per_page, (page - 1) * per_page])
+    for r in rows:
+        r["login_id"] = login_id(r.get("email"), r.get("username"), r.get("kakao_id"), r["id"])
+        r["signup_via"] = ("운영자 아이디" if r.get("username") else "이메일 가입" if r.get("email")
+                           else "카카오 가입" if r.get("kakao_id") else "경로 미확인")
     total = query_one(f"SELECT COUNT(*) AS n FROM users WHERE {w}", params)["n"]
     return rows, total
 

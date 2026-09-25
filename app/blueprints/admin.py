@@ -1032,6 +1032,9 @@ def user_grade(user_id):
 @admin_required
 def user_drawer(user_id):
     u = user_model.get_by_id(user_id) or abort(404)
+    u["login_id"] = user_model.login_id(u.get("email"), u.get("username"), u.get("kakao_id"), u["id"])
+    u["signup_via"] = ("운영자 아이디" if u.get("username") else "이메일 가입" if u.get("email")
+                       else "카카오 가입" if u.get("kakao_id") else "가입")
     from ..models import post as post_model
     return render_template("admin/_user_drawer.html", u=u, campaigns=campaign_model.list_by_user(user_id, 20),
                            posts=post_model.list_by_user(user_id, 20), paid_total=campaign_model.total_paid(user_id),

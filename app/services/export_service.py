@@ -81,12 +81,9 @@ def ids_of(c):
 
 
 def login_id(c):
-    """회원의 로그인 아이디 — 이메일 가입은 이메일, 카카오 가입은 kakao:<id>."""
-    if c.get("user_email"):
-        return c["user_email"]
-    if c.get("user_kakao"):
-        return f"kakao:{c['user_kakao']}"
-    return f"#{c['user_id']}"
+    """캠페인 행의 회원 로그인 아이디 — 표기 규칙은 models/user.login_id 한 곳에서."""
+    from ..models.user import login_id as fmt
+    return fmt(email=c.get("user_email"), kakao_id=c.get("user_kakao"), user_id=c.get("user_id"))
 
 
 def _week_start(d):
