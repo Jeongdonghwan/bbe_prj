@@ -50,6 +50,12 @@ tail -f preview.log                  # 로그 보기
 pkill -f scripts/serve_preview.py    # 중지
 bash scripts/deploy.sh               # 시작/재시작 (크론도 함께 등록)
 
+# 운영자 계정 (최초 1회 필수 — 없으면 /admin 에 아무도 못 들어간다)
+python scripts/admin_user.py create ops@회사도메인    # 비밀번호 자동 생성, 한 번만 표시됨
+python scripts/admin_user.py list                      # 계정·비밀번호 설정 여부 확인
+python scripts/admin_user.py passwd ops@회사도메인    # 비밀번호 재설정
+# 로그인: http://<서버>:8034/auth/admin/login  (회원 로그인과 분리된 화면)
+
 # 주기 작업 (deploy.sh 가 crontab 에 자동 등록. 수동 실행도 가능)
 python scripts/cron.py daily         # 미입금 만료·매체 효율·슬롯 갱신·의뢰 마감
 python scripts/cron.py hourly        # 순위 추적 보정 (등록 누락분 + 콜백 유실분)

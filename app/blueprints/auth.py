@@ -43,8 +43,10 @@ def login_required(view):
 def admin_required(view):
     @wraps(view)
     def wrapped(*a, **kw):
-        if not g.get("user") or g.user["role"] != "admin":
-            abort(403)
+        if not g.get("user"):
+            return redirect(url_for("auth.admin_login", next=request.full_path.rstrip("?")))
+        if g.user["role"] != "admin":
+            abort(403)               # 로그인은 했는데 권한이 없는 경우만 403
         return view(*a, **kw)
     return wrapped
 
@@ -86,6 +88,34 @@ def login():
                            kakao_url=url_for("auth.kakao", next=next_url or None),
                            dev_mode=current_app.debug and current_app.config["DEV_LOGIN"],
                            no_key=not key, next_url=next_url)
+
+
+# ---- admin sign-in (운영자 전용 화면) ----------------------------------------
+@bp.route("/admin/login", methods=["GET", "POST"])
+def admin_login():
+    """운영자 전용 로그인. 일반 회원 화면(/auth/login)과 분리해 두고, 여기서는 role=admin 만 통과."""
+    # next 는 항상 우리 어드민 경로로 강제한다 (외부 주소로 튕기는 오픈 리다이렉트 방지).
+    next_url = request.values.get("next") or ""
+    if not next_url.startswith("/admin") or next_url.startswith("//"):
+        next_url = "/admin"
+    if g.get("user") and g.user["role"] == "admin":
+        return redirect(next_url)
+    if request.method == "POST":
+        email = (request.form.get("email") or "").strip().lower()
+        password = request.form.get("password") or ""
+        user = user_model.get_by_email(email) if email else None
+        ok = bool(user and user["password_hash"] and check_password_hash(user["password_hash"], password))
+        if not ok or user["role"] != "admin":
+            # 일반 회원 계정인지 비밀번호가 틀렸는지 구분해서 알려주지 않는다.
+            current_app.logger.warning("admin login failed: %s from %s", email[:40],
+                                       request.headers.get("X-Forwarded-For", request.remote_addr))
+            flash("운영자 계정이 아니거나 비밀번호가 올바르지 않습니다.")
+            return redirect(url_for("auth.admin_login", next=next_url))
+        if user["status"] != "active":
+            flash("이용이 제한된 계정입니다.")
+            return redirect(url_for("auth.admin_login"))
+        return _login(user["id"], next_url)
+    return render_template("auth/admin_login.html", next_url=next_url)
 
 
 # ---- local (email) signup ---------------------------------------------------

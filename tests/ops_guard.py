@@ -51,7 +51,11 @@ def main():
     for u in ["/", "/notice", "/popular", "/community/info", "/terms", "/privacy", "/auth/login"]:
         check(anon.get(u).status_code == 200, f"공개 {u}")
 
-    print("\n=== 4. 일반 회원의 어드민 접근 ===")
+    print("\n=== 4. 어드민 진입 ===")
+    for u in ["/admin", "/admin/orders", "/admin/credits"]:
+        r = anon.get(u)
+        check(r.status_code == 302 and "/auth/admin/login" in r.headers.get("Location", ""),
+              f"비로그인 → {u} 운영자 로그인으로", r.headers.get("Location"))
     for u in ["/admin", "/admin/orders", "/admin/credits", "/admin/media", "/admin/users"]:
         r = member.get(u)
         check(r.status_code == 403, f"회원 → {u} 403", r.status_code)
@@ -72,7 +76,15 @@ def main():
     r = anon.post("/api/rank/callback", json={"trackId": 1, "date": "2026-09-24", "rank": 3})
     check(r.status_code == 401, "토큰 없는 콜백 401", r.status_code)
 
-    print("\n=== 7. 개발용 우회 로그인 (운영에서 꺼져 있어야) ===")
+    print("\n=== 7. 운영자 로그인 화면 ===")
+    h = anon.get("/auth/admin/login").get_data(as_text=True)
+    check("운영자" in h and 'name="password"' in h, "운영자 로그인 화면 공개")
+    check("카카오" not in h and "회원가입" not in h, "회원 가입 유도 없음")
+    for bad in ("https://evil.example.com", "//evil.example.com", "/my"):
+        r = anon.get("/auth/admin/login?next=" + bad)
+        check(r.status_code == 200 and bad not in r.get_data(as_text=True), f"next={bad} 반영 안 됨")
+
+    print("\n=== 8. 개발용 우회 로그인 (운영에서 꺼져 있어야) ===")
     r = anon.get("/auth/dev-login?as=admin")
     check(r.status_code == 404, "dev-login 404 (DEBUG·DEV_LOGIN 둘 다 꺼짐)", r.status_code)
 

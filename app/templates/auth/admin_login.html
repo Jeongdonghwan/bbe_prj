@@ -1,0 +1,47 @@
+{# 운영자 로그인은 앱 셸(사이드바·회원가입 CTA)을 쓰지 않는 단독 화면이다. #}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>운영자 로그인 — {{ APP_NAME }}</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+<style>
+  body{background:#0B1220;min-height:100vh;display:grid;place-items:center;padding:24px}
+  .alogin{width:min(380px,100%)}
+  .alogin .card{padding:34px 30px 26px}
+  .alogin .brand{display:flex;align-items:center;justify-content:center;gap:9px;padding-bottom:6px}
+  .alogin .brand b{font-family:'Baloo 2',sans-serif;font-size:24px;font-weight:800;color:var(--text);letter-spacing:.04em;line-height:1}
+  .alogin .tag{font-size:11px;font-weight:700;color:#F59E0B;border:1px solid #F59E0B;border-radius:4px;padding:1px 6px}
+  .alogin .msg{background:var(--danger-soft);color:var(--danger);border-radius:8px;padding:9px 12px;font-size:12.5px;margin-bottom:14px}
+  .alogin .foot{font-size:11.5px;color:rgba(255,255,255,.5);text-align:center;margin-top:14px;line-height:1.7}
+  .alogin .foot a{color:rgba(255,255,255,.75)}
+</style>
+</head>
+<body>
+<div class="alogin">
+  <div class="card">
+    <div class="brand"><b>BBene</b><span class="tag">운영자</span></div>
+    <p class="thin" style="text-align:center;margin-bottom:20px">운영자 계정으로만 들어올 수 있습니다.</p>
+
+    {% with msgs = get_flashed_messages() %}{% if msgs %}
+    <div class="msg">{{ msgs[0] }}</div>
+    {% endif %}{% endwith %}
+
+    <form method="post" action="/auth/admin/login?next={{ next_url | urlencode }}">
+      <div class="f"><label>이메일</label><input class="in" type="email" name="email" required autocomplete="username" autofocus></div>
+      <div class="f"><label>비밀번호</label><input class="in" type="password" name="password" required autocomplete="current-password"></div>
+      <button class="btn pri lg" type="submit" style="width:100%">로그인</button>
+    </form>
+  </div>
+  <p class="foot">
+    계정 발급·비밀번호 재설정은 서버에서 <code>python scripts/admin_user.py</code><br>
+    일반 회원이신가요? <a href="/auth/login">회원 로그인</a>
+  </p>
+</div>
+</body>
+</html>
