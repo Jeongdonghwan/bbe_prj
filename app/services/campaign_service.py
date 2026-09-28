@@ -178,6 +178,11 @@ def spawn_track(campaign):
         return None
     r = rank_client.register_slot(campaign.get("main_keyword"), campaign.get("target_url"), platform)
     if not r.get("ok"):
+        # 조용히 실패하면 순위가 왜 안 뜨는지 알 길이 없다. 사유를 남긴다.
+        from flask import current_app
+        current_app.logger.warning(
+            "spawn_track 실패 %s %s '%s' %s — %s", campaign.get("order_no"), platform,
+            campaign.get("main_keyword"), campaign.get("target_url"), r.get("message") or "응답 없음")
         return None
     fields = {"track_id": r["trackId"], "track_status": r.get("status") or "queued"}
     campaign_model.update(campaign["id"], fields)

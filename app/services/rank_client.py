@@ -77,13 +77,17 @@ def register_slot(keyword, url, platform="shop"):
     """
     keyword = " ".join((keyword or "").split())[:100]
     url = (url or "").strip()
-    if not configured() or not keyword or not url or platform not in TRACK_PLATFORM.values():
-        return {"ok": False}
+    if not configured():
+        return {"ok": False, "message": "순위 서버 미설정 (RANK_SERVER_URL / RANK_API_TOKEN)"}
+    if not keyword or not url:
+        return {"ok": False, "message": "키워드 또는 주소가 비어 있음"}
+    if platform not in TRACK_PLATFORM.values():
+        return {"ok": False, "message": f"지원하지 않는 채널 (platform={platform})"}
     body = _call("POST", "/partner/slots", body={"keyword": keyword, "url": url, "platform": platform})
     if not isinstance(body, dict) or not body.get("ok") or not body.get("trackId"):
         if isinstance(body, dict) and body.get("message"):
             current_app.logger.info("rank_client register_slot rejected: %s", body["message"])
-        return {"ok": False, "message": (body or {}).get("message")}
+        return {"ok": False, "message": (body or {}).get("message") or "순위 서버에 닿지 못함 (타임아웃·연결 거부)"}
     return body
 
 

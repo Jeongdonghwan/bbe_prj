@@ -23,8 +23,17 @@ with app.app_context():
         print(f"   등록 {c['created_at']:%m-%d %H:%M} / 구동 {c['start_date']}~{c['end_date']}")
         print(f"   2) track_id = {c['track_id']}  track_status = {c['track_status']}")
         if not c["track_id"]:
-            print("   → 추적이 안 걸렸다. spawn_track 실패. 아래를 실행:")
-            print("      ./.venv/bin/python scripts/cron.py sync_ranks")
+            plat = rank_client.TRACK_PLATFORM.get(c["channel"])
+            if not plat:
+                print(f"   → {c['channel']} 은 순위 서버에 수집기가 없어 추적하지 않는다 (정상).")
+                continue
+            print(f"   → 추적이 안 걸렸다. 지금 다시 등록해 본다 (platform={plat}):")
+            r = rank_client.register_slot(c["main_keyword"], c["target_url"], plat)
+            print("      순위 서버 응답:", r)
+            if r.get("ok"):
+                print("      → 성공. 이제 걸렸다:", cs.spawn_track(c))
+            else:
+                print("      → 거부됨. 위 message 가 이유다.")
             continue
         print(f"   3) 기록 구간 = {cs.rank_window(c)}  (이 안의 날짜만 기록된다)")
         daily = query("SELECT date, `rank`, done_qty FROM campaign_daily WHERE campaign_id=%s ORDER BY date DESC LIMIT 5", [c["id"]])
