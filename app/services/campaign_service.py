@@ -317,6 +317,36 @@ def backfill_nv_mid(limit=100):
     return filled
 
 
+def refresh_ranks_async(campaigns, limit=5):
+    """목록을 열었을 때 순위가 비어 있는 건을 뒤에서 당겨온다.
+
+    콜백이 늦거나 막혀도 사용자가 화면을 보는 것만으로 다음 새로고침에는 순위가 차 있다.
+    응답을 막지 않으려고 스레드로 돌리고, backfill_ranks 의 5분 스로틀이 걸려 있어
+    새로고침을 연타해도 순위 서버를 계속 때리지 않는다.
+    """
+    from flask import current_app, has_request_context
+    if not has_request_context():
+        return
+    targets = [c["id"] for c in campaigns
+               if c.get("track_id") and not c.get("rank_now")
+               and c.get("status") in PENDING_STATUSES][:limit]
+    if not targets:
+        return
+    app = current_app._get_current_object()
+
+    def run():
+        with app.app_context():
+            for cid in targets:
+                try:
+                    c = campaign_model.get(cid)
+                    if c:
+                        backfill_ranks(c)
+                except Exception:
+                    app.logger.exception("순위 보정 실패 campaign=%s", cid)
+
+    threading.Thread(target=run, name="rank-refresh", daemon=True).start()
+
+
 def spawn_track_async(campaign_id):
     """추적 등록을 요청 밖으로 뺀다 — 사용자를 순위 서버 응답까지 기다리게 하지 않는다.
 

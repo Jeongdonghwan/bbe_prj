@@ -28,19 +28,31 @@ fi
 
 python scripts/migrate.py
 
-# cron: 주기 작업 등록 (매일 04:10 / 매시 정각). 이미 있으면 건드리지 않는다.
+# cron: 주기 작업 등록. 줄 단위로 확인해서 없는 것만 더한다 — 예전에는 bbe-cron 이 하나라도
+# 있으면 통째로 건너뛰어서, 나중에 추가한 작업이 기존 서버에 영영 안 들어갔다.
 if command -v crontab >/dev/null 2>&1; then
   ROOT="$(pwd)"
   PY="$ROOT/.venv/bin/python"
   [ -x "$PY" ] || PY="$(command -v python3 || command -v python)"
   CUR="$(crontab -l 2>/dev/null || true)"
-  if ! printf '%s' "$CUR" | grep -q "bbe-cron"; then
-    { printf '%s
-' "$CUR"
-      echo "10 4 * * * cd $ROOT && $PY scripts/cron.py daily  >> $ROOT/cron.log 2>&1  # bbe-cron"
-      echo "0  * * * * cd $ROOT && $PY scripts/cron.py hourly >> $ROOT/cron.log 2>&1  # bbe-cron"
-    } | crontab -
-    echo "[deploy] cron 등록됨 (daily 04:10 / hourly). 해제: crontab -e 에서 bbe-cron 줄 삭제"
+  NEW="$CUR"
+  add_cron() {   # $1=스케줄  $2=작업명
+    case "$NEW" in
+      *"cron.py $2 "*) return 0 ;;
+    esac
+    NEW="$NEW
+$1 cd $ROOT && $PY scripts/cron.py $2 >> $ROOT/cron.log 2>&1  # bbe-cron"
+    echo "[deploy] cron 추가: $2 ($1)"
+  }
+  add_cron "10 4 * * *"  daily
+  add_cron "0  * * * *"  hourly
+  # 순위·이름 보정은 5분마다. 순위 서버 콜백이 막히거나 늦어도 화면이 오래 비지 않게 한다
+  # (호출은 추적 중인데 오늘 순위가 없는 건에만 나가므로 평소엔 거의 0건이다).
+  add_cron "*/5 * * * *" sync_ranks
+  if [ "$NEW" != "$CUR" ]; then
+    printf '%s
+' "$NEW" | sed '/^$/d' | crontab -
+    echo "[deploy] cron 갱신됨. 해제: crontab -e 에서 bbe-cron 줄 삭제"
   fi
 fi
 

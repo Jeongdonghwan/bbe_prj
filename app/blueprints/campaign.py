@@ -337,6 +337,8 @@ def manage(channel):
     total = campaign_model.count_user(uid, channel, status, period, media_id, q)
     for r in rows:
         r["prog"] = campaign_service.progress(r)
+    # 순위가 아직 빈 건은 뒤에서 당겨온다 (콜백이 늦어도 화면이 오래 비어 있지 않게).
+    campaign_service.refresh_ranks_async(rows)
     counts = campaign_model.status_counts(uid, channel)
     running = counts.get("running", 0)
     avg_up, done_n = campaign_model.avg_rank_change(uid, channel)
