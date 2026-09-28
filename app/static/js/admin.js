@@ -133,5 +133,26 @@
     form.addEventListener('submit', function () { if (html.style.display !== 'none') area.innerHTML = html.value; $('bodyField').value = area.innerHTML; syncBoard(); });
   }
 
+  // ---- 순위 보고서 모달 (회원 화면과 같은 표)
+  var rm = $('rankModal'), rb = $('rankBody');
+  if (rm && rb) {
+    var closeRanks = function () { rm.classList.remove('on'); };
+    rm.addEventListener('click', function (e) { if (e.target === rm) closeRanks(); });
+    document.querySelectorAll('[data-ranks]').forEach(function (b) {
+      b.addEventListener('click', function (e) {
+        e.stopPropagation();
+        fetch('/admin/orders/' + b.dataset.ranks + '/ranks')
+          .then(function (r) { return r.text(); })
+          .then(function (html) {
+            rb.innerHTML = html;
+            rm.classList.add('on');
+            var x = $('rkclose');
+            if (x) x.addEventListener('click', closeRanks);
+            if (window.lucide) window.lucide.createIcons();
+          });
+      });
+    });
+  }
+
   if (window.lucide) window.lucide.createIcons();
 })();

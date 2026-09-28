@@ -184,6 +184,16 @@ def order_action(campaign_id):
     return _back(url_for("admin.orders"))
 
 
+@bp.route("/orders/<int:campaign_id>/ranks")
+@admin_required
+def order_ranks(campaign_id):
+    """순위 보고서 — 회원 화면과 같은 표(campaign/_ranks.html)를 그대로 쓴다."""
+    c = campaign_model.get(campaign_id) or abort(404)
+    sheet = campaign_service.rank_sheet(c)
+    return render_template("campaign/_ranks.html", channel=c["channel"], wd=campaign_service.WEEKDAYS,
+                           **{"c": c, **sheet})
+
+
 @bp.route("/orders/<int:campaign_id>/rank", methods=["POST"])
 @admin_required
 def order_rank(campaign_id):

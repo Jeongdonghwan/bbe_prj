@@ -190,6 +190,30 @@ def spawn_track(campaign):
     return r["trackId"]
 
 
+WEEKDAYS = ["월", "화", "수", "목", "금", "토", "일"]
+
+
+def rank_sheet(campaign):
+    """순위 보고서(_ranks.html)에 넘길 값 — 사용자 화면과 어드민이 같은 표를 쓴다.
+
+    쿠팡은 순위 서버에 수집기가 없어 빈 표를 돌려준다.
+    """
+    if campaign["channel"] == "coupang":
+        return {"days": [], "today_rank": None, "delta": None}
+    backfill_ranks(campaign)        # 콜백을 놓쳤으면 순위 서버에서 보정 (5분 스로틀)
+    c = campaign_model.get(campaign["id"])
+    rankmap = {d["date"]: d["rank"] for d in campaign_model.list_daily(c["id"])}
+    # 구동 전 기준 순위도 기록되므로 시작일보다 이른 기록이 있으면 거기서부터 보여준다.
+    first = min([c["start_date"], *rankmap]) if rankmap else c["start_date"]
+    days, cur = [], min(date.today(), c["end_date"])
+    while cur >= first:
+        days.append({"date": cur, "rank": rankmap.get(cur)})
+        cur -= timedelta(days=1)
+    today_rank = rankmap.get(date.today())
+    delta = (c["rank_start"] - today_rank) if (c["rank_start"] and today_rank) else None
+    return {"c": c, "days": days, "today_rank": today_rank, "delta": delta}
+
+
 def backfill_nv_mid(limit=100):
     """비어 있는 nvMid 를 순위 서버 미리보기로 메운다 (크론).
 

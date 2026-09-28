@@ -692,3 +692,7 @@ tr:hover .rowact button, tr.sel .rowact button{opacity:1}
 #lackMsg em{font-style:normal;font-weight:700}
 .chargebtn{width:100%;margin-top:10px;background:var(--danger);color:#fff;height:46px;font-weight:700;border-radius:12px}
 .chargebtn:hover{opacity:.9}
+
+/* 어드민 주문표: 순위 칸 전체가 순위 보고서를 여는 버튼 */
+.rankcell{display:inline-block;cursor:pointer;border-bottom:1px dashed var(--line);padding-bottom:1px}
+.rankcell:hover{border-bottom-color:var(--accent)}

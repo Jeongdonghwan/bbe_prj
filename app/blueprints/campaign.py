@@ -378,23 +378,9 @@ def ranks(channel, campaign_id):
     """Daily rank sheet shown in a modal from the manage list (2026-09-01)."""
     _channel(channel)
     c = _own(channel, campaign_id)
-    days, today_rank, delta = [], None, None
-    if channel != "coupang":
-        campaign_service.backfill_ranks(c)      # 콜백을 놓쳤으면 순위 서버에서 보정 (5분 스로틀)
-        c = _own(channel, campaign_id)
-        rankmap = {d["date"]: d["rank"] for d in campaign_model.list_daily(campaign_id)}
-        # 구동 전 기준 순위도 기록되므로 시작일보다 이른 기록이 있으면 거기서부터 보여준다.
-        first = min([c["start_date"], *rankmap]) if rankmap else c["start_date"]
-        cur = min(date.today(), c["end_date"])
-        while cur >= first:
-            days.append({"date": cur, "rank": rankmap.get(cur)})
-            cur -= timedelta(days=1)
-        today_rank = rankmap.get(date.today())
-        if c["rank_start"] and today_rank:
-            delta = c["rank_start"] - today_rank
-    return render_template("campaign/_ranks.html", c=c, channel=channel, days=days,
-                           today_rank=today_rank, delta=delta,
-                           wd=["월", "화", "수", "목", "금", "토", "일"])
+    sheet = campaign_service.rank_sheet(c)
+    return render_template("campaign/_ranks.html", channel=channel, wd=campaign_service.WEEKDAYS,
+                           **{"c": c, **sheet})
 
 
 @bp.route("/<channel>/<int:campaign_id>/cancel", methods=["POST"])
