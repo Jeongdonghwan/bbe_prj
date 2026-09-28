@@ -2,6 +2,7 @@
 import math
 import secrets
 import threading
+import time
 from datetime import date, datetime, timedelta
 
 from ..constants import DISCOUNT_RULES, TRANSITIONS, VAT_RATE
@@ -96,6 +97,9 @@ def create_with_credit(user, media, form):
         campaign_model.delete(cid)
         raise CampaignError("크레딧 잔액이 부족합니다. 충전 후 다시 시도해주세요.")
     campaign_model.add_log(cid, None, "review", user["id"], f"크레딧 결제 {cost:,}원 · 검수 대기")
+    # 추적 스레드는 자기 커넥션으로 이 캠페인을 다시 읽는다 — 커밋 전에는 그 행이 안 보인다.
+    from ..db import commit as db_commit
+    db_commit()
     spawn_track_async(cid)  # 등록 즉시 순위 추적 시작 (검수 결과를 기다리지 않는다)
     return campaign_model.get(cid)
 
@@ -329,7 +333,16 @@ def spawn_track_async(campaign_id):
     def run():
         with app.app_context():
             try:
-                spawn_track(campaign_model.get(campaign_id))
+                # 부른 쪽이 아직 커밋 전일 수 있다. 몇 번 기다려 보고 그래도 없으면 남긴다
+                # (그런 건은 크론 sync_ranks 가 줍는다).
+                for wait in (0, 0.3, 1.0, 3.0):
+                    if wait:
+                        time.sleep(wait)
+                    c = campaign_model.get(campaign_id)
+                    if c:
+                        spawn_track(c)
+                        return
+                app.logger.warning("추적 등록 건너뜀 — 캠페인 %s 을 찾지 못했다", campaign_id)
             except Exception:
                 app.logger.exception("추적 등록 실패 campaign=%s", campaign_id)
 
@@ -390,6 +403,9 @@ def backfill_ranks(campaign, throttle_min=5):
             continue
         apply_rank(campaign["id"], day, int(rk))
         n += 1
+    if n:
+        # 폴백으로 받아왔어도 "수집됨"이다 — 콜백만 이 값을 갱신하면 상태가 어긋난다.
+        campaign_model.mark_tracked(tid, "collected")
     return bool(n)
 
 

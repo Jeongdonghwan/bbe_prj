@@ -64,6 +64,18 @@ def execute(sql, params=None, rowcount=False):
         return n if rowcount else cur.lastrowid
 
 
+def commit():
+    """지금까지의 쓰기를 확정한다.
+
+    평소에는 teardown 이 알아서 커밋하므로 부를 일이 없다. **요청 밖(백그라운드 스레드)에서
+    방금 만든 행을 읽어야 할 때만** 쓴다 — 스레드는 자기 커넥션을 쓰기 때문에 커밋 전에는
+    그 행이 보이지 않는다.
+    """
+    conn = g.get("db")
+    if conn is not None:
+        conn.commit()
+
+
 def init_app(app):
     @app.teardown_appcontext
     def _teardown(exc):
