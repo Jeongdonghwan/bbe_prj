@@ -425,12 +425,20 @@ def media_picks():
 @admin_required
 def credits():
     from ..models import credit as credit_model
-    status = request.args.get("status") if request.args.get("status") in ("pending", "approved", "rejected") else None
+    status = request.args.get("status") if request.args.get("status") in ("pending", "approved", "rejected", "stale") else None
     page, per_page = _page()
-    rows, total = credit_model.list_admin_requests(status, page, per_page)
+    due_days = int(bank_settings()["due_days"])
+    stale = status == "stale"
+    rows, total = credit_model.list_admin_requests(None if stale else status, page, per_page,
+                                                   stale_days=due_days if stale else None)
+    now = datetime.now()
+    for r in rows:
+        r["age_d"] = (now - r["created_at"]).days
+        r["overdue"] = r["status"] == "pending" and r["age_d"] >= due_days
     return render_template("admin/credits.html", rows=rows, status=status, page=page,
                            total_pages=max(1, -(-total // per_page)),
-                           pending_n=credit_model.pending_count(),
+                           pending_n=credit_model.pending_count(), due_days=due_days,
+                           stale_n=credit_model.stale_pending_count(due_days),
                            users=user_model.list_brief(), recent=credit_model.ledger_recent(20))
 
 
@@ -548,7 +556,9 @@ def media_save():
             "op_note": f.get("op_note", "").strip()[:200] or None,
             "no_refund_days": int(f["no_refund_days"]) if f.get("no_refund_days", "").strip() else None,
             "rank_lead_days": f.get("rank_lead_days", "").strip()[:20] or None,
-            "is_active": 1 if f.get("is_active") == "1" else 0, "same_day": 1 if f.get("same_day") == "1" else 0,
+            # media.same_day 는 쓰지 않는다 — 구동 시작일은 campaign_service.earliest_start()
+            # 한 곳에서만 정하고(익일부터, 16시 이후 접수는 익익일) 매체별 예외가 없다.
+            "is_active": 1 if f.get("is_active") == "1" else 0,
             "sort": int(f.get("sort") or 0),
         }
         if not fields["name"]:

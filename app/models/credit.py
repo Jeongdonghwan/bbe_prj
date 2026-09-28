@@ -99,9 +99,13 @@ def list_user_requests(user_id, status=None, page=1, per_page=20):
     return rows, total
 
 
-def list_admin_requests(status=None, page=1, per_page=20):
+def list_admin_requests(status=None, page=1, per_page=20, stale_days=None):
+    """stale_days: 입금 기한이 지나도록 입금이 안 된 대기 건만 (운영자가 직접 거절하도록 모아 보여준다)."""
     where, params = "1=1", []
-    if status:
+    if stale_days:
+        where = "r.status = 'pending' AND r.created_at < DATE_SUB(NOW(), INTERVAL %s DAY)"
+        params = [int(stale_days)]
+    elif status:
         where, params = "r.status = %s", [status]
     rows = query(
         f"""SELECT r.*, u.nickname, u.email, u.credit_balance FROM charge_requests r JOIN users u ON u.id = r.user_id
@@ -119,6 +123,13 @@ def set_request_status(req_id, status, admin_id, reason=None):
 
 def pending_count():
     return query_one("SELECT COUNT(*) AS n FROM charge_requests WHERE status = 'pending'")["n"]
+
+
+def stale_pending_count(days):
+    """입금 기한이 지나도록 대기 중인 충전 요청 수 — 자동 거절은 하지 않는다(늦게 입금하는 회원이 있다)."""
+    return query_one(
+        "SELECT COUNT(*) AS n FROM charge_requests WHERE status = 'pending' "
+        "AND created_at < DATE_SUB(NOW(), INTERVAL %s DAY)", [int(days)])["n"]
 
 
 def campaign_refunds(campaign_ids):
