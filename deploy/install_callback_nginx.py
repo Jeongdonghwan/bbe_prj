@@ -42,12 +42,17 @@ def main():
         print(io.open(snippet, encoding="utf-8").read())
         return 1
 
-    backup = target.with_suffix(target.suffix + f".bak.{datetime.now():%Y%m%d-%H%M%S}")
+    # 백업은 반드시 sites-enabled 바깥에 둔다. nginx 는 include sites-enabled/* 로 디렉터리를
+    # 통째로 읽으므로, 옆에 .bak 을 두면 server 블록이 두 번 잡혀 duplicate default server 로 죽는다.
+    backup_dir = Path("/var/backups/nginx")
+    backup_dir.mkdir(parents=True, exist_ok=True)
+    backup = backup_dir / f"{target.name}.{datetime.now():%Y%m%d-%H%M%S}"
     shutil.copy2(target, backup)
     body = io.open(snippet, encoding="utf-8").read().rstrip()
     io.open(target, "w", encoding="utf-8").write(s.replace(anchor, anchor + "\n\n" + body + "\n", 1))
-    print(f"추가했습니다. 백업: {backup}")
+    print(f"추가했습니다. 백업: {backup}  (sites-enabled 바깥이라 nginx 가 읽지 않는다)")
     print("이제: sudo nginx -t && sudo systemctl reload nginx")
+    print(f"되돌리려면: sudo cp {backup} {target} && sudo nginx -t && sudo systemctl reload nginx")
     return 0
 
 
