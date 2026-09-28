@@ -44,6 +44,11 @@ def list_admin(status=None, method=None, page=1, per_page=20):
     return rows, total
 
 
+def count_all():
+    """레거시 건별 결제(무통장·카드) 건수 — 0 이면 결제 내역에서 그 탭을 숨긴다."""
+    return query_one("SELECT COUNT(*) AS n FROM payments")["n"]
+
+
 def pending_bank_summary():
     return query_one(
         "SELECT COUNT(*) AS n, COALESCE(SUM(amount), 0) AS total FROM payments WHERE method = 'bank' AND status = 'pending'")

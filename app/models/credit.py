@@ -50,6 +50,32 @@ def ledger_recent(limit=20):
            ORDER BY l.id DESC LIMIT %s""", [limit])
 
 
+def ledger_all(type_=None, page=1, per_page=20):
+    """전체 크레딧 원장 — 어드민 결제 내역의 열람용. type_ 은 charge/spend/refund/adjust."""
+    where, params = "1=1", []
+    if type_:
+        where, params = "l.type = %s", [type_]
+    rows = query(
+        f"""SELECT l.*, u.nickname, u.email, u.username, u.kakao_id, u.biz_name
+            FROM credit_ledger l JOIN users u ON u.id = l.user_id
+            WHERE {where} ORDER BY l.id DESC LIMIT %s OFFSET %s""",
+        params + [per_page, (page - 1) * per_page])
+    total = query_one(f"SELECT COUNT(*) AS n FROM credit_ledger l WHERE {where}", params)["n"]
+    return rows, total
+
+
+def processed_requests(page=1, per_page=20):
+    """처리가 끝난 충전 요청(승인·거절) — 결제 내역에 남는 기록."""
+    rows = query(
+        """SELECT r.*, u.nickname, u.email, u.username, u.kakao_id, u.biz_name, a.nickname AS admin_nick
+           FROM charge_requests r JOIN users u ON u.id = r.user_id
+           LEFT JOIN users a ON a.id = r.processed_by
+           WHERE r.status <> 'pending' ORDER BY r.processed_at DESC, r.id DESC LIMIT %s OFFSET %s""",
+        [per_page, (page - 1) * per_page])
+    total = query_one("SELECT COUNT(*) AS n FROM charge_requests WHERE status <> 'pending'")["n"]
+    return rows, total
+
+
 # ---- charge requests ------------------------------------------------------
 def create_request(user_id, amount, vat, total, depositor, tax_invoice, biz_snapshot):
     return execute(

@@ -19,7 +19,11 @@ from app import create_app  # noqa: E402
 
 
 def expire_unpaid():
-    """입금 기한이 지난 무통장 주문을 취소하고 크레딧 충전 요청도 정리."""
+    """입금 기한이 지난 무통장 주문을 취소한다 (폐기된 건별 결제 잔재 — 보통 0건).
+
+    크레딧 충전 요청(charge_requests)은 건드리지 않는다. 늦게 입금하는 회원이 있어서
+    자동 거절하지 않고, 어드민이 크레딧 관리에서 직접 처리한다.
+    """
     from app.services import payment_service
     return payment_service.expire_unpaid()
 

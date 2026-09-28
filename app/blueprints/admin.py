@@ -307,23 +307,33 @@ def orders_rank_upload():
 @bp.route("/payments")
 @admin_required
 def payments():
-    tab = request.args.get("tab", "pending")
+    """결제 내역 = 열람 화면. 크레딧 충전 승인 기록과 원장이 본체이고,
+    무통장·카드 탭은 폐기된 건별 PG 시절 주문을 위해 남겨둔 것이다 (건수가 있을 때만 보인다)."""
+    from ..models import credit as credit_model
+    tab = request.args.get("tab", "charge")
     page, per_page = _page()
-    if tab == "pending":
-        rows, total = payment_model.list_admin("pending", "bank", page, per_page)
-    elif tab == "paid":
-        rows, total = payment_model.list_admin("paid", "bank", page, per_page)
-    elif tab == "expired":
-        rows, total = payment_model.list_admin("expired", "bank", page, per_page)
+    rows, ledger_type, now = [], None, datetime.now()
+    if tab == "charge":
+        rows, total = credit_model.processed_requests(page, per_page)
+    elif tab == "ledger":
+        ledger_type = request.args.get("type") if request.args.get("type") in ("charge", "spend", "refund", "adjust") else None
+        rows, total = credit_model.ledger_all(ledger_type, page, per_page)
     else:
-        tab = "card"; rows, total = payment_model.list_admin(None, "card", page, per_page)
-    now = datetime.now()
+        if tab not in ("pending", "paid", "expired", "card"):
+            tab = "charge"
+        method = "card" if tab == "card" else "bank"
+        rows, total = payment_model.list_admin(None if tab == "card" else tab, method, page, per_page)
+        for r in rows:
+            r["overdue"] = bool(r["bank_due_at"] and r["status"] == "pending" and r["bank_due_at"] < now)
+            r["age_h"] = int((now - r["created_at"]).total_seconds() // 3600)
     for r in rows:
-        r["overdue"] = bool(r["bank_due_at"] and r["status"] == "pending" and r["bank_due_at"] < now)
-        r["age_h"] = int((now - r["created_at"]).total_seconds() // 3600)
+        if "email" in r:
+            r["login_id"] = user_model.login_id(r.get("email"), r.get("username"), r.get("kakao_id"), r["user_id"])
     pend = payment_model.pending_bank_summary()
     return render_template("admin/payments.html", rows=rows, tab=tab, page=page, total_pages=max(1, -(-total // per_page)),
                            pending_n=pend["n"], pending_total=int(pend["total"]), bank=bank_settings(),
+                           legacy_n=payment_model.count_all(), ledger_type=ledger_type,
+                           charge_pending=credit_model.pending_count(),
                            pay_status_label=PAYMENT_STATUS_LABEL, status_label=STATUS_LABEL, status_class=STATUS_CLASS, channel_label=CHANNEL_LABEL)
 
 
