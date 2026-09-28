@@ -703,3 +703,8 @@ tr:hover .rowact button, tr.sel .rowact button{opacity:1}
   border:2px solid var(--line);border-top-color:var(--accent);animation:rkspin .8s linear infinite}
 @keyframes rkspin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.rk-wait::before{animation-duration:3s}}
+
+/* 제출 후 응답을 기다리는 버튼 — "조회중…" 옆에 작은 스피너 */
+.btn.is-busy{pointer-events:none;opacity:.75;display:inline-flex;align-items:center;gap:6px}
+.btn.is-busy::before{content:"";width:12px;height:12px;border-radius:50%;flex:0 0 auto;
+  border:2px solid currentColor;border-top-color:transparent;opacity:.6;animation:rkspin .8s linear infinite}

@@ -4,7 +4,7 @@
 <div class="ph"><div><h1>연관키워드 조회</h1><p>씨앗 키워드 1개로 연관 키워드 최대 100개를 검색량순으로 보여줍니다. 골라서 캠페인에 바로 담을 수 있어요.</p></div>{% if rows %}<div class="act"><a class="btn sec" href="/tools/related?seed={{ seed | urlencode }}&csv=1">CSV 다운로드</a></div>{% endif %}</div>
 {% include "tools/_quota.html" %}
 <div class="card" style="margin-bottom:16px"><div class="cb" style="padding-top:16px">
-  <form method="post" action="/tools/related" style="display:flex;gap:8px;align-items:end;flex-wrap:wrap">
+  <form method="post" action="/tools/related" data-busy="조회중…" style="display:flex;gap:8px;align-items:end;flex-wrap:wrap">
     <div class="f" style="flex:1;min-width:260px;margin:0"><label>씨앗 키워드</label><input class="in" name="seed" value="{{ seed }}" placeholder="예) 일산 갈비" required></div>
     <button class="btn pri" type="submit">조회</button>
   </form>
