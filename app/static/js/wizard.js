@@ -261,7 +261,8 @@
     if (n === 3) {
       var kw = $('f-kw').value.trim();
       if (!kw) return err('e-kw', '메인 키워드를 입력해주세요.');
-      if (/[,\s]/.test(kw)) return err('e-kw', '키워드는 한 개만 입력하세요.');
+      // 띄어쓰기는 키워드의 일부다 ('usb 선풍기', '강남 변호사'). 여러 개를 막는 건 쉼표뿐.
+      if (kw.indexOf(',') >= 0) return err('e-kw', '키워드는 한 개만 입력하세요. 쉼표로 여러 개를 넣을 수 없습니다.');
       err('e-kw', '');
       var t = sel(), v = cnt();
       if (v < 100) return err('e-qty', '일일 목표 유입수는 100회 이상으로 입력하세요.');
