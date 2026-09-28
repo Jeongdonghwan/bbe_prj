@@ -223,6 +223,11 @@ def _parse_form(channel, media, form):
 
 def _create(channel):
     """Credit model: wizard posts type/date/qty; server re-reads the unit price and re-checks the total."""
+    # 최종 확인 화면에서만 confirm=1 이 실린다. 입력칸에서 엔터를 누르면 브라우저가 폼을
+    # 그냥 제출해(암묵적 제출) 스텝을 건너뛴 채 크레딧까지 빠져나가므로 여기서 막는다.
+    if request.form.get("confirm") != "1":
+        flash("마지막 확인 화면에서 '광고 만들기'를 눌러주세요.")
+        return _back(channel, request.form.get("media_id", type=int))
     media_id = request.form.get("media_id", type=int)
     media = media_model.get(media_id) if media_id else None
     if not media or media["channel"] != channel or not media["is_active"]:

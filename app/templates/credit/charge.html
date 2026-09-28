@@ -64,6 +64,7 @@
     <div class="wiz-foot">
       <button type="button" class="btn sec" id="wPrev" disabled>이전</button>
       <button type="button" class="btn pri" id="wNext">다음</button>
+      <input type="hidden" name="confirm" id="chConfirm" value="">
       <button type="submit" class="btn pri" id="wSubmit" hidden>충전 요청하기</button>
     </div>
   </div>
@@ -117,8 +118,21 @@
     $('wPrev').disabled = step === 1;
     $('wNext').hidden = step === MAX;
     $('wSubmit').hidden = step !== MAX;
+    if ($('chConfirm')) { $('chConfirm').value = step === MAX ? '1' : ''; }
     if (step === MAX) calc();
   }
+  // 입력칸에서 엔터를 누르면 브라우저가 폼을 그냥 제출한다(암묵적 제출) — 스텝을 건너뛴
+  // 충전 요청이 들어가지 않도록 엔터는 "다음"으로만 쓴다.
+  $('chargeForm').addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' || e.isComposing) { return; }
+    var t = e.target;
+    if (t.tagName === 'TEXTAREA' || t.type === 'submit' || t.type === 'button') { return; }
+    e.preventDefault();
+    if (step !== MAX) { $('wNext').click(); }
+  });
+  $('chargeForm').addEventListener('submit', function (e) {
+    if (step !== MAX) { e.preventDefault(); }
+  });
   function valid1() {
     var a = +amt.value || 0;
     if (a < {{ min_charge }}) { alert('최소 충전 금액은 {{ "{:,}".format(min_charge) }}원입니다.'); return false; }

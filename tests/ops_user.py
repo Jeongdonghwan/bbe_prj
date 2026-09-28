@@ -96,6 +96,7 @@ def main():
         bal0 = query_one("SELECT credit_balance FROM users WHERE id=%s", [uid])["credit_balance"]
     total = m["unit_price"] * 300 * 10
     r = c.post("/campaign/store/new", data={
+        "confirm": "1",
         "media_id": m["id"], "days": "10", "daily_qty": "300", "product_name": "운영점검 상품",
         "target_url": "https://smartstore.naver.com/ops/products/24680", "main_keyword": "운영점검키워드",
         "start_date": start.isoformat(), "client_total": str(total)}, follow_redirects=True)
@@ -121,7 +122,7 @@ def main():
     check(bal2 == bal1, "거절 시 잔액 변화 없음", f"{bal1}→{bal2}")
 
     print("\n=== 6. 크레딧 충전 요청 ===")
-    r = c.post("/credit/charge", data={"amount": "300000", "depositor": "운영점검", "tax_invoice": "0"},
+    r = c.post("/credit/charge", data={"amount": "300000", "depositor": "운영점검", "tax_invoice": "0", "confirm": "1"},
                follow_redirects=True)
     with app.app_context():
         req = query_one("SELECT * FROM charge_requests WHERE user_id=%s ORDER BY id DESC LIMIT 1", [uid])

@@ -12,6 +12,10 @@ bp = Blueprint("credit", __name__, url_prefix="/credit")
 @login_required
 def charge():
     if request.method == "POST":
+        # 마지막 확인 화면에서만 confirm=1 이 실린다 — 입력칸 엔터로 폼이 새어 나가는 것을 막는다.
+        if request.form.get("confirm") != "1":
+            flash("마지막 확인 화면에서 '충전 요청하기'를 눌러주세요.")
+            return redirect(url_for("credit.charge"))
         amount = request.form.get("amount", type=int) or 0
         depositor = request.form.get("depositor", "")
         tax = request.form.get("tax_invoice") == "1"

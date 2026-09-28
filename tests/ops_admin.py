@@ -45,6 +45,7 @@ def main():
     made = []
     for i in (1, 2):
         user.post("/campaign/store/new", data={
+            "confirm": "1",
             "media_id": m["id"], "days": "10", "daily_qty": "300", "product_name": f"어드민점검 {i}",
             "target_url": f"https://smartstore.naver.com/ops/products/9000{i}", "main_keyword": f"어드민점검키워드{i}",
             "start_date": start.isoformat(), "client_total": str(total)}, follow_redirects=True)
@@ -108,7 +109,7 @@ def main():
     check(d and d["rank"] == 9, "CSV 순위 업로드", (d or {}).get("rank"))
 
     print("\n=== 6. 크레딧 관리 ===")
-    user.post("/credit/charge", data={"amount": "200000", "depositor": "점검", "tax_invoice": "0"}, follow_redirects=True)
+    user.post("/credit/charge", data={"amount": "200000", "depositor": "점검", "tax_invoice": "0", "confirm": "1"}, follow_redirects=True)
     with app.app_context():
         req = query_one("SELECT * FROM charge_requests WHERE user_id=%s ORDER BY id DESC LIMIT 1", [uid])
         bal0 = query_one("SELECT credit_balance FROM users WHERE id=%s", [uid])["credit_balance"]

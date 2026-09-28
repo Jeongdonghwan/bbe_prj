@@ -35,6 +35,7 @@ def ok(cond, name, extra=""):
 
 def register(client, media, start, name, keyword, total):
     client.post("/campaign/store/new", data={
+        "confirm": "1",
         "media_id": media["id"], "days": "30", "daily_qty": "100", "product_name": name,
         "target_url": f"https://smartstore.naver.com/x/products/{abs(hash(name)) % 10**9}",
         "main_keyword": keyword, "start_date": start.isoformat(), "client_total": str(total),

@@ -242,6 +242,8 @@
     $('btn-prev').style.visibility = cur === 1 ? 'hidden' : 'visible';
     $('btn-next').hidden = cur === LAST;
     $('btn-submit').hidden = cur !== LAST;
+    // 최종 확인 화면에 서 있을 때만 제출을 허용한다 (서버도 이 값을 다시 본다).
+    if ($('cwConfirm')) { $('cwConfirm').value = cur === LAST ? '1' : ''; }
     $('btn-next').disabled = false;
     sync();
     if (cur >= 4) calc();
@@ -344,7 +346,18 @@
   }
 
   /* ── submit ── */
+  // 입력칸에서 엔터를 누르면 브라우저가 폼을 그냥 제출해 버린다(암묵적 제출).
+  // 그러면 스텝을 건너뛴 채 결제까지 진행되므로, 엔터는 "다음"으로만 쓴다.
+  $('cwForm').addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' || e.isComposing) { return; }
+    var t = e.target;
+    if (t.tagName === 'TEXTAREA' || t.type === 'submit' || t.type === 'button') { return; }
+    e.preventDefault();
+    if (cur !== LAST && validate(cur)) { go(cur + 1); }
+  });
+
   $('cwForm').addEventListener('submit', function (e) {
+    if (cur !== LAST) { e.preventDefault(); return; }      // 최종 확인 화면에서만 제출
     for (var n = 1; n <= 4; n++) {
       if (!validate(n)) { e.preventDefault(); go(n); return; }
     }

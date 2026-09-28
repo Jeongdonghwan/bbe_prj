@@ -185,6 +185,8 @@
       </div>
     </div>
 
+    {# 최종 확인 화면에서만 1 이 된다. 엔터로 폼이 새어 나가도 서버가 여기서 거른다. #}
+    <input type="hidden" name="confirm" id="cwConfirm" value="">
     <div class="w-foot">
       <button type="button" class="w-btn" id="btn-prev">이전</button>
       <button type="button" class="w-btn w-go" id="btn-next">다음</button>
