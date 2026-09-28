@@ -129,7 +129,7 @@ POST /api/rank/callback      (app/blueprints/rank_api.py)
 순위 서버 쪽 `.env` 의 `NSR_PARTNER_CALLBACK_URL` 에 우리 주소를 **콤마로 덧붙여야** 한다
 (트리플업 주소를 지우지 말 것). **우리 주소에는 포트를 붙이지 않는다** — 8034 인바운드가
 카페24 단에서 막혀 있어 nginx 가 80 으로 받는다(아래 2) 항목):
-`https://tripleup.cloud/api/rank/callback,http://211.45.175.195/bbe/rank-callback`
+`https://tripleup.cloud/api/rank/callback,http://bbe-callback/bbe/rank-callback`
 
 ### 기록 구간 — 시작일 전 순위도 남긴다
 
@@ -218,28 +218,40 @@ with app.app_context():
 `설정됨: True` 가 나오고 미리보기 응답에 `ok: True` 가 오면 우리 → 순위 서버 방향은 끝.
 `ok: False` 만 오면 토큰이 틀렸거나 방화벽에 막힌 것이다.
 
-> **2026-09-28 확인: 콜백은 80 번 `/bbe/rank-callback` 으로 받는다.**
+> **2026-09-28: 콜백은 `http://bbe-callback/bbe/rank-callback` 으로 받는다.**
+> 주소가 이상하게 생겼는데 이유가 있다. 바꾸기 전에 아래를 읽을 것.
 >
-> 앱은 `:8034` 로 뜨지만 **카페24 네트워크 단에서 8034 인바운드가 막혀 있다** — 순위
-> 서버(211.45.175.226)에서 우리 8034 로 가는 연결이 전부 ConnectTimeout 이었다
-> (`파트너 콜백 최종 실패` 가 trackId 19~76 에 걸쳐 쌓였고 성공은 한 건도 없었다).
-> 서버 안에서 고칠 수 있는 게 아니다: `ufw` inactive, `iptables INPUT` 규칙 없음,
-> 서버가 자기 공인 IP:8034 로는 401 을 정상 수신한다. 같은 서버로 80·443 은 열린다.
+> **1) 8034 를 쓸 수 없다.** 앱은 `:8034` 로 뜨지만 카페24 네트워크 단에서 8034
+> 인바운드가 막혀 있다 — 순위 서버(211.45.175.226)에서 오는 연결이 전부
+> ConnectTimeout 이었다(`파트너 콜백 최종 실패` 가 trackId 19~76 에 쌓였고 성공 0건).
+> 서버 안 문제가 아니다: `ufw` inactive, `iptables INPUT` 규칙 없음, 서버가 자기 공인
+> IP:8034 로는 401 을 정상 수신한다. 80·443 만 바깥에서 들어온다.
 >
-> 그래서 열린 80 으로 받아 내부 8034 로 넘긴다. 다만 **이 서버의 80 번은 다른 앱
-> (`ilioom`, 127.0.0.1:8080)이 default_server 로 쥐고 있고 그 앱이 `/api/*` 를 이미
-> 가로챈다** — 실제로 `http://211.45.175.195/api/rank/callback` 을 부르면 ilioom 의
-> `{"error":{"code":"UNAUTHORIZED"}}` 가 돌아온다. 그래서 겹치지 않는 경로를 쓴다:
+> **2) `/api/*` 를 쓸 수 없다.** 이 서버의 80 번은 다른 앱(`ilioom`, 127.0.0.1:8080)이
+> `default_server` 로 쥐고 있고 그 앱이 `/api/*` 를 가로챈다. 그래서 겹치지 않는
+> `/bbe/rank-callback` 을 쓴다 (정확 일치 location 이라 `location /` 보다 우선).
 >
-> ```
-> http://211.45.175.195/bbe/rank-callback  →  127.0.0.1:8034/api/rank/callback
-> ```
+> **3) IP 로 부를 수 없다.** 이 서버에는 사이트가 20개 넘게 물려 있고, `ilioom` 보다
+> 먼저 로드되는 블록이 `server_name 211.45.175.195` 를 선점한다
+> (`nginx: [warn] conflicting server name ... ignored`). IP 로 부르면 그 블록이 받아
+> 로그인으로 302 를 준다. 그래서 **어느 server_name 에도 맞지 않는 이름**으로 불러
+> `default_server`(= ilioom, 우리 location 이 있는 곳)로 떨어뜨린다.
 >
-> 설치: `sudo python3 deploy/install_callback_nginx.py` (80 번 server 블록의
-> `server_name` 뒤에 `deploy/nginx-callback.conf` 를 끼워 넣고 백업을 남긴다) →
-> `sudo nginx -t && sudo systemctl reload nginx`.
-> 별도 server 블록을 만들면 `duplicate default server` 로 nginx 가 뜨지 않으니
-> **새 server 블록을 만들지 말 것.**
+> 결과 구성:
+>
+> | 어디 | 무엇 |
+> | --- | --- |
+> | bbe `/etc/nginx/sites-enabled/ilioom` | `location = /bbe/rank-callback` → `127.0.0.1:8034/api/rank/callback` (`deploy/nginx-callback.conf`, 설치는 `deploy/install_callback_nginx.py`, 백업은 `/var/backups/nginx/`) |
+> | 순위 서버 `/etc/hosts` | `211.45.175.195  bbe-callback` |
+> | 순위 서버 `.env` | `NSR_PARTNER_CALLBACK_URL=...,http://bbe-callback/bbe/rank-callback` |
+>
+> **주의**: 순위 서버를 재설치하면 `/etc/hosts` 줄이 사라져 콜백이 조용히 죽는다.
+> 그때도 순위는 `sync_ranks`(매시)와 화면 진입 폴백으로 들어오므로 티가 잘 안 난다 —
+> `journalctl -u rankserver | grep "파트너 콜백"` 으로 확인할 것.
+>
+> **더 깔끔하게 하려면**: `server_name 211.45.175.195` 를 선점한 블록을 찾아
+> (`grep -rn "211.45.175.195" /etc/nginx/sites-enabled/`) 거기에 같은 location 을
+> 넣으면 `/etc/hosts` 없이 IP 로 부를 수 있다.
 
 ### 2) 순위 서버 `.env` — 보내는 쪽 (콜백)
 
@@ -248,7 +260,7 @@ with app.app_context():
 이미 있으면 지우지 말고 뒤에 덧붙인다.
 
 ```ini
-NSR_PARTNER_CALLBACK_URL=<기존 주소가 있으면 그대로>,http://211.45.175.195/bbe/rank-callback
+NSR_PARTNER_CALLBACK_URL=<기존 주소가 있으면 그대로>,http://bbe-callback/bbe/rank-callback
 # NSR_PARTNER_TOKEN 은 이미 들어 있는 값을 그대로 쓴다 — 우리 RANK_API_TOKEN 과 같아야 한다.
 ```
 
