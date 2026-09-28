@@ -36,11 +36,16 @@ with app.app_context():
                 print("      → 거부됨. 위 message 가 이유다.")
             continue
         print(f"   3) 기록 구간 = {cs.rank_window(c)}  (이 안의 날짜만 기록된다)")
+        print(f"   3-1) 이름: {c['biz_name']!r}  (수집된 이름 product_name={c['product_name']!r} "
+              f"→ 화면 상태 '{cs.name_state(c)}')")
         daily = query("SELECT date, `rank`, done_qty FROM campaign_daily WHERE campaign_id=%s ORDER BY date DESC LIMIT 5", [c["id"]])
         print(f"   4) 우리 DB 기록 {len(daily)}행:", [(str(d['date']), d['rank']) for d in daily] or "없음")
         print(f"      rank_start={c['rank_start']} rank_now={c['rank_now']} → 화면 상태 '{cs.rank_state(c)}'")
         got = rank_client.slot_ranks(c["track_id"])
         print(f"   5) 순위 서버가 가진 순위:", (got.get("ranks") or "없음") if got.get("ok") else f"조회 실패 {got}")
+        if got.get("ok"):
+            print(f"      순위 서버가 아는 이름: {got.get('prodNm')!r}", end="")
+            print("  → 반영함" if cs.apply_prod_name(c, got.get("prodNm")) else "  (반영할 것 없음)")
         if got.get("ok") and got.get("ranks"):
             cs._BACKFILL_AT.pop(c["id"], None)
             print("   6) 폴백 실행:", cs.backfill_ranks(c, throttle_min=0))
