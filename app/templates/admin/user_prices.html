@@ -6,54 +6,84 @@
   <div class="act"><a class="btn sec" href="/admin/users">회원 목록</a></div></div>
 
 <div class="form2">
-  <div class="card"><div class="cb" style="padding-top:14px">
-    <form class="tbar" method="get" style="margin-bottom:10px">
-      <div class="f" style="margin:0;flex:1;min-width:240px"><label>회원</label>
-        <select class="in" name="user" onchange="this.form.submit()">
-          <option value="">회원을 고르세요</option>
-          {% for a in accounts %}
-          <option value="{{ a.id }}"{% if user and user.id == a.id %} selected{% endif %}>
-            {{ a.biz_name or a.nickname }} · {{ a.login_id }}{% if a.n %} (단가 {{ a.n }}건){% endif %}</option>
-          {% endfor %}
-        </select></div>
-    </form>
+  <div>
+    <div class="card"><div class="cb" style="padding-top:14px">
+      <form class="tbar" method="get" style="margin-bottom:0">
+        {% if user %}<input type="hidden" name="user" value="{{ user.id }}">{% endif %}
+        {% if channel %}<input type="hidden" name="channel" value="{{ channel }}">{% endif %}
+        <div class="search" style="flex:1"><i data-lucide="search" class="i"></i>
+          <input class="in" name="q" value="{{ q or '' }}" placeholder="아이디 · 이름 · 회사명으로 회원 찾기" autofocus></div>
+        <button class="btn sec" type="submit">검색</button>
+      </form>
 
-    {% if not user %}
-    <div class="empty">회원을 고르면 매체별 단가를 설정할 수 있습니다.</div>
-    {% else %}
-    <form method="post" action="/admin/user-prices/{{ user.id }}/save">
-      <p class="thin" style="margin:0 0 10px">
-        <b>{{ user.biz_name or user.nickname }}</b> · <span class="mono">{{ user.login_id }}</span> —
-        칸을 비우면 기본 단가로 돌아갑니다. 바꾼 단가는 <b>앞으로 만드는 캠페인</b>에만 적용되고,
-        이미 접수된 주문 금액은 그대로입니다.
-      </p>
-      <div style="overflow-x:auto;margin:0 -18px"><table>
-        <thead><tr><th>채널</th><th>매체</th><th style="text-align:right">기본 단가</th>
-          <th style="width:130px">이 회원 단가</th><th>메모</th></tr></thead>
-        <tbody>
-        {% for m in rows %}
-        <tr{% if not m.is_active %} style="opacity:.5"{% endif %}>
-          <td><span class="pill p-{{ m.channel }}">{{ channel_label[m.channel] }}</span></td>
-          <td><b>{{ m.name }}</b>{% if not m.is_active %} <span class="mut">비노출</span>{% endif %}
-            <br><span class="mut" style="font-size:11px">{{ m.group_name }}</span></td>
-          <td class="num mut" style="text-align:right">{{ m.base_price | fmt_num }}원</td>
-          <td><input class="in num" type="number" min="1" step="1" name="price_{{ m.id }}"
-                     value="{{ m.custom_price or '' }}" placeholder="{{ m.base_price }}"
-                     style="height:32px;text-align:right"></td>
-          <td><input class="in" name="memo_{{ m.id }}" value="{{ m.memo or '' }}" maxlength="200"
-                     placeholder="예) 계약 단가" style="height:32px"></td>
+      {% if q %}
+      <div style="overflow-x:auto;margin:10px -18px 0"><table>
+        <thead><tr><th>아이디</th><th>회원</th><th style="text-align:right">지정 단가</th><th></th></tr></thead><tbody>
+        {% for a in found %}
+        <tr{% if user and user.id == a.id %} class="sel"{% endif %}>
+          <td><span class="mono">{{ a.login_id }}</span></td>
+          <td><b>{{ a.nickname }}</b>{% if a.biz_name %} <span class="mut">{{ a.biz_name }}</span>{% endif %}</td>
+          <td class="num" style="text-align:right">{% if a.n %}{{ a.n }}건{% else %}<span class="mut">—</span>{% endif %}</td>
+          <td><div class="inline-f" style="justify-content:flex-end">
+            <a href="/admin/user-prices?user={{ a.id }}{% if channel %}&channel={{ channel }}{% endif %}"><button class="btn sec sm" type="button">단가 설정</button></a>
+          </div></td>
         </tr>
+        {% else %}<tr><td colspan="4"><div class="empty">'{{ q }}' 에 맞는 회원이 없습니다.</div></td></tr>{% endfor %}
+        </tbody></table></div>
+      {% endif %}
+    </div></div>
+
+    {% if user %}
+    <div class="card" style="margin-top:14px"><div class="ch">
+      <h3>{{ user.biz_name or user.nickname }} <span class="thin mono">{{ user.login_id }}</span></h3>
+      <span class="thin" style="margin-left:auto">지정 {{ custom_n }}건</span></div>
+      <div class="cb" style="padding-top:6px">
+      <div class="tabs">
+        {% for k, v in channel_label.items() %}
+        <a href="/admin/user-prices?user={{ user.id }}&channel={{ k }}{% if q %}&q={{ q | urlencode }}{% endif %}">
+          <button type="button"{% if channel == k %} class="on"{% endif %}>{{ v }}<em>{{ ch_counts.get(k, 0) }}</em></button></a>
         {% endfor %}
-        </tbody>
-      </table></div>
-      <div style="display:flex;gap:8px;margin-top:12px">
-        <button class="btn pri" type="submit">단가 저장</button>
-        <button class="btn sec" type="submit" name="reset" value="1" style="color:var(--danger)"
-                onclick="return confirm('이 회원의 단가 설정을 모두 지우고 기본 단가로 되돌릴까요?')">전체 해제</button>
       </div>
-    </form>
+      <p class="thin" style="margin:6px 0 10px">
+        칸을 비우면 기본 단가로 돌아갑니다. 바꾼 단가는 <b>앞으로 만드는 캠페인</b>에만 적용되고,
+        이미 접수된 주문 금액은 그대로입니다. <b>지금 보이는 {{ channel_label[channel] }} 탭만 저장</b>되니
+        다른 채널은 그 탭에서 따로 저장하세요.
+      </p>
+      <form method="post" action="/admin/user-prices/{{ user.id }}/save">
+        <input type="hidden" name="back_channel" value="{{ channel }}">
+        {% if q %}<input type="hidden" name="back_q" value="{{ q }}">{% endif %}
+        <div style="overflow-x:auto;margin:0 -18px"><table>
+          <thead><tr><th>매체</th><th style="text-align:right">기본 단가</th>
+            <th style="width:130px">이 회원 단가</th><th>메모</th></tr></thead>
+          <tbody>
+          {% for m in rows %}
+          <tr{% if not m.is_active %} style="opacity:.5"{% endif %}>
+            <td><input type="hidden" name="ids" value="{{ m.id }}">
+              <b>{{ m.name }}</b>{% if not m.is_active %} <span class="mut">비노출</span>{% endif %}
+              <br><span class="mut" style="font-size:11px">{{ m.group_name }}</span></td>
+            <td class="num mut" style="text-align:right">{{ m.base_price | fmt_num }}원</td>
+            <td><input class="in num" type="number" min="1" step="1" name="price_{{ m.id }}"
+                       value="{{ m.custom_price or '' }}" placeholder="{{ m.base_price }}"
+                       style="height:32px;text-align:right"></td>
+            <td><input class="in" name="memo_{{ m.id }}" value="{{ m.memo or '' }}" maxlength="200"
+                       placeholder="예) 계약 단가" style="height:32px"></td>
+          </tr>
+          {% else %}<tr><td colspan="4"><div class="empty">이 채널에 매체가 없습니다.</div></td></tr>{% endfor %}
+          </tbody>
+        </table></div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn pri" type="submit">{{ channel_label[channel] }} 단가 저장</button>
+          <button class="btn sec" type="submit" name="reset" value="1" style="color:var(--danger)"
+                  onclick="return confirm('이 회원의 단가 설정을 모든 채널에서 지우고 기본 단가로 되돌릴까요?')">전체 해제</button>
+        </div>
+      </form>
+    </div></div>
+    {% elif not q %}
+    <div class="card" style="margin-top:14px"><div class="cb">
+      <div class="empty">위에서 회원을 검색해 고르면 매체별 단가를 설정할 수 있습니다.</div>
+    </div></div>
     {% endif %}
-  </div></div>
+  </div>
 
   <div class="card"><div class="ch"><h3>단가를 따로 쓰는 회원</h3></div><div class="cb">
     {% if custom_users %}

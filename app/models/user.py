@@ -55,6 +55,18 @@ def list_brief():
                     FROM users WHERE status = 'active' ORDER BY biz_name, nickname, id""")
 
 
+def search_brief(q, limit=30):
+    """어드민 검색용 — 아이디·닉네임·회사명·전화로 활성 회원을 찾는다."""
+    term = f"%{search_term(q)}%"
+    return query("""SELECT id, nickname, email, username, kakao_id, biz_name, credit_balance
+                    FROM users
+                    WHERE status = 'active'
+                      AND (nickname LIKE %s OR biz_name LIKE %s OR email LIKE %s
+                           OR username LIKE %s OR kakao_id LIKE %s OR phone LIKE %s)
+                    ORDER BY biz_name, nickname, id LIMIT %s""",
+                 [term] * 6 + [int(limit)])
+
+
 def update_biz(user_id, biz_name, biz_no, biz_type, biz_item, biz_email):
     execute(
         "UPDATE users SET biz_name = %s, biz_no = %s, biz_type = %s, biz_item = %s, biz_email = %s WHERE id = %s",

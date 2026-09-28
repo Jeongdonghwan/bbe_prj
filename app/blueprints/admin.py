@@ -1076,39 +1076,63 @@ def user_drawer(user_id):
 @bp.route("/user-prices")
 @admin_required
 def user_prices():
-    """회원마다 다른 매체 단가. 없으면 media.unit_price 가 그대로 쓰인다."""
-    accounts = user_model.list_brief()
-    custom = {r["id"]: r["n"] for r in media_model.users_with_custom_prices()}
-    for a in accounts:
-        a["login_id"] = user_model.login_id(a.get("email"), a.get("username"), a.get("kakao_id"), a["id"])
-        a["n"] = custom.get(a["id"], 0)
+    """회원마다 다른 매체 단가. 없으면 media.unit_price 가 그대로 쓰인다.
+
+    회원이 많아 드롭다운으로는 못 고른다 — 아이디·이름·회사명으로 검색해서 고른다.
+    매체도 많아 채널 탭으로 나눠 보여주고, 저장도 보이는 탭만 건드린다.
+    """
+    q = (request.args.get("q") or "").strip()[:40]
+    channel = request.args.get("channel") if request.args.get("channel") in CHANNEL_LABEL else "store"
+    custom_n = {r["id"]: r["n"] for r in media_model.users_with_custom_prices()}
+
+    def decorate(rows):
+        for a in rows:
+            a["login_id"] = user_model.login_id(a.get("email"), a.get("username"), a.get("kakao_id"), a["id"])
+            a["n"] = custom_n.get(a["id"], 0)
+        return rows
+
+    found = decorate(user_model.search_brief(q, 30)) if q else []
     uid = request.args.get("user", type=int)
     user = user_model.get_by_id(uid) if uid else None
+    rows, ch_counts = [], {}
     if user:
-        user["login_id"] = user_model.login_id(user.get("email"), user.get("username"),
-                                               user.get("kakao_id"), user["id"])
-    custom_users = media_model.users_with_custom_prices()
-    for a in custom_users:
-        a["login_id"] = user_model.login_id(a.get("email"), a.get("username"), a.get("kakao_id"), a["id"])
-    return render_template("admin/user_prices.html", accounts=accounts, user=user,
-                           rows=media_model.user_price_rows(uid) if user else [],
-                           custom_users=custom_users, channel_label=CHANNEL_LABEL)
+        decorate([user])
+        all_rows = media_model.user_price_rows(user["id"])
+        for m in all_rows:
+            if m["custom_price"] is not None:
+                ch_counts[m["channel"]] = ch_counts.get(m["channel"], 0) + 1
+        rows = [m for m in all_rows if m["channel"] == channel]
+    return render_template("admin/user_prices.html", q=q, found=found, user=user, rows=rows,
+                           channel=channel, ch_counts=ch_counts,
+                           custom_n=custom_n.get(uid, 0) if uid else 0,
+                           custom_users=decorate(media_model.users_with_custom_prices()),
+                           channel_label=CHANNEL_LABEL)
 
 
 @bp.route("/user-prices/<int:user_id>/save", methods=["POST"])
 @admin_required
 def user_prices_save(user_id):
     u = user_model.get_by_id(user_id) or abort(404)
-    back = redirect(url_for("admin.user_prices", user=user_id))
+    args = {"user": user_id, "channel": request.form.get("back_channel") or None,
+            "q": request.form.get("back_q") or None}
+    back = redirect(url_for("admin.user_prices", **{k: v for k, v in args.items() if v}))
     if request.form.get("reset"):
+        cleared = 0
         for m in media_model.user_price_rows(user_id):
             if m["custom_price"] is not None:
                 media_model.clear_user_price(user_id, m["id"])
-        _log("user_price", "user", user_id, f"{u['nickname']} 계정 단가 전체 해제")
-        flash("이 회원의 단가 설정을 모두 해제했습니다. 기본 단가를 씁니다.")
+                cleared += 1
+        _log("user_price", "user", user_id, f"{u['nickname']} 계정 단가 전체 해제 ({cleared}건)")
+        flash(f"단가 설정 {cleared}건을 모두 해제했습니다. 기본 단가를 씁니다.")
         return back
+
+    # 화면에 그려진 행만 건드린다. 이 가드가 없으면 채널 탭을 저장할 때 다른 탭의 단가가
+    # "칸이 비었다"로 읽혀 통째로 지워진다.
+    shown = {int(i) for i in request.form.getlist("ids") if str(i).isdigit()}
     changed, cleared, bad = 0, 0, []
     for m in media_model.user_price_rows(user_id):
+        if m["id"] not in shown:
+            continue
         raw = (request.form.get(f"price_{m['id']}") or "").strip()
         memo = request.form.get(f"memo_{m['id']}") or ""
         if not raw:
