@@ -123,6 +123,7 @@ def new(channel):
         return pre
     pre, editing = pre
     medias, sections = _media_ctx(channel)
+    media_model.apply_user_prices(g.user["id"], medias)   # 계정별 단가가 있으면 그 값으로 보여준다
     from ..models import daily_pick as pick_model
     picks = pick_model.get(channel, date.today())
     by_id = {m["id"]: m for m in medias}
@@ -152,6 +153,7 @@ def new(channel):
         types_json=json.dumps({
             m["id"]: {"g": next((i for i, s in enumerate(sections) if m in s["items"]), 0),
                       "n": m["name"], "p": m["unit_price"], "max": m["max_daily"] or 0,
+                      "mind": m["min_days"] or 1,
                       "badge": m["badge"], "badge_label": m["badge_label"],
                       "desc": m["description"] or "", "fit": m["fit_for"], "flow": m["flow_steps"]}
             for m in medias}, ensure_ascii=False),
@@ -231,12 +233,16 @@ def _create(channel):
         return _back(channel, request.form.get("media_id", type=int))
     media_id = request.form.get("media_id", type=int)
     media = media_model.get(media_id) if media_id else None
+    if media:
+        # 총액 재계산은 반드시 이 회원에게 적용되는 단가로 한다 (client_total 대조도 같은 값 기준).
+        media["unit_price"] = media_model.price_for(g.user["id"], media)
     if not media or media["channel"] != channel or not media["is_active"]:
         flash("광고 유형을 선택해주세요.")
         return redirect(url_for("campaign.new", channel=channel))
     days = request.form.get("days", type=int)
-    if days not in DATE_PRESETS:
-        flash("광고 기간을 선택해주세요.")
+    # 프리셋(10/20/30) 외에 직접 입력도 받는다. 매체별 최소 일수는 _parse_form 이 검사한다.
+    if not days or days < 1 or days > 60:
+        flash("광고 기간은 1~60일 사이로 입력해주세요.")
         return redirect(url_for("campaign.new", channel=channel))
     earliest = campaign_service.earliest_start()
     try:

@@ -550,8 +550,6 @@ def media_save():
             "badge_until": f.get("badge_until") or None,
             "fit_for": _csv_json(f.get("fit_for")),
             "flow_steps": _csv_json(f.get("flow_steps")),
-            "eff_level": f.get("eff_level") if f.get("eff_level") in ("normal", "good", "best") else "good",
-            "eff_note": f.get("eff_note", "").strip()[:120] or None,
             "description": f.get("description", "").strip() or None,
             "op_note": f.get("op_note", "").strip()[:200] or None,
             "no_refund_days": int(f["no_refund_days"]) if f.get("no_refund_days", "").strip() else None,
@@ -1072,6 +1070,68 @@ def user_drawer(user_id):
     return render_template("admin/_user_drawer.html", u=u, campaigns=campaign_model.list_by_user(user_id, 20),
                            posts=post_model.list_by_user(user_id, 20), paid_total=campaign_model.total_paid(user_id),
                            status_label=STATUS_LABEL, status_class=STATUS_CLASS, channel_label=CHANNEL_LABEL)
+
+
+# =============================================================== 계정별 단가
+@bp.route("/user-prices")
+@admin_required
+def user_prices():
+    """회원마다 다른 매체 단가. 없으면 media.unit_price 가 그대로 쓰인다."""
+    accounts = user_model.list_brief()
+    custom = {r["id"]: r["n"] for r in media_model.users_with_custom_prices()}
+    for a in accounts:
+        a["login_id"] = user_model.login_id(a.get("email"), a.get("username"), a.get("kakao_id"), a["id"])
+        a["n"] = custom.get(a["id"], 0)
+    uid = request.args.get("user", type=int)
+    user = user_model.get_by_id(uid) if uid else None
+    if user:
+        user["login_id"] = user_model.login_id(user.get("email"), user.get("username"),
+                                               user.get("kakao_id"), user["id"])
+    custom_users = media_model.users_with_custom_prices()
+    for a in custom_users:
+        a["login_id"] = user_model.login_id(a.get("email"), a.get("username"), a.get("kakao_id"), a["id"])
+    return render_template("admin/user_prices.html", accounts=accounts, user=user,
+                           rows=media_model.user_price_rows(uid) if user else [],
+                           custom_users=custom_users, channel_label=CHANNEL_LABEL)
+
+
+@bp.route("/user-prices/<int:user_id>/save", methods=["POST"])
+@admin_required
+def user_prices_save(user_id):
+    u = user_model.get_by_id(user_id) or abort(404)
+    back = redirect(url_for("admin.user_prices", user=user_id))
+    if request.form.get("reset"):
+        for m in media_model.user_price_rows(user_id):
+            if m["custom_price"] is not None:
+                media_model.clear_user_price(user_id, m["id"])
+        _log("user_price", "user", user_id, f"{u['nickname']} 계정 단가 전체 해제")
+        flash("이 회원의 단가 설정을 모두 해제했습니다. 기본 단가를 씁니다.")
+        return back
+    changed, cleared, bad = 0, 0, []
+    for m in media_model.user_price_rows(user_id):
+        raw = (request.form.get(f"price_{m['id']}") or "").strip()
+        memo = request.form.get(f"memo_{m['id']}") or ""
+        if not raw:
+            if m["custom_price"] is not None:
+                media_model.clear_user_price(user_id, m["id"])
+                cleared += 1
+            continue
+        try:
+            price = int(raw)
+        except ValueError:
+            bad.append(m["name"]); continue
+        if price < 1 or price > 1000000:
+            bad.append(m["name"]); continue
+        if price != m["custom_price"] or (memo or None) != m["memo"]:
+            media_model.set_user_price(user_id, m["id"], price, memo, g.user["id"])
+            changed += 1
+    if changed or cleared:
+        _log("user_price", "user", user_id, f"{u['nickname']} 계정 단가 {changed}건 지정 · {cleared}건 해제")
+    msg = f"단가 {changed}건 저장, {cleared}건 해제했습니다."
+    if bad:
+        msg += f" 값이 올바르지 않아 건너뛴 매체: {', '.join(bad[:5])}"
+    flash(msg)
+    return back
 
 
 @bp.route("/users/<int:user_id>/passwd", methods=["POST"])

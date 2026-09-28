@@ -11,6 +11,8 @@
   function digits(v) { return parseInt(String(v).replace(/[^0-9]/g, ''), 10) || 0; }
   function cnt() { return digits(qty.value); }
   function span() { return +daysVal.value || SPANS[0]; }
+  function minDays() { var t = sel(); return Math.max(1, (t && t.mind) || 1); }
+  var MAX_DAYS = 60;
   function sel() { return T[mediaId.value] || null; }
   function day(d) { return (d.getMonth() + 1) + '.' + String(d.getDate()).padStart(2, '0') + '(' + '일월화수목금토'[d.getDay()] + ')'; }
   function longDay(d) {
@@ -186,6 +188,12 @@
     document.querySelectorAll('#spans .w-span').forEach(function (b) {
       b.addEventListener('click', function () { daysVal.value = b.dataset.d; calc(); save(); });
     });
+    // 직접 입력칸과 버튼은 같은 값을 본다. 입력 중일 때는 커서를 건드리지 않는다.
+    var di = $('f-days');
+    if (di && document.activeElement !== di) { di.value = span(); }
+    if ($('daysHint')) {
+      $('daysHint').textContent = '최소 ' + minDays() + '일 ~ 최대 ' + MAX_DAYS + '일. ' + t.n + ' 기준입니다.';
+    }
     var total = perDay * span();
     $('c-day').textContent = won(perDay);
     $('c-formula').textContent = num(cnt()) + '회 × ' + num(t.p) + '원 × ' + span() + '일';
@@ -274,6 +282,10 @@
         return err('e-start', '시작일은 ' + longDay(new Date(W.minStart + 'T00:00:00')) + ' 이후로 선택해주세요.');
       }
       err('e-start', '');
+      var d = span();
+      if (d < minDays()) { return err('e-days', '이 광고 유형은 최소 ' + minDays() + '일부터 가능합니다.'); }
+      if (d > MAX_DAYS) { return err('e-days', '기간은 최대 ' + MAX_DAYS + '일입니다.'); }
+      err('e-days', '');
       var tt = sel();
       return !(tt && cnt() * tt.p * span() > BAL);
     }
@@ -322,7 +334,7 @@
     if (!$('f-kw').value && v.kw) $('f-kw').value = v.kw;
     if (!mediaId.value && v.media && T[v.media]) mediaId.value = v.media;
     if (v.qty) qty.value = v.qty;
-    if (v.days && SPANS.indexOf(+v.days) >= 0) daysVal.value = v.days;
+    if (v.days && +v.days >= 1 && +v.days <= MAX_DAYS) daysVal.value = +v.days;
     if (v.start && v.start >= W.minStart) startIn.value = v.start;
     if (v.memo) $('f-memo').value = v.memo;
   }
@@ -363,6 +375,22 @@
     recap();
     try { sessionStorage.removeItem(KEY); } catch (x) { /* ignore */ }
   });
+
+  var daysIn = $('f-days');
+  if (daysIn) {
+    daysIn.addEventListener('input', function () {
+      daysIn.value = String(daysIn.value).replace(/[^0-9]/g, '').slice(0, 2);
+      var v = parseInt(daysIn.value, 10);
+      if (v >= 1) { daysVal.value = Math.min(v, MAX_DAYS); calc(); save(); }
+    });
+    daysIn.addEventListener('blur', function () {
+      var v = parseInt(daysIn.value, 10);
+      if (!(v >= 1)) { v = span(); }                 // 비우고 나가면 직전 값으로 되돌린다
+      daysVal.value = Math.max(minDays(), Math.min(v, MAX_DAYS));
+      daysIn.value = span();
+      calc(); save();
+    });
+  }
 
   /* ── init ── */
   restore();

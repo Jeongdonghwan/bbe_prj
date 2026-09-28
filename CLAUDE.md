@@ -23,6 +23,10 @@
 cp .env.example .env → mysql < schema.sql → python scripts/seed.py → flask run
 
 ## 현재 Phase
+- 2026-09-28 계정별 매체 단가 / 기간 직접 입력 / 효율 UI 정리:
+  - **계정별 단가**: `user_media_prices(user_id, media_id, unit_price, memo)` + 어드민 `/admin/user-prices`. 없으면 `media.unit_price` 를 그대로 쓴다. 적용 지점은 두 곳뿐 — 위저드 렌더(`media.apply_user_prices`)와 제출 시 총액 재계산(`media.price_for`). **총액 대조(client_total)도 같은 값 기준**이라 기본 단가로 위조한 제출은 거절된다. 이미 접수된 주문은 `campaigns.unit_price` 에 박제되므로 단가를 바꿔도 과거 금액은 변하지 않는다.
+  - **광고 기간은 직접 입력 가능**. `DATE_PRESETS`(10/20/30)는 빠른 선택 버튼일 뿐이고, 실제 허용 범위는 **매체 `min_days` ~ 60일**이다. 서버는 라우트에서 1~60을 거르고 매체별 최소 일수는 `_parse_form` 이 본다. 위저드는 `types_json.mind` 로 매체 최소 일수를 받아 안내·검증한다.
+  - 매체 효율 게이지(`media.eff_level`/`eff_note`)는 **사용자 화면에서 사라진 지 오래인데 어드민 입력칸만 남아 있었다** → 입력칸 제거(컬럼은 보존, 저장 시 덮어쓰지 않음). `efficiency_auto`(성과 %)는 어드민이 인기 트래픽 추천을 고를 때 쓰는 내부 지표라 유지하고, 화면에 "회원 화면에는 나오지 않는다"고 밝혔다.
 - 2026-09-25 상태 흐름 단축 + 운영 삭제 기능 (JDH "과정이 너무 복잡해서 줄일 수 있는 건 줄여라"):
   - 캠페인은 **검수 → 정상 → 완료** 3단계로만 흐른다. 운영자는 **승인만** 누르고, 승인은 곧장 `running`이다 (`approved`를 거치지 않는다 — 2026-09-25 JDH "승인 누르면 그냥 정상이라고 나오고, 어차피 시작일자가 캠페인 관리에서 나오니 상관없다"). 종료일이 지나면 `campaign_service.advance_due()`(크론 `advance_campaigns`, hourly+daily)가 완료로 넘긴다. 어드민 주문 표의 "완료"·"중단"은 앞당길 때만 쓰는 수동 override.
   - `running`이지만 **시작일 전**인 구간이 정상적으로 존재한다. 그래서 `progress()`는 `today < start_date`면 진행률 대신 "MM.DD 시작"을 돌려주고, `day_index()`는 0이다 — 어드민 표의 순위 입력칸·"N일차"·"완료" 버튼과 드로어의 일차 표시는 모두 `day_idx`가 0이 아닐 때만 그린다. 진행 중 집계(`running_today_spend`, `running_without_today_rank`)도 `start_date <= CURDATE()`로 걸러야 한다.

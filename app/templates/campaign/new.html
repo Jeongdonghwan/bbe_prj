@@ -150,6 +150,15 @@
           <span class="w-err" id="e-start" hidden></span>
         </div>
         <div class="w-spans" id="spans"></div>
+        <div class="w-fld" style="margin-top:16px;max-width:320px">
+          <label for="f-days">기간 직접 입력</label>
+          <p class="w-hint" id="daysHint">원하는 일수를 넣으세요.</p>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input class="w-in" id="f-days" type="text" inputmode="numeric" maxlength="2" style="max-width:110px" aria-label="광고 기간(일)">
+            <span class="w-num" style="color:var(--ink-3)">일</span>
+          </div>
+          <span class="w-err" id="e-days" hidden></span>
+        </div>
         <div class="w-calc">
           <div class="w-k">일일 비용</div><div class="w-v w-num" id="c-day">-</div>
           <div class="w-k">계산</div><div class="w-v w-num" id="c-formula" style="color:var(--ink-3)">-</div>

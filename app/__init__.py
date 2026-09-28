@@ -86,6 +86,7 @@ MENU = {
             "title": "회원 · 커뮤니티",
             "items": [
                 {"label": "회원 목록", "icon": "circle-help", "href": "/admin/users"},
+                {"label": "계정별 단가", "icon": "credit-card", "href": "/admin/user-prices"},
                 {"label": "운영자 관리", "icon": "venetian-mask", "href": "/admin/operators"},
                 {"label": "게시글 관리", "icon": "message-circle", "href": "/admin/posts"},
                 {"label": "대행의뢰 · 제안", "icon": "message-circle", "href": "/admin/agency"},

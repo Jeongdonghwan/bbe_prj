@@ -50,8 +50,9 @@ def update_profile(user_id, nickname, phone):
 
 
 def list_brief():
-    """id/nickname/email/balance for admin dropdowns (active users)."""
-    return query("SELECT id, nickname, email, credit_balance FROM users WHERE status = 'active' ORDER BY id")
+    """어드민 드롭다운용 (활성 회원). 아이디 표기에 필요한 컬럼까지 같이 준다."""
+    return query("""SELECT id, nickname, email, username, kakao_id, biz_name, credit_balance
+                    FROM users WHERE status = 'active' ORDER BY biz_name, nickname, id""")
 
 
 def update_biz(user_id, biz_name, biz_no, biz_type, biz_item, biz_email):

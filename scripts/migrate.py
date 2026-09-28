@@ -296,6 +296,22 @@ def main():
         cur.execute("ALTER TABLE users ADD COLUMN last_login_at DATETIME NULL AFTER status")
         done.append("users.last_login_at")
 
+    # -- 계정별 매체 단가 (2026-09-28) --------------------------------------
+    if not table("user_media_prices"):
+        cur.execute("""CREATE TABLE user_media_prices (
+              user_id      INT NOT NULL,
+              media_id     INT NOT NULL,
+              unit_price   INT NOT NULL,
+              memo         VARCHAR(200) NULL,
+              updated_by   INT NULL,
+              updated_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+              PRIMARY KEY (user_id, media_id),
+              KEY idx_ump_media (media_id),
+              CONSTRAINT fk_ump_user  FOREIGN KEY (user_id)  REFERENCES users (id) ON DELETE CASCADE,
+              CONSTRAINT fk_ump_media FOREIGN KEY (media_id) REFERENCES media (id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci""")
+        done.append("user_media_prices")
+
     # -- strip banner settings (2026-09-02, default OFF) -------------------
     for k, v in (("strip_on", "0"), ("strip_text", "테스트 띠배너 문구입니다"), ("strip_link", ""), ("strip_bg", "#2563EB")):
         cur.execute("INSERT IGNORE INTO settings (k, v) VALUES (%s,%s)", (k, v))
