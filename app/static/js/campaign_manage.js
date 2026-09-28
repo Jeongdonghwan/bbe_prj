@@ -14,16 +14,17 @@
   var rm = document.getElementById('rankModal'), rb = document.getElementById('rankBody');
   function closeRanks() { rm.classList.remove('on'); }
   rm.addEventListener('click', function (e) { if (e.target === rm) closeRanks(); });
-  document.querySelectorAll('[data-ranks]').forEach(function (b) {
-    b.addEventListener('click', function (e) {
-      e.stopPropagation();
-      fetch(window.DRAWER_BASE + b.dataset.ranks + '/ranks').then(function (r) { return r.text(); }).then(function (html) {
-        rb.innerHTML = html;
-        rm.classList.add('on');
-        var x = document.getElementById('rkclose');
-        if (x) x.addEventListener('click', closeRanks);
-        if (window.lucide) window.lucide.createIcons();
-      });
+  // 드로어는 fetch 로 나중에 들어오므로 문서에 위임한다 (그때 붙이면 버튼이 안 먹는다).
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-ranks]');
+    if (!b) { return; }
+    e.stopPropagation();
+    fetch(window.DRAWER_BASE + b.dataset.ranks + '/ranks').then(function (r) { return r.text(); }).then(function (html) {
+      rb.innerHTML = html;
+      rm.classList.add('on');
+      var x = document.getElementById('rkclose');
+      if (x) x.addEventListener('click', closeRanks);
+      if (window.lucide) window.lucide.createIcons();
     });
   });
   document.querySelectorAll('tr[data-open]').forEach(function (tr) {

@@ -9,7 +9,7 @@
     {% if c.warn_words %}<div class="memo" style="margin-top:8px">주의 문구 감지: {{ c.warn_words }} — 검수 시 반려될 수 있습니다.</div>{% endif %}
     {% if c.reject_reason %}<div class="memo" style="margin-top:8px;background:var(--danger-soft);color:#991B1B">반려 사유: {{ c.reject_reason }}</div>{% endif %}</div>
 
-  <div class="dsec"><h6>순위 변동 <span style="font-weight:500;color:var(--text-3)">· 낮을수록 좋음</span></h6>
+  <div class="dsec"><h6 style="display:flex;align-items:center;gap:6px">순위 변동 <span style="font-weight:500;color:var(--text-3)">· 낮을수록 좋음</span><button class="btn sec sm" type="button" data-ranks="{{ c.id }}" style="margin-left:auto">일자별 보기</button></h6>
     {% if ranks %}<div class="rankchart">{% for d in ranks %}<i data-r="{{ d.rank }}" style="height:{{ d.h }}%"{% if loop.last %} class="now"{% endif %}></i>{% endfor %}</div>
     <div class="spark-lb"><span>{{ ranks[0].date | fmt_date }}</span><span>{{ ranks[-1].date | fmt_date }}</span></div>
     {% else %}<div class="empty" style="padding:16px 0">{% if c | rank_state == 'waiting' %}<span class="rk-wait">순위 조회중</span><br>등록과 함께 추적을 시작했고, 수집되는 대로 채워집니다.{% elif c | rank_state == 'out' %}아직 300위 안에 들지 않았습니다.{% else %}아직 순위 데이터가 없습니다.{% endif %}</div>{% endif %}</div>
