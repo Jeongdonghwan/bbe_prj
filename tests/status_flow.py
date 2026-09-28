@@ -117,8 +117,11 @@ def main():
         ok(campaign_service.day_index(c0) == 0, "아직 0일차", campaign_service.day_index(c0))
         ok(prog["cls"] == "wait" and "시작" in prog["label"], "진행률 대신 시작일 표시", prog)
     h = admin.get("/admin/orders").get_data(as_text=True)
-    ok(f"{a['start_date']:%m.%d} 시작" in h, "어드민 표에도 시작일", "표에 시작일 문구 없음")
-    ok("일차" not in h.split(a["order_no"])[1][:600], "시작 전에는 N일차 안 띄움")
+    row = h.split(a["order_no"])[1][:900]
+    # 기간 칸에 시작~종료가 그대로 있다 (순위 칸은 이제 순위 상태만 보여준다)
+    ok(f"{a['start_date']:%m.%d}~" in row, "어드민 표에 구동 기간", row[:200])
+    ok("순위 조회중" in row, "순위 칸은 조회중", row[:200])
+    ok("일차" not in row, "시작 전에는 N일차 안 띄움")
 
     print("\n=== 4. 종료일 경과 → 자동 완료 ===")
     with app.app_context():

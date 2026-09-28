@@ -229,16 +229,25 @@ def backfill_names(limit=100):
     return filled
 
 
+# 순위 서버가 다루는 채널. 쿠팡은 수집기가 없다.
+TRACKABLE = ("store", "place")
+# 아직 이름·순위가 들어올 여지가 있는 상태. 끝난 건은 영원히 "수집중"으로 두지 않는다.
+PENDING_STATUSES = ("review", "approved", "running")
+
+
 def name_state(campaign):
     """표시명이 수집된 진짜 이름인지, 아직 키워드로 버티는 중인지.
 
     "named"      순위 서버가 준 이름이 들어와 있다
-    "collecting" 추적은 걸렸고 이름은 아직 — 화면에 "수집중"을 띄운다
-    "keyword"    추적 대상이 아니다 (쿠팡 등) — 키워드를 그대로 보여준다
+    "collecting" 들어올 예정 — 화면에 "수집중"을 띄운다
+    "keyword"    들어올 일이 없다 (쿠팡, 또는 이미 끝난 건) — 키워드를 그대로 보여준다
+
+    track_id 유무로 판정하지 않는다. 추적 등록은 요청 밖 스레드에서 돌아서 등록 직후에는
+    비어 있고, 그 순간 화면에 키워드가 그대로 노출되는 게 이 판정의 옛 버그였다.
     """
     if campaign.get("product_name"):
         return "named"
-    if campaign.get("track_id") and campaign.get("channel") in ("store", "place"):
+    if campaign.get("channel") in TRACKABLE and campaign.get("status") in PENDING_STATUSES:
         return "collecting"
     return "keyword"
 
@@ -253,9 +262,12 @@ def rank_state(campaign):
     """
     if campaign.get("rank_now"):
         return "ranked"
-    if not campaign.get("track_id"):
-        return "none"
-    return "out" if campaign.get("track_status") == "not_found" else "waiting"
+    if campaign.get("track_status") == "not_found":
+        return "out"
+    # name_state 와 같은 이유로 track_id 를 보지 않는다 (등록 직후엔 아직 비어 있다).
+    if campaign.get("channel") in TRACKABLE and campaign.get("status") in PENDING_STATUSES:
+        return "waiting"
+    return "none"
 
 
 def rank_sheet(campaign):
