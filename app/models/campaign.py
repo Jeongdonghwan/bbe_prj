@@ -382,6 +382,15 @@ def untracked_running(limit=200):
            AND track_id IS NULL ORDER BY id LIMIT %s""", [limit])]
 
 
+def tracked_without_name(limit=100):
+    """추적은 걸렸는데 상품·업체명이 아직 안 들어온 캠페인 — 등록 화면에서 이름을 받지 않으므로
+    순위 서버가 유일한 이름 출처다."""
+    return [_decode(r) for r in query(
+        """SELECT * FROM campaigns WHERE track_id IS NOT NULL AND product_name IS NULL
+             AND status IN ('review','approved','running')
+           ORDER BY id DESC LIMIT %s""", [limit])]
+
+
 def store_without_nv_mid(limit=100):
     """nvMid 가 비어 있는 쇼핑 캠페인 — 등록 때 미리보기가 못 채운 건을 나중에 메운다."""
     return [_decode(r) for r in query(

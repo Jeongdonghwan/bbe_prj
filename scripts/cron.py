@@ -70,7 +70,8 @@ def sync_ranks():
     for c in campaign_model.tracked_without_today_rank():
         if campaign_service.backfill_ranks(c, throttle_min=0):
             filled += 1
-    return f"신규 등록 {spawned} · 순위 보정 {filled}"
+    named = campaign_service.backfill_names()
+    return f"신규 등록 {spawned} · 순위 보정 {filled} · 이름 보정 {named}"
 
 
 def backfill_nvmid():

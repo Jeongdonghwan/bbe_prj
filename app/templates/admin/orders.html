@@ -23,7 +23,7 @@
       <td class="ord">{{ r.order_no }}<br><span class="mut" style="font-size:11px">{{ pay_method_label[r.pay_method] }} {{ r.paid_amount | fmt_num }}</span></td>
       <td><a class="lnk" href="/admin/users?q={{ r.login_id | urlencode }}">{{ r.nickname }}</a><br><span class="mut mono" style="font-size:11px">{{ r.login_id }}</span>{% if r.user_biz %}<br><span class="mut" style="font-size:11px">{{ r.user_biz }}</span>{% endif %}</td>
       <td><span class="pill p-{{ r.channel }}">{{ channel_label[r.channel] }}</span></td>
-      <td><b>{{ r.biz_name }}</b><br>{% if r.warn.block %}<span style="color:var(--danger);font-size:12px">⚠ 금지 문구 "{{ r.warn.block | join(', ') }}" 감지</span>{% elif r.warn.warn %}<span style="color:var(--warn);font-size:12px">주의 "{{ r.warn.warn | join(', ') }}"</span> <span class="mut">{{ r.main_keyword }}</span>{% else %}<span class="mut">{{ r.main_keyword }}</span>{% endif %}</td>
+      <td>{% if r | name_state == 'collecting' %}<span class="rk-wait">이름 수집중</span>{% else %}<b>{{ r.biz_name }}</b>{% endif %}<br>{% if r.warn.block %}<span style="color:var(--danger);font-size:12px">⚠ 금지 문구 "{{ r.warn.block | join(', ') }}" 감지</span>{% elif r.warn.warn %}<span style="color:var(--warn);font-size:12px">주의 "{{ r.warn.warn | join(', ') }}"</span> <span class="mut">{{ r.main_keyword }}</span>{% else %}<span class="mut">{{ r.main_keyword }}</span>{% endif %}</td>
       <td>{{ r.media_name }}</td>
       <td class="num">{{ r.start_date | fmt_date }}~{{ r.end_date | fmt_date }}<br><span class="mut">{{ r.daily_qty }}/일{% if r.status == 'running' and r.day_idx %} · {{ r.day_idx }}일차{% endif %}</span></td>
       <td><a class="lnk" href="{{ r.target_url }}" target="_blank" rel="noopener">확인</a></td>

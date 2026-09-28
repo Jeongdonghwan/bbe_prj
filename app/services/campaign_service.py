@@ -186,6 +186,7 @@ def spawn_track(campaign):
         return None
     fields = {"track_id": r["trackId"], "track_status": r.get("status") or "queued"}
     campaign_model.update(campaign["id"], fields)
+    apply_prod_name(campaign, r.get("prodNm"))   # 이미 아는 상품이면 이름이 바로 온다
     # 오늘 이미 수집된 키워드면 순위가 바로 들어 있다.
     if r.get("status") == "collected" and r.get("rank") is not None and r.get("date"):
         try:
@@ -196,6 +197,50 @@ def spawn_track(campaign):
 
 
 WEEKDAYS = ["월", "화", "수", "목", "금", "토", "일"]
+
+
+def apply_prod_name(campaign, prod_nm):
+    """순위 서버가 준 실제 상품·업체명을 표시명으로 반영한다.
+
+    등록 화면에서 이름을 받지 않으므로(2026-09-28) 이게 유일한 이름 출처다.
+    product_name = 수집된 진짜 이름(없으면 아직 모른다는 뜻), biz_name = 목록 표시명.
+    표시명이 아직 키워드 대체값일 때만 바꾼다 — 사람이 고쳐 둔 이름은 건드리지 않는다.
+    """
+    name = " ".join((prod_nm or "").split())[:120]
+    if not name or campaign.get("product_name") == name:
+        return False
+    fields = {"product_name": name}
+    if not campaign.get("biz_name") or campaign["biz_name"] == campaign.get("main_keyword"):
+        fields["biz_name"] = name[:80]
+    campaign_model.update(campaign["id"], fields)
+    return True
+
+
+def backfill_names(limit=100):
+    """이름이 아직 안 들어온 추적 캠페인의 상품·업체명을 순위 서버에서 가져온다 (크론)."""
+    from . import rank_client
+    if not rank_client.configured():
+        return 0
+    filled = 0
+    for c in campaign_model.tracked_without_name(limit):
+        r = rank_client.slot_ranks(c["track_id"])
+        if r.get("ok") and apply_prod_name(c, r.get("prodNm")):
+            filled += 1
+    return filled
+
+
+def name_state(campaign):
+    """표시명이 수집된 진짜 이름인지, 아직 키워드로 버티는 중인지.
+
+    "named"      순위 서버가 준 이름이 들어와 있다
+    "collecting" 추적은 걸렸고 이름은 아직 — 화면에 "수집중"을 띄운다
+    "keyword"    추적 대상이 아니다 (쿠팡 등) — 키워드를 그대로 보여준다
+    """
+    if campaign.get("product_name"):
+        return "named"
+    if campaign.get("track_id") and campaign.get("channel") in ("store", "place"):
+        return "collecting"
+    return "keyword"
 
 
 def rank_state(campaign):
@@ -319,6 +364,7 @@ def backfill_ranks(campaign, throttle_min=5):
     r = rank_client.slot_ranks(tid)
     if not r.get("ok"):
         return False
+    apply_prod_name(campaign, r.get("prodNm"))   # 순위를 가져오는 김에 이름도 채운다
     n = 0
     for row in r.get("ranks") or []:
         try:

@@ -216,6 +216,12 @@ def create_app():
             "crumb_label": active[2] if active else "대시보드",
         }
 
+    @app.template_filter("name_state")
+    def name_state(campaign):
+        """표시명 상태: named / collecting(수집중) / keyword. 판정은 서비스에 있다."""
+        from .services.campaign_service import name_state as calc
+        return calc(campaign)
+
     @app.template_filter("rank_state")
     def rank_state(campaign):
         """순위 칸 상태: waiting(조회중) / out(순위 밖) / ranked / none. 판정은 서비스에 있다."""
