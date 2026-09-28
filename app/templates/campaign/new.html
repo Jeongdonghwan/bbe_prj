@@ -24,10 +24,14 @@
     <input type="hidden" name="client_total" id="clientTotal" value="0">
     <input type="hidden" name="media_id" id="mediaId" value="{{ pre.media_id or '' }}">
     <input type="hidden" name="nv_mid" id="nvMid" value="{{ pre.nv_mid or '' }}">
+    {# 상품명은 더 이상 직접 입력받지 않는다 (2026-09-28 JDH). 미리보기가 잡아오면 그 값을
+       표시명으로 쓰고, 못 잡으면 서버가 희망 키워드를 표시명으로 쓴다. #}
+    <input type="hidden" name="{{ 'biz_name' if is_place else 'product_name' }}" id="f-name"
+           value="{{ (pre.biz_name if is_place else (pre.product_name or pre.biz_name)) or '' }}">
 
     <div class="w-side">
       <ol class="w-steps" id="steps">
-        <li class="w-cur" data-n="1"><div class="w-dot">1</div><div class="w-t">{{ '플레이스 정보 입력' if is_place else '상품 정보 입력' }}</div><div class="w-c">{{ '플레이스 링크와 이름' if is_place else '상품 URL과 이름' }}</div></li>
+        <li class="w-cur" data-n="1"><div class="w-dot">1</div><div class="w-t">{{ '플레이스 정보 입력' if is_place else '상품 정보 입력' }}</div><div class="w-c">{{ '플레이스 링크' if is_place else '상품 URL' }}</div></li>
         <div class="w-gname">광고 설정</div>
         <li class="w-nest" data-n="2"><div class="w-dot">2</div><div class="w-t">광고 유형</div><div class="w-c">유형과 단가</div></li>
         <li class="w-nest" data-n="3"><div class="w-dot">3</div><div class="w-t">유입 설정</div><div class="w-c">키워드와 목표 유입수</div></li>
@@ -41,7 +45,7 @@
       <!-- 1 -->
       <div class="w-pane w-on" data-p="1">
         <h2>{{ '플레이스 정보' if is_place else '상품 정보' }}</h2>
-        <p class="w-lede">{{ '광고할 네이버 플레이스를 등록하세요.' if is_place else '광고할 상품을 등록하세요.' }}</p>
+        <p class="w-lede">{{ '광고할 네이버 플레이스 주소를 넣어주세요.' if is_place else '광고할 상품 주소를 넣어주세요.' }} 이름은 자동으로 채워집니다.</p>
         <div class="w-fld">
           <label for="f-url">{{ '플레이스 링크' if is_place else '상품 URL' }}</label>
           <p class="w-hint">{% if ch == 'store' %}smartstore.naver.com · brand.naver.com · shopping.naver.com 주소만 가능합니다.{% elif ch == 'coupang' %}www.coupang.com/vp/products/ 로 시작하는 주소만 가능합니다.{% else %}m.place.naver.com · naver.me 주소만 가능합니다. PC 주소는 자동 변환됩니다.{% endif %}</p>
@@ -57,13 +61,6 @@
         {% else %}
         <div class="w-urlok" id="urlOk" hidden><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg><span id="urlOkTxt"></span></div>
         {% endif %}
-        <div class="w-fld" style="margin-top:20px">
-          <label for="f-name">{{ '플레이스명' if is_place else '상품명' }}{% if not is_place %} <span class="w-opt">선택</span>{% endif %}</label>
-          <p class="w-hint">{% if is_place %}캠페인 목록에서 구분하기 쉬운 이름. 2~60자.{% elif preview_on %}상품 URL을 넣으면 자동으로 채워집니다. 원하는 이름으로 고쳐도 됩니다.{% else %}캠페인 목록에서 구분하기 쉬운 이름. 비우면 희망 키워드로 표시됩니다.{% endif %}</p>
-          <input class="w-in" id="f-name" name="{{ 'biz_name' if is_place else 'product_name' }}" maxlength="60"{% if not is_place %} data-opt="1"{% endif %}
-                 value="{{ (pre.biz_name if is_place else (pre.product_name or pre.biz_name)) or '' }}" placeholder="{% if is_place %}2~60자{% elif preview_on %}상품 URL을 넣으면 자동으로 채워집니다{% else %}비워두면 희망 키워드로 표시됩니다{% endif %}">
-          <span class="w-err" id="e-name" hidden></span>
-        </div>
       </div>
 
       <!-- 2 -->

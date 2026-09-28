@@ -9,7 +9,7 @@
 {% else %}
 <div class="dgrid" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px">
   <div><span>키워드</span><b>{{ c.main_keyword }}</b></div>
-  <div><span>금일 순위</span><b class="num">{{ today_rank ~ '위' if today_rank else '-' }}</b></div>
+  <div><span>금일 순위</span><b class="num">{% if today_rank %}{{ today_rank }}위{% elif c | rank_state == 'waiting' %}<span class="rk-wait">조회중</span>{% elif c | rank_state == 'out' %}<span class="mut">순위 밖</span>{% else %}-{% endif %}</b></div>
   <div><span>시작 순위</span><b class="num">{{ c.rank_start ~ '위' if c.rank_start else '순위 밖' }}</b></div>
   <div><span>시작일 대비</span><b class="num">{% if delta is not none %}{% if delta > 0 %}<span class="up">▲{{ delta }}</span>{% elif delta < 0 %}<span class="dn">▼{{ -delta }}</span>{% else %}—{% endif %}{% else %}-{% endif %}</b></div>
 </div>
@@ -22,7 +22,7 @@
 </div>
 <p class="thin" style="margin-top:10px">* 등락 표시는 시작 순위 대비 등하락입니다. 순위는 매일 자동으로 수집됩니다 — {{ '플레이스 오후 2시' if channel == 'place' else '쇼핑 오전 11시·오후 5시' }} 기준.</p>
 {% else %}
-<div class="empty" style="padding:30px 0">아직 수집된 순위가 없습니다. 등록과 함께 추적을 시작했고, {{ '매일 오후 2시' if channel == 'place' else '매일 오전 11시·오후 5시' }}에 수집됩니다.</div>
+<div class="empty" style="padding:30px 0">{% if c | rank_state == 'waiting' %}<span class="rk-wait">순위 조회중</span><br>등록과 함께 추적을 시작했습니다. {{ '매일 오후 2시' if channel == 'place' else '매일 오전 11시·오후 5시' }}에 수집됩니다.{% else %}아직 수집된 순위가 없습니다.{% endif %}</div>
 {% endif %}
 {% endif %}
 <button class="btn sec" type="button" style="width:100%;margin-top:14px" onclick="document.getElementById('rankModal').classList.remove('on')">닫기</button>

@@ -696,3 +696,10 @@ tr:hover .rowact button, tr.sel .rowact button{opacity:1}
 /* 어드민 주문표: 순위 칸 전체가 순위 보고서를 여는 버튼 */
 .rankcell{display:inline-block;cursor:pointer;border-bottom:1px dashed var(--line);padding-bottom:1px}
 .rankcell:hover{border-bottom-color:var(--accent)}
+
+/* 순위 조회중 — 순위 서버가 아직 수집 전인 상태 (track_status queued) */
+.rk-wait{display:inline-flex;align-items:center;gap:5px;color:var(--text-3);font-size:12px;white-space:nowrap}
+.rk-wait::before{content:"";width:11px;height:11px;border-radius:50%;
+  border:2px solid var(--line);border-top-color:var(--accent);animation:rkspin .8s linear infinite}
+@keyframes rkspin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.rk-wait::before{animation-duration:3s}}

@@ -216,6 +216,12 @@ def create_app():
             "crumb_label": active[2] if active else "대시보드",
         }
 
+    @app.template_filter("rank_state")
+    def rank_state(campaign):
+        """순위 칸 상태: waiting(조회중) / out(순위 밖) / ranked / none. 판정은 서비스에 있다."""
+        from .services.campaign_service import rank_state as calc
+        return calc(campaign)
+
     @app.template_filter("fmt_date")
     def fmt_date(v, fmt="%m.%d"):
         if not v:

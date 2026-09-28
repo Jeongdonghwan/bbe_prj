@@ -254,11 +254,8 @@
   }
   function validate(n) {
     if (n === 1) {
-      var u = $('f-url').value.trim(), nm = $('f-name').value.trim();
-      var a = err('e-url', u ? '' : '주소를 입력해주세요.');
-      var opt = $('f-name').dataset.opt === '1';
-      var b = err('e-name', (opt && !nm) || (nm.length >= 2 && nm.length <= 60) ? '' : '이름을 2~60자로 입력해주세요.');
-      return a && b;
+      // 이름은 더 이상 받지 않는다 — 주소만 확인한다.
+      return err('e-url', $('f-url').value.trim() ? '' : '주소를 입력해주세요.');
     }
     if (n === 2) return err('e-media', sel() ? '' : '광고 유형을 선택해주세요.');
     if (n === 3) {
@@ -328,7 +325,7 @@
     if (v.start && v.start >= W.minStart) startIn.value = v.start;
     if (v.memo) $('f-memo').value = v.memo;
   }
-  ['f-url', 'f-name', 'f-kw'].forEach(function (id) {
+  ['f-url', 'f-kw'].forEach(function (id) {      // f-name 은 숨은 필드라 입력 이벤트가 없다
     $(id).addEventListener('input', function () { preview(); save(); });
   });
   if (W.preview && $('preview')) {
@@ -339,6 +336,7 @@
       $('pvImg').hidden = true;
       $('pvIcon').hidden = false;
       if ($('nvMid')) $('nvMid').value = '';            // 주소가 바뀌면 이전 상품의 nvMid 를 버린다
+      $('f-name').value = '';                           // 상품명도 같이 (직접 입력받지 않으므로 항상 새로 채운다)
       clearTimeout(lookupTimer);
       lookupTimer = setTimeout(lookup, 600);
     });

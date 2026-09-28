@@ -201,11 +201,12 @@ def _parse_form(channel, media, form):
     f["main_keyword"] = " ".join((form.get("main_keyword") or "").split())[:60]
     if not f["main_keyword"]:
         return None, "희망 키워드를 입력해주세요."
+    # 상품명·플레이스명은 더 이상 입력받지 않는다 (2026-09-28 JDH). 미리보기가 잡아온 이름이
+    # 있으면 그걸 목록 표시명으로 쓰고, 없으면 희망 키워드를 쓴다. 세 채널 모두 같은 규칙.
     if channel in ("store", "coupang"):
-        # 상품명은 선택 입력 (2026-09-21 JDH). 비우면 키워드를 목록 표시명으로 쓴다.
         f["biz_name"] = f["product_name"] or f["main_keyword"]
-    elif not f["biz_name"]:
-        return None, "플레이스명을 입력해주세요."
+    else:
+        f["biz_name"] = f["biz_name"] or f["main_keyword"]
     f["sub_keywords"] = []
     f["keyword_mode"] = "manual"
     f["setting_keywords"] = [f["main_keyword"]]

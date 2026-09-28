@@ -193,6 +193,21 @@ def spawn_track(campaign):
 WEEKDAYS = ["월", "화", "수", "목", "금", "토", "일"]
 
 
+def rank_state(campaign):
+    """순위 칸이 어떤 상태인지 한 곳에서 판정한다 — 화면마다 다르게 보이지 않게.
+
+    "waiting"  순위 서버가 아직 수집 전 (조회중 스피너)
+    "out"      수집은 됐는데 300위 밖
+    "ranked"   순위가 있다
+    "none"     추적을 걸지 않았다 (쿠팡, 또는 순위 서버 미설정)
+    """
+    if campaign.get("rank_now"):
+        return "ranked"
+    if not campaign.get("track_id"):
+        return "none"
+    return "out" if campaign.get("track_status") == "not_found" else "waiting"
+
+
 def rank_sheet(campaign):
     """순위 보고서(_ranks.html)에 넘길 값 — 사용자 화면과 어드민이 같은 표를 쓴다.
 
