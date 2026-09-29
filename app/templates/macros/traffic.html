@@ -53,12 +53,12 @@
 {% if m.origin == 'own' %}<span class="p-tag p-own">자체개발</span> {% endif %}{{ badge_tags(m) }}
 {%- endmacro %}
 
-{# 정사각 타일: 상단 24% 그룹 띠 + 연회색 바탕에 흰 원 + 가운데 큰 이름(글자 수에 따라 38/32/26px) + BBene #}
+{# 정사각 타일: 상단 24% 그룹 띠 + 연회색 바탕에 흰 원 + 가운데 큰 이름(글자 수에 따라 38/32/26px) + 서비스명 #}
 {% macro tile(m) %}
 {% set n = m.name %}
 <div class="p-tile {{ gc(m) }}">
   <div class="p-band">{{ band_text(m) }}</div>
-  <div class="p-body"><div class="p-nm{% if n | length >= 6 %} p-l5{% elif n | length >= 4 %} p-l4{% endif %}">{{ n }}</div><div class="p-brand">BBene</div></div>
+  <div class="p-body"><div class="p-nm{% if n | length >= 6 %} p-l5{% elif n | length >= 4 %} p-l4{% endif %}">{{ n }}</div><div class="p-brand">{{ APP_NAME }}</div></div>
 </div>
 {% endmacro %}
 

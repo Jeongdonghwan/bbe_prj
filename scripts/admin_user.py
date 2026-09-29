@@ -2,10 +2,10 @@
 
     python scripts/admin_user.py list
     python scripts/admin_user.py create admin                      # 아이디로 (비밀번호 자동)
-    python scripts/admin_user.py create ops@bbene.co.kr             # 이메일로
+    python scripts/admin_user.py create ops@example.com             # 이메일로
     python scripts/admin_user.py create admin --password 1234       # 비밀번호 직접
     python scripts/admin_user.py passwd admin                       # 재설정
-    python scripts/admin_user.py revoke ops@bbene.co.kr            # 운영 권한 회수(일반 회원으로)
+    python scripts/admin_user.py revoke ops@example.com            # 운영 권한 회수(일반 회원으로)
 
 비밀번호는 화면에 한 번만 보여주고 저장하지 않는다. 직접 정하려면 --password 로 주되,
 셸 히스토리에 남으니 되도록 자동 생성을 쓸 것.

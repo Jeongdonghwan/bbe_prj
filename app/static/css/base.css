@@ -137,7 +137,8 @@ a.post,a.qna,a.ag{color:inherit;display:flex}a.qna{display:block}
 .logo{font-size:30px;padding:6px 10px 22px;gap:10px;align-items:center}
 .logo b{width:40px;height:40px;border-radius:10px;font-size:19px}
 .logo .lsym{height:30px;width:auto;display:block;flex:none}
-.logo .ltxt{font-family:'Baloo 2',var(--font);font-size:30px;font-weight:800;color:#fff;letter-spacing:.01em;line-height:1;padding-top:2px}
+/* 서비스명이 한글이라 라틴 전용 서체('Baloo 2')를 쓰면 글자가 다른 서체로 튄다 (2026-09-29 JDH). */
+.logo .ltxt{font-family:var(--font);font-size:26px;font-weight:800;color:#fff;letter-spacing:-.02em;line-height:1;padding-top:2px;white-space:nowrap}
 .logo small{font-size:12px}
 .sidebar .nav a,.sidebar .nav button{font-size:17.5px;font-weight:600;padding:11px 12px;gap:12px;border-radius:9px}
 .sidebar .nav .i{width:21px;height:21px;flex:none}
