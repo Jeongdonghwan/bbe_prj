@@ -210,3 +210,9 @@ body:not(.admin) .nav a:hover,body:not(.admin) .nav button:hover,body:not(.admin
 @media(min-width:768px){
   .sidebar:not(:hover) .logo .lsym{display:block;height:28px;margin:0 auto}
 }
+
+/* 사이드바 가입 CTA — 카카오 노란 버튼을 숨기고 같은 자리에 이메일 가입을 둔다 (2026-09-29).
+   .kakao-btn 의 접힘/펼침 규칙을 그대로 타기 위해 클래스는 남기고 색만 바꾼다. */
+.sidebar .kakao-btn.signup-btn{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.28)}
+.sidebar .kakao-btn.signup-btn:hover{background:rgba(255,255,255,.22)}
+.sidebar .kakao-btn.signup-btn svg{fill:none;stroke:#fff;width:18px;height:18px}

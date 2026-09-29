@@ -196,9 +196,9 @@ def kakao():
         return redirect("/")
     key = current_app.config["KAKAO_REST_KEY"]
     if not key:
-        # No key yet: send to the login page (dev buttons in DEBUG, guidance in prod).
-        if not current_app.debug:
-            flash("카카오 로그인 준비 중입니다. 잠시 후 다시 시도해주세요.")
+        # 키 발급 전이라 화면에서 카카오 진입점을 전부 숨겨 뒀다 (2026-09-29). 북마크나 옛 링크로
+        # 들어오면 이메일 로그인으로 보낸다. 키가 생기면 login.html 에 버튼만 되살리면 된다.
+        flash("카카오 로그인은 준비 중입니다. 이메일로 로그인해주세요.")
         return redirect(url_for("auth.login", next=request.args.get("next")))
     state = secrets.token_urlsafe(16)
     session["oauth_state"] = state

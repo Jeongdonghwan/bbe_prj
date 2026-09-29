@@ -133,7 +133,12 @@ def privacy():
 
 @bp.route("/guide")
 def guide():
-    return render_placeholder("이용가이드", 5)
+    """이용가이드 — 수치는 상수에서 읽어 화면 문구가 정책과 어긋나지 않게 한다."""
+    from ..constants import BANK_DUE_DAYS, DATE_PRESETS, MEDIA_MIN_DAILY, ORDER_CUTOFF, STORE_SLOT_MAX
+    from ..services import credit_service
+    return render_template("my/guide.html", min_charge=credit_service.MIN_CHARGE, bank_due_days=BANK_DUE_DAYS,
+                           order_cutoff=ORDER_CUTOFF, presets=DATE_PRESETS, min_daily=MEDIA_MIN_DAILY,
+                           slot_max=STORE_SLOT_MAX)
 
 
 @bp.route("/settings")
