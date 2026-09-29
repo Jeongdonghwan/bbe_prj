@@ -160,7 +160,25 @@ POST /api/rank/callback      (app/blueprints/rank_api.py)
 이미 등록했으면 우리 POST 는 그쪽 `trackId` 를 돌려받고, 우리가 DELETE 하면 **그쪽 추적까지 끊긴다.**
 그래서 `untrack_if_unused()` 는 우리 쪽 진행 캠페인 수를 세는 것에 더해 `RANK_UNTRACK_ON_STOP`
 (기본 `0`)이 켜져 있을 때만 실제로 지운다. 켜기 전에 순위 서버 운영자와 합의할 것.
-슬롯은 자동 만료가 없고 파트너 슬롯은 수량 쿼터도 안 먹으므로, 안 지우고 두어도 비용은 없다.
+**"안 지우고 두어도 비용은 없다"는 틀렸다** (2026-09-29 rankserver 측 정정). 수량 쿼터가
+없는 것이지 수집 비용이 없는 게 아니다 — 활성 슬롯의 키워드는 매일 배치(11시·17시)에서
+작업 PC 3대가 계속 긁는다. 끝난 캠페인의 슬롯이 쌓이면 **수집 부하가 영구히 늘어난다.**
+
+그래서 지금은 "지우면 남의 추적이 끊긴다"와 "안 지우면 부하가 쌓인다" 사이에서 전자를
+피하는 쪽으로 잠가 둔 것이고, 영구적인 답이 아니다.
+
+### 정리 계획 — 파트너 계정 분리 후 (rankserver 예정)
+
+rankserver 가 토큰별로 파트너 계정을 나눌 예정이다 (`partner:bbe` / `partner:tripleup` /
+`partner:biz`). 비즈 사이트 런칭 때 어차피 필요한 작업이다. 분리되면 각 사이트가 **자기
+슬롯만** 안전하게 지울 수 있고, 키워드 수집 자체는 keyword 단위로 공유되므로 중복
+수집도 안 생긴다.
+
+그때 우리가 할 일은 `.env` 의 `RANK_UNTRACK_ON_STOP=1` 뿐이다. 코드는 이미 준비돼 있다 —
+`transition()` 이 done/stopped/cancelled/rejected 로 갈 때 `untrack_if_unused()` 를 부르고,
+그 안에서 `campaign_model.count_active_by_track()` 로 **우리 쪽에 그 track_id 를 쓰는 살아
+있는 캠페인이 더 없을 때만** 지운다. 그전까지는 **삭제를 붙이지 말 것** — 미사용 판정
+기준은 캠페인 status 이고, 그 기준을 rankserver 쪽 일괄 정리 스크립트도 쓴다.
 
 ### 토큰
 

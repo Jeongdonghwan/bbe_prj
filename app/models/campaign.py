@@ -345,7 +345,9 @@ def done_rank_stats(media_id, days=30):
 
 
 # ---- 순위 자동 추적 -------------------------------------------------------
-ACTIVE_TRACK_STATUSES = ("approved", "running")
+# 추적 슬롯을 실제로 쓰는 상태. 등록 즉시 추적을 걸므로 **검수 중인 건도 포함**한다 —
+# 빠뜨리면 같은 슬롯을 쓰는 검수 건이 있는데도 완료 처리 때 슬롯을 지워 추적이 끊긴다.
+ACTIVE_TRACK_STATUSES = ("review", "approved", "running")
 
 
 def by_track(track_id):

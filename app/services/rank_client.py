@@ -8,6 +8,10 @@ server degrades to manual entry instead of blocking the app. The token lives in 
 트리플업(bbe_shop)이 같은 키워드·URL 을 이미 등록해 뒀으면 우리 등록은 그쪽 trackId 를
 그대로 돌려받고(get-or-create), 우리가 DELETE 하면 그쪽 추적까지 끊긴다. 그래서 삭제는
 기본으로 하지 않는다 (RANK_UNTRACK_ON_STOP, 기본 off).
+
+다만 **안 지우는 것도 공짜가 아니다** (2026-09-29 rankserver 측 정정): 활성 슬롯의 키워드는
+매일 배치에서 계속 수집되므로, 끝난 캠페인의 슬롯이 쌓이면 수집 부하가 영구히 늘어난다.
+rankserver 가 토큰별 파트너 계정을 분리하면 그때 켠다 — docs/RANK_INTEGRATION.md 참고.
 """
 import json
 import urllib.error
