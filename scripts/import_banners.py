@@ -10,7 +10,7 @@ git 뿐이라 이 경로를 만들었다. 원본은 deploy/banners/ 에 그대�
 화면이 쓰는 비율 (components.css, aspect-ratio 로 고정 — 화면 폭이 변해도 그대로다):
   그리드(.adgrid img)    높이 112px 고정 (모바일 84px)
   슬라이드(.sb-track img) 높이 200px 고정 (모바일 130px)
-  제작 권장: 그리드 1200x400 · 슬라이드 2440x350 — 본 내용은 가운데 80% 안에.
+  제작 권장: 그리드 1200x400 · 슬라이드 2440x400 — 높이를 꽉 채우고 좌우는 여유 있게.
 비율이 다른 이미지는 **잘라내지 않는다**. 통째로 넣고 남는 여백을 그 이미지를 흐리게 깐
 배경으로 채운다(letterbox). 그래서 어떤 비율을 올려도 내용이 사라지지 않는다.
 """
@@ -31,11 +31,10 @@ DST = ROOT / "app" / "static" / "uploads" / "banners"
 # 화면이 그리는 비율 — 이 값으로 잘림 정도를 계산한다.
 # 칸은 목업대로 높이만 고정(112px/200px)이라 화면 폭에 따라 비율이 변한다:
 #   그리드 1280px 창 2.4:1 ~ 1920px 창 3.8:1,  슬라이드 5.7:1 ~ 8.7:1
-# 그래서 사본은 그 중간 비율의 캔버스로 만들고, 본 그림은 캔버스 가운데 SAFE 비율 안에 둔다.
-# 어느 폭에서 잘려도 잘리는 건 흐린 여백이고 본 그림은 남는다.
-BOX = {"grid": (1200, 400), "slide": (2440, 349)}
-SAFE = 0.82
-# 저장할 최대 가로 (2배 해상도까지만. 그 이상은 용량만 먹는다).
+# 캔버스는 그중 **가장 넓은 비율**로 만들고 그림은 캔버스 높이를 꽉 채운다. 그러면 cover 가
+# 어느 폭에서도 위아래는 절대 안 자르고(그림이 항상 온전히 보임) 좁은 창에서만 좌우 여백을
+# 잘라낸다. 여백은 흐린 확대본이 아니라 그림 가장자리 색이라 배너가 그냥 넓어 보인다.
+BOX = {"grid": (1200, 316), "slide": (2440, 280)}
 MAX_W = {"grid": 1200, "slide": 2440}  # = BOX 가로
 
 BANNERS = [
@@ -50,12 +49,15 @@ BANNERS = [
 
 
 def crop_note(w, h, zone):
-    """본 그림이 캔버스에서 차지하는 비율 — 100% 에 가까울수록 여백이 적다."""
+    """가장 좁은 창(그리드 2.4:1 / 슬라이드 5.7:1)에서도 그림이 온전히 보이는지."""
     tw, th = BOX[zone]
-    fs = min(tw * SAFE / w, th * SAFE / h)
-    return f"그림 {w * fs / tw * 100:.0f}% x {h * fs / th * 100:.0f}%"
-
-
+    narrow = {"grid": 2.4, "slide": 5.7}[zone]
+    fs = min(th / h, tw / w)
+    art_w = w * fs / tw                             # 캔버스 가로 중 그림이 차지하는 비율
+    visible = narrow / (tw / th)                    # 가장 좁은 창에서 보이는 캔버스 가로 비율
+    if art_w <= visible + 0.01:
+        return f"그림 {art_w * 100:.0f}% · 항상 온전"
+    return f"그림 {art_w * 100:.0f}% · 좁은 창 좌우 {(1 - visible / art_w) * 100:.0f}% 잘림"
 def _flatten(im):
     """투명 PNG 를 흰 배경 위에 얹어 JPEG 로 저장할 수 있게 한다."""
     if im.mode in ("RGBA", "P", "LA"):
@@ -66,25 +68,23 @@ def _flatten(im):
     return im.convert("RGB")
 
 
-def fit_to_box(im, zone):
-    """칸 비율 범위 어디서도 본 그림이 잘리지 않게 캔버스에 앉힌다.
+def _edge_color(im):
+    """좌우 가장자리 픽셀의 중간값 — 여백을 이 색으로 채우면 배너가 그냥 넓어진 것처럼 보인다."""
+    w, h = im.size
+    strip = max(1, w // 50)
+    px = list(im.crop((0, 0, strip, h)).get_flattened_data()) + list(im.crop((w - strip, 0, w, h)).get_flattened_data())
+    px.sort()
+    return px[len(px) // 2]
 
-    캔버스(BOX)는 화면 폭에 따라 변하는 칸 비율의 중간값. 본 그림은 캔버스의 SAFE(82%)
-    안에 통째로 들어가고, 남는 자리는 같은 그림의 흐린 확대본으로 채운다. object-fit: cover
-    가 좌우/위아래를 잘라도 그 자리는 여백이지 그림이 아니다.
-    """
+
+def fit_to_box(im, zone):
+    """칸 높이를 꽉 채우고 좌우 남는 자리는 가장자리 색으로 채운다. 그림은 절대 자르지 않는다."""
     tw, th = BOX[zone]
-    # 배경: 캔버스를 꽉 채우도록 잘라 흐리게
-    cs = max(tw / im.width, th / im.height)
-    bg = im.resize((max(1, round(im.width * cs)), max(1, round(im.height * cs))), Image.LANCZOS)
-    l, t = (bg.width - tw) // 2, (bg.height - th) // 2
-    bg = bg.crop((l, t, l + tw, t + th)).filter(ImageFilter.GaussianBlur(radius=max(10, tw // 50)))
-    # 앞: 안전 영역 안에 통째로
-    sw, sh = tw * SAFE, th * SAFE
-    fs = min(sw / im.width, sh / im.height)
+    fs = min(th / im.height, tw / im.width)        # 보통은 높이 기준, 아주 넓은 그림만 가로 기준
     fg = im.resize((max(1, round(im.width * fs)), max(1, round(im.height * fs))), Image.LANCZOS)
-    bg.paste(fg, ((tw - fg.width) // 2, (th - fg.height) // 2))
-    return bg
+    canvas = Image.new("RGB", (tw, th), _edge_color(im))
+    canvas.paste(fg, ((tw - fg.width) // 2, (th - fg.height) // 2))
+    return canvas
 
 
 def make_web_copy(src, dst, zone):
@@ -104,7 +104,7 @@ def main():
 
     app = create_app()
     with app.app_context():
-        print(f"{'파일':14}{'zone':7}{'원본':13}{'캔버스 점유':16}{'사본':13}제목")
+        print(f"{'파일':14}{'zone':7}{'원본':13}{'표시':26}{'사본':13}제목")
         for name, zone, sort, title, link in BANNERS:
             src = SRC / name
             w, h = Image.open(src).size
@@ -123,7 +123,7 @@ def main():
                 shown = f"{nw}x{nh} {size // 1024}KB"
             else:
                 shown = "(드라이런)"
-            print(f"{name:14}{zone:7}{f'{w}x{h}':13}{note:16}{shown:13}{title}")
+            print(f"{name:14}{zone:7}{f'{w}x{h}':13}{note:26}{shown:13}{title}")
 
         if not apply:
             print("\n실제로 반영하려면: python scripts/import_banners.py --yes")
