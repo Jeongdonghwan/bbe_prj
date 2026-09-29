@@ -6,7 +6,7 @@
 {# Prototype #p-dash, violet redesign 2026-09-03: ad grid + slide banner + campaign cards, FAQ left / tall community right. #}
 
 {% if grid_banners %}
-<div class="adgrid n{{ [grid_banners | length, 4] | min }}">
+<div class="adgrid">
   {% for b in grid_banners %}<a href="{{ b.link or '#' }}"{% if b.link and b.link.startswith('http') %} target="_blank" rel="noopener"{% endif %}><img src="{{ b.image_url }}" alt="{{ b.title }}" loading="lazy"></a>{% endfor %}
 </div>
 {% endif %}

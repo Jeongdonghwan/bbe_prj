@@ -548,9 +548,9 @@ tr:hover .rowact button, tr.sel .rowact button{opacity:1}
    그러면 어떤 크기로 만들어도 어딘가에서는 잘린다 → 비율을 고정한다 (2026-09-29 JDH).
    권장 제작 크기: 그리드 1200x460 · 슬라이드 2400x400 */
 .adgrid img{width:100%;min-width:0;height:auto;aspect-ratio:1200/460;object-fit:cover;display:block}
-/* 배너 수만큼만 칸을 만든다 — 3장인데 4칸이면 한 칸이 빈다 */
-.adgrid.n1{grid-template-columns:1fr}.adgrid.n2{grid-template-columns:repeat(2,1fr)}.adgrid.n3{grid-template-columns:repeat(3,1fr)}
-@media(max-width:768px){.adgrid,.adgrid.n2,.adgrid.n3{grid-template-columns:1fr 1fr}.adgrid.n1{grid-template-columns:1fr}}
+/* 칸은 언제나 4개로 둔다. 배너가 3장이면 3칸만 채우고 넷째 칸은 비워 둔다 —
+   칸 수를 배너 수에 맞추면 배너가 옆으로 늘어나 원래보다 커진다 (2026-09-29 JDH). */
+@media(max-width:768px){.adgrid{grid-template-columns:1fr 1fr}}
 .slidebn{position:relative;border-radius:16px;overflow:hidden;margin-bottom:6px;box-shadow:var(--shadow)}
 .sb-track{display:flex;transition:transform .5s ease}
 .sb-track a{flex:0 0 100%;min-width:0;display:block}

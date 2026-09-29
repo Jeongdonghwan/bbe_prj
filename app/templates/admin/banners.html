@@ -1,7 +1,7 @@
 {% extends "layout/base.html" %}
 {% block title %}배너 관리{% endblock %}
 {% block content %}
-<div class="ph"><div><h1>배너 관리</h1><p>대시보드 상단 그리드와 그 아래 슬라이드 배너를 관리합니다. <b>등록한 수만큼만 그려집니다</b> — 빈 칸은 생기지 않습니다. 이미지가 없는 배너는 노출되지 않습니다.</p></div><div class="act"><a class="btn pri" href="/admin/banners?new=1">+ 배너 추가</a></div></div>
+<div class="ph"><div><h1>배너 관리</h1><p>대시보드 상단 그리드와 그 아래 슬라이드 배너를 관리합니다. 그리드는 <b>한 줄에 4칸</b>이고, 3장만 걸면 3칸만 채우고 넷째 칸은 비워 둡니다. 이미지가 없는 배너는 노출되지 않습니다.</p></div><div class="act"><a class="btn pri" href="/admin/banners?new=1">+ 배너 추가</a></div></div>
 <div class="card" style="margin-bottom:14px"><div class="ch"><h3>띠배너 (켜면 사이트 전체 최상단에 노출)</h3></div><div class="cb">
   <form method="post" action="/admin/banners/strip" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
     <div class="f" style="flex:2;min-width:220px;margin:0"><label>문구</label><input class="in" name="strip_text" value="{{ strip.text }}" maxlength="120" placeholder="예) 마케팅 의뢰하고 비교견적 무료로 받으세요!"></div>
@@ -27,7 +27,7 @@
   {% if edit or new %}{% set b = edit or {} %}
   <div class="card"><div class="ch"><h3>{% if edit %}배너 수정{% else %}배너 추가{% endif %}</h3><a class="icon-btn" style="margin-left:auto" href="/admin/banners"><i data-lucide="x" class="i"></i></a></div><div class="cb">
     <form method="post" action="/admin/banners/save" enctype="multipart/form-data">{% if edit %}<input type="hidden" name="id" value="{{ b.id }}">{% endif %}
-      <div class="f"><label>배너 이미지 <small>PNG/JPG/GIF/WEBP · 5MB 이하 · <b>그리드 1200×460</b> (2.6:1) / <b>슬라이드 2400×400</b> (6:1). 비율만 맞으면 크기는 더 커도 됩니다. <b>배너를 몇 개 걸든 비율은 같습니다</b> — 개수에 따라 칸이 커지고 작아질 뿐입니다. 비율이 다르면 가운데만 남기고 잘립니다.</small></label>
+      <div class="f"><label>배너 이미지 <small>PNG/JPG/GIF/WEBP · 5MB 이하 · <b>그리드 1200×460</b> (2.6:1) / <b>슬라이드 2400×400</b> (6:1). 비율만 맞으면 크기는 더 커도 됩니다. <b>배너를 몇 개 걸든 칸 크기는 같습니다.</b> 비율이 다르면 가운데만 남기고 잘립니다.</small></label>
         <label class="upl" style="cursor:pointer">
           {% if b.image_url %}<img src="{{ b.image_url }}" alt="" style="max-width:100%;max-height:90px;border-radius:8px" id="bnPrev">{% else %}<img alt="" style="max-width:100%;max-height:90px;border-radius:8px;display:none" id="bnPrev"><i data-lucide="image" class="i" style="width:28px;height:28px" id="bnIcon"></i>{% endif %}
           <span>클릭해서 {% if b.image_url %}교체{% else %}이미지 선택{% endif %}</span>
