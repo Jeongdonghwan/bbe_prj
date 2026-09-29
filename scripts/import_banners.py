@@ -7,10 +7,10 @@
 git 뿐이라 이 경로를 만들었다. 원본은 deploy/banners/ 에 그대로 두고, 화면에 쓸
 사본만 static/uploads/banners/ 에 만든다.
 
-화면이 쓰는 크기 (components.css):
-  그리드(.adgrid img)  height 112px · 4열 → 1220px 기준 약 296x112 (2.64:1), object-fit: cover
-  슬라이드(.sb-track img) height 200px · 전체폭 → 1220x200 (6.1:1), object-fit: cover
-비율이 다르면 잘린다. 잘리는 정도를 아래 표로 찍어주니 확인하고 쓸 것.
+화면이 쓰는 비율 (components.css, aspect-ratio 로 고정 — 화면 폭이 변해도 그대로다):
+  그리드(.adgrid img)    1200x460 (2.6:1)
+  슬라이드(.sb-track img) 2400x400 (6:1)
+비율이 다르면 object-fit: cover 가 가운데만 남기고 자른다. 얼마나 잘리는지 아래 표로 찍는다.
 """
 import sys
 from pathlib import Path
@@ -27,9 +27,9 @@ SRC = ROOT / "deploy" / "banners"
 DST = ROOT / "app" / "static" / "uploads" / "banners"
 
 # 화면이 그리는 비율 — 이 값으로 잘림 정도를 계산한다.
-BOX = {"grid": (296, 112), "slide": (1220, 200)}
+BOX = {"grid": (1200, 460), "slide": (2400, 400)}
 # 저장할 최대 가로 (2배 해상도까지만. 그 이상은 용량만 먹는다).
-MAX_W = {"grid": 1200, "slide": 2440}
+MAX_W = {"grid": 1400, "slide": 2400}
 
 BANNERS = [
     # (파일, zone, sort, 제목, 링크)
