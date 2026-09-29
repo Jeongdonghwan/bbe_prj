@@ -6,15 +6,15 @@
 {# Prototype #p-dash, violet redesign 2026-09-03: ad grid + slide banner + campaign cards, FAQ left / tall community right. #}
 
 {% if grid_banners %}
-<div class="adgrid">
-  {% for b in grid_banners %}<a href="{{ b.link or '#' }}"><img src="{{ b.image_url }}" alt="{{ b.title }}"></a>{% endfor %}
+<div class="adgrid n{{ [grid_banners | length, 4] | min }}">
+  {% for b in grid_banners %}<a href="{{ b.link or '#' }}"{% if b.link and b.link.startswith('http') %} target="_blank" rel="noopener"{% endif %}><img src="{{ b.image_url }}" alt="{{ b.title }}" loading="lazy"></a>{% endfor %}
 </div>
 {% endif %}
 
 {% if slide_banners %}
 <div class="slidebn" id="slidebn">
   <div class="sb-track">
-    {% for b in slide_banners %}<a href="{{ b.link or '#' }}"><img src="{{ b.image_url }}" alt="{{ b.title }}"></a>{% endfor %}
+    {% for b in slide_banners %}<a href="{{ b.link or '#' }}"{% if b.link and b.link.startswith('http') %} target="_blank" rel="noopener"{% endif %}><img src="{{ b.image_url }}" alt="{{ b.title }}"{% if not loop.first %} loading="lazy"{% endif %}></a>{% endfor %}
   </div>
   <button type="button" class="sb-nav sb-prev" aria-label="이전"><i data-lucide="chevron-left" class="i"></i></button>
   <button type="button" class="sb-nav sb-next" aria-label="다음"><i data-lucide="chevron-right" class="i"></i></button>

@@ -543,7 +543,9 @@ tr:hover .rowact button, tr.sel .rowact button{opacity:1}
 .adgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
 .adgrid a{display:block;border-radius:12px;overflow:hidden;border:1px solid var(--border);background:var(--surface)}
 .adgrid img{width:100%;height:112px;object-fit:cover;display:block}
-@media(max-width:768px){.adgrid{grid-template-columns:1fr 1fr}.adgrid img{height:84px}}
+/* 배너 수만큼만 칸을 만든다 — 3장인데 4칸이면 한 칸이 빈다 */
+.adgrid.n1{grid-template-columns:1fr}.adgrid.n2{grid-template-columns:repeat(2,1fr)}.adgrid.n3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:768px){.adgrid,.adgrid.n2,.adgrid.n3{grid-template-columns:1fr 1fr}.adgrid.n1{grid-template-columns:1fr}.adgrid img{height:84px}}
 .slidebn{position:relative;border-radius:16px;overflow:hidden;margin-bottom:6px;box-shadow:var(--shadow)}
 .sb-track{display:flex;transition:transform .5s ease}
 .sb-track a{flex:0 0 100%;display:block}
