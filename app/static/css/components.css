@@ -544,19 +544,18 @@ tr:hover .rowact button, tr.sel .rowact button{opacity:1}
 /* min-width:0 이 없으면 그리드 칸이 이미지 원본 가로폭(1400px 등) 아래로 못 줄어들어
    가로로 넘친다. 높이를 aspect-ratio 로 바꾸면서 드러난 문제 (2026-09-29). */
 .adgrid a{display:block;min-width:0;border-radius:12px;overflow:hidden;border:1px solid var(--border);background:var(--surface)}
-/* 높이를 px 로 고정하면 화면이 넓어질수록 칸이 옆으로 늘어나 비율이 2.6:1~3.9:1 로 변한다.
-   그러면 어떤 크기로 만들어도 어딘가에서는 잘린다 → 비율을 고정한다 (2026-09-29 JDH).
-   비율은 원래 화면 크기 그대로다: 그리드 296x112(2.64:1) · 슬라이드 1220x200(6.1:1).
-   제작 권장은 같은 비율의 2배 이상: 그리드 1200x455 · 슬라이드 2440x400.
-   비율이 다른 이미지는 scripts/import_banners.py 가 잘라내지 않고 여백을 채워 맞춘다. */
-.adgrid img{width:100%;min-width:0;height:auto;aspect-ratio:296/112;object-fit:cover;display:block}
+/* 목업 그대로 높이 고정 112px (모바일 84px). 화면 폭에 따라 칸 비율이 2.4:1~5:1 로 변하므로
+   비율이 안 맞는 이미지는 scripts/import_banners.py 가 여백을 넉넉히 채워 넣는다 — 어느 폭에서도
+   잘리는 건 흐린 여백뿐이고 본 그림은 남는다 (2026-09-29 JDH: 목업 크기에서 벗어나지 말 것). */
+.adgrid img{width:100%;min-width:0;height:112px;object-fit:cover;display:block}
 /* 칸은 언제나 4개로 둔다. 배너가 3장이면 3칸만 채우고 넷째 칸은 비워 둔다 —
    칸 수를 배너 수에 맞추면 배너가 옆으로 늘어나 원래보다 커진다 (2026-09-29 JDH). */
-@media(max-width:768px){.adgrid{grid-template-columns:1fr 1fr}}
+@media(max-width:768px){.adgrid{grid-template-columns:1fr 1fr}.adgrid img{height:84px}}
 .slidebn{position:relative;border-radius:16px;overflow:hidden;margin-bottom:6px;box-shadow:var(--shadow)}
 .sb-track{display:flex;transition:transform .5s ease}
 .sb-track a{flex:0 0 100%;min-width:0;display:block}
-.sb-track img{width:100%;min-width:0;height:auto;aspect-ratio:1220/200;object-fit:cover;display:block}
+.sb-track img{width:100%;min-width:0;height:200px;object-fit:cover;display:block}
+@media(max-width:768px){.sb-track img{height:130px}}
 .sb-dots{position:absolute;left:0;right:0;bottom:10px;display:flex;justify-content:center;gap:6px}
 .sb-dots button{width:8px;height:8px;border-radius:99px;background:rgba(255,255,255,.55);transition:width .2s,background .2s}
 .sb-dots button.on{width:22px;background:#fff}
