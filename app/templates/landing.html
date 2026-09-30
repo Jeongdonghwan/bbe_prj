@@ -1,4 +1,4 @@
-{# 홍보용 랜딩 (2026-09-30) — 앱 셸(사이드바) 없는 단독 화면. 비로그인 / 와 /intro 가 이 화면.
+{# 홍보용 랜딩 (2026-09-30) — 앱 셸(사이드바) 없는 단독 화면. /intro 전용 — / 는 대시보드 그대로 (2026-09-30 JDH "별도로 랜딩").
    숫자는 라우트(main.landing)가 DB·상수에서 읽어 넘긴다 — 여기에 손으로 적지 말 것. #}
 <!DOCTYPE html>
 <html lang="ko">
@@ -142,7 +142,7 @@
 
 <footer class="ld-foot"><div class="ld-wrap">
   <a class="ld-logo" href="/"><img src="{{ url_for('static', filename='img/logo-sym-violet.png') }}" alt="">{{ APP_NAME }}</a>
-  <nav><a href="/guide">이용가이드</a><a href="/popular">인기 트래픽</a><a href="/notice">공지사항</a><a href="/terms">이용약관</a><a href="/privacy">개인정보처리방침</a><a href="/dashboard">서비스 둘러보기</a></nav>
+  <nav><a href="/guide">이용가이드</a><a href="/popular">인기 트래픽</a><a href="/notice">공지사항</a><a href="/terms">이용약관</a><a href="/privacy">개인정보처리방침</a><a href="/">서비스 둘러보기</a></nav>
   <span class="copy">© {{ now_year }} {{ APP_NAME }}</span>
 </div></footer>
 

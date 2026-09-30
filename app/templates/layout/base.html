@@ -22,7 +22,7 @@
 {% include "layout/sidebar.html" %}
 <div class="side-scrim"></div>
 <div class="main">
-  {% if request.endpoint not in ('main.dashboard', 'main.dashboard_page', 'my.index') %}{% include "layout/header.html" %}{% endif %}
+  {% if request.endpoint not in ('main.dashboard', 'my.index') %}{% include "layout/header.html" %}{% endif %}
   <section class="page on">
     {% with msgs = get_flashed_messages() %}{% if msgs %}<div class="flash">{% for m in msgs %}<div>{{ m }}</div>{% endfor %}</div>{% endif %}{% endwith %}
     {% block content %}{% endblock %}
@@ -31,7 +31,7 @@
 </div>
 {% if needs_onboarding %}{% include "auth/_welcome_modal.html" %}{% endif %}
 {% include "layout/bottom_tab.html" %}
-{% if request.endpoint in ('main.dashboard', 'main.dashboard_page') %}
+{% if request.endpoint == 'main.dashboard' %}
 <button class="help-float" type="button" id="helpFloat"><i data-lucide="circle-help" class="i"></i><span>도움말</span></button>
 <div class="modal" id="helpModal"><div class="modal-box" style="max-width:460px">
   <div style="display:flex;align-items:center;margin-bottom:14px"><h3>이렇게 진행돼요</h3><button class="icon-btn" type="button" id="helpX" style="margin-left:auto"><i data-lucide="x" class="i"></i></button></div>

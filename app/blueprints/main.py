@@ -1,5 +1,5 @@
-"""Landing (anonymous) / dashboard (members) + robots·sitemap + shared placeholder renderer."""
-from flask import Blueprint, Response, g, render_template, request, url_for
+"""Dashboard (/) · 홍보 랜딩 (/intro) · robots/sitemap + shared placeholder renderer."""
+from flask import Blueprint, Response, render_template, request
 
 from ..models import banner as banner_model
 from ..models import content as content_model
@@ -17,19 +17,7 @@ def render_placeholder(title, phase=None, desc=None):
 
 @bp.route("/")
 def dashboard():
-    """비로그인은 홍보용 랜딩, 회원은 대시보드 (2026-09-30 JDH "홍보용 페이지로도 쓸 수 있게")."""
-    if not g.get("user"):
-        return landing()
-    return _dashboard()
-
-
-@bp.route("/dashboard")
-def dashboard_page():
-    """대시보드 직접 진입 — 비로그인도 볼 수 있다 (랜딩의 '둘러보기')."""
-    return _dashboard()
-
-
-def _dashboard():
+    """/ 는 로그인 여부와 상관없이 대시보드. 홍보용 랜딩은 별도 주소 /intro (2026-09-30 JDH)."""
     grid_banners = banner_model.list_active_banners(8, "grid")
     slide_banners = banner_model.list_active_banners(6, "slide")
     notices = content_model.dashboard_notices(5)
@@ -43,7 +31,7 @@ def _dashboard():
 
 @bp.route("/intro")
 def landing():
-    """홍보용 랜딩 — 앱 셸 없이 단독 화면. 숫자(매체 수·최저 단가·정책값)는 DB·상수에서 읽는다."""
+    """홍보용 랜딩 — 앱 셸 없이 단독 화면. / 와는 별개 페이지(홍보 링크·검색 유입용). 숫자(매체 수·최저 단가·정책값)는 DB·상수에서 읽는다."""
     from ..constants import BANK_DUE_DAYS, CHANNEL_LABEL, MEDIA_MIN_DAILY, ORDER_CUTOFF, TRAFFIC_CHANNELS
     from ..models import media as media_model
     from ..services import credit_service
