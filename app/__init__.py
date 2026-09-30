@@ -206,8 +206,9 @@ def create_app():
             sv = {}
         strip = {"on": sv.get("strip_on") == "1", "text": sv.get("strip_text") or "",
                  "link": sv.get("strip_link") or "", "bg": sv.get("strip_bg") or "#2563EB"}
-        from .constants import SEO_DESCRIPTION, SEO_KEYWORDS, SEO_TITLE, STATUS_CLASS, STATUS_LABEL
+        from .constants import ORDER_CUTOFF_LABEL, SEO_DESCRIPTION, SEO_KEYWORDS, SEO_TITLE, STATUS_CLASS, STATUS_LABEL
         return {
+            "ORDER_CUTOFF_LABEL": ORDER_CUTOFF_LABEL,   # 접수 마감 문구 — 모든 화면이 같은 말을 쓰게
             "APP_NAME": app.config["APP_NAME"], "strip": strip,
             "KAKAO_CHAT_URL": app.config["KAKAO_CHAT_URL"],
             # 검색·공유 메타 (layout/_seo.html). 로컬은 PUBLIC_URL 이 비어 요청 호스트를 쓴다.

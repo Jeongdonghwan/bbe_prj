@@ -34,7 +34,7 @@
         <li><div><b>상품 정보</b><span>광고할 상품(플레이스) 주소만 넣으세요. 상품명 · 대표 이미지는 자동으로 채워집니다. 쇼핑·스토어는 smartstore · brand · shopping.naver.com, 플레이스는 m.place.naver.com · naver.me, 쿠팡은 coupang.com/vp/products 주소만 됩니다.</span></div></li>
         <li><div><b>광고 유형</b><span>유형을 고르면 오른쪽에 설명과 100회×10일 기준 예상 비용이 나옵니다. 유형마다 단가 · 최소 기간이 다릅니다.</span></div></li>
         <li><div><b>유입 설정</b><span>메인 키워드 한 개(띄어쓰기 포함 가능)와 일일 목표 유입수를 정합니다. 최소 {{ min_daily }}회, 100회 단위로 조절하거나 직접 입력합니다. 경쟁도 블록을 누르면 권장값이 들어갑니다.</span></div></li>
-        <li><div><b>일정</b><span>접수는 24시간 되지만 <b>구동은 다음 날부터</b>입니다. <b>{{ order_cutoff }} 이후 접수는 그 다음 날</b>부터 돕니다. 기간은 {{ presets | join('·') }}일 버튼 또는 직접 입력(유형별 최소 일수 ~ 60일).</span></div></li>
+        <li><div><b>일정</b><span>접수는 24시간 되지만 <b>구동은 다음 날부터</b>입니다. <b>마감({{ ORDER_CUTOFF_LABEL }}) 이후 접수는 그 다음 날</b>부터 돕니다. 기간은 {{ presets | join('·') }}일 버튼 또는 직접 입력(유형별 최소 일수 ~ 60일).</span></div></li>
         <li><div><b>최종 확인</b><span>총 광고비 = 단가 × 일일 유입수 × 일수. 보유 크레딧이 부족하면 충전으로 안내합니다. <b>광고 만들기</b>를 누르는 순간 크레딧이 차감되고 검수로 넘어갑니다.</span></div></li>
       </ol>
       <p class="thin" style="margin-top:10px">입력 도중 Enter 키는 다음 단계로만 넘어갑니다 — 마지막 확인 화면에서 버튼을 눌러야 접수됩니다.</p>
@@ -80,7 +80,7 @@
     </div></div>
     <div class="card"><div class="ch"><h3>한눈에</h3></div><div class="cb">
       <div class="kv"><span>구동 시작</span><b>다음 날부터</b></div>
-      <div class="kv"><span>접수 마감</span><b class="num">{{ order_cutoff }} (이후는 익익일)</b></div>
+      <div class="kv"><span>접수 마감</span><b class="num">{{ ORDER_CUTOFF_LABEL }} (이후는 익익일)</b></div>
       <div class="kv"><span>일일 유입 최소</span><b class="num">{{ min_daily }}회</b></div>
       <div class="kv"><span>기간</span><b class="num">유형별 최소 ~ 60일</b></div>
       <div class="kv"><span>최소 충전</span><b class="num">{{ min_charge | fmt_num }}원</b></div>

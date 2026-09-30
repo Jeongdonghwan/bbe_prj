@@ -555,7 +555,7 @@ def media_save():
             "no_refund_days": int(f["no_refund_days"]) if f.get("no_refund_days", "").strip() else None,
             "rank_lead_days": f.get("rank_lead_days", "").strip()[:20] or None,
             # media.same_day 는 쓰지 않는다 — 구동 시작일은 campaign_service.earliest_start()
-            # 한 곳에서만 정하고(익일부터, 16시 이후 접수는 익익일) 매체별 예외가 없다.
+            # 한 곳에서만 정하고(익일부터, 마감(평일 16시·주말 10시) 이후 접수는 익익일) 매체별 예외가 없다.
             "is_active": 1 if f.get("is_active") == "1" else 0,
             "sort": int(f.get("sort") or 0),
         }

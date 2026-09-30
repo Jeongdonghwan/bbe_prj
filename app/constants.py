@@ -92,7 +92,14 @@ RECO_PER_1000 = 1.5
 
 # Link whitelist per channel (host suffix match)
 # 접수는 24시간. 이 시각 이전 접수는 익일 구동, 이후는 익익일 구동. 당일 시작 없음 (2026-09-21 JDH).
-ORDER_CUTOFF = "16:00"
+ORDER_CUTOFF = "16:00"            # 평일 마감
+ORDER_CUTOFF_WEEKEND = "10:00"    # 토·일 마감 (2026-09-30 JDH "주말 오전 10시까지 접수건 익일 구동")
+ORDER_CUTOFF_LABEL = "평일 16시 · 주말 10시"   # 화면 문구용 — 숫자를 템플릿에 직접 적지 말 것
+
+
+def order_cutoff_for(day):
+    """그 날짜의 접수 마감 시각 ("HH:MM"). 판정은 campaign_service.earliest_start() 가 한다."""
+    return ORDER_CUTOFF_WEEKEND if day.weekday() >= 5 else ORDER_CUTOFF
 
 # Channel product-page patterns checked after the host whitelist. Query strings are preserved.
 URL_PATTERNS = {

@@ -66,10 +66,14 @@ def create(user, media, form, method, depositor=None):
 
 
 def earliest_start(now=None):
-    """접수는 24시간, 구동은 익일부터. ORDER_CUTOFF(16:00) 이후 접수는 익익일 (2026-09-21 JDH)."""
-    from ..constants import ORDER_CUTOFF
+    """접수는 24시간, 구동은 익일부터. 마감 시각 이후 접수는 익익일.
+
+    마감은 평일 ORDER_CUTOFF(16:00), 주말(토·일) ORDER_CUTOFF_WEEKEND(10:00) — 2026-09-30 JDH.
+    판정은 이 함수 한 곳. 화면 문구는 constants.ORDER_CUTOFF_LABEL 을 쓴다.
+    """
+    from ..constants import order_cutoff_for
     now = now or datetime.now()
-    return now.date() + timedelta(days=1 if now.strftime("%H:%M") < ORDER_CUTOFF else 2)
+    return now.date() + timedelta(days=1 if now.strftime("%H:%M") < order_cutoff_for(now.date()) else 2)
 
 
 def create_with_credit(user, media, form):
