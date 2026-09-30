@@ -54,10 +54,9 @@ def callback():
         # 시작일 전은 기록한다 — 그게 유입 전 기준 순위다.
         if not campaign_service.in_rank_window(c, day):
             continue
-        if rank is None:                            # 300위 밖 — 순위는 남기지 않고 상태만 갱신
-            continue
+        # 300위 밖(rank=None)도 그날 행으로 남긴다 — "수집 전"과 구분하기 위해서.
         campaign_service.apply_rank(c["id"], day, rank)
+        campaign_model.mark_tracked(c["id"], "collected" if rank is not None else "not_found")
         applied += 1
-    campaign_model.mark_tracked(track_id, "collected" if rank is not None else "not_found")
     current_app.logger.info("rank callback track=%s date=%s rank=%s → %d건", track_id, day, rank, applied)
     return jsonify(ok=True, matched=len(rows), applied=applied)

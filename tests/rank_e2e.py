@@ -3,7 +3,7 @@ import json
 import os
 import sys
 import threading
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import urlparse
 
@@ -57,6 +57,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, {"ok": True, "trackId": tid, "prodNm": "스텁 상품", "ranks": [
                 {"date": date.today().isoformat(), "rank": 12},
                 {"date": (date.today() - timedelta(days=1)).isoformat(), "rank": 19},
+                {"date": (date.today() - timedelta(days=2)).isoformat(), "rank": None},  # 수집했지만 300위 밖
                 {"date": (date.today() - timedelta(days=400)).isoformat(), "rank": 3},   # 기간 밖
             ]})
         self._json(404, {"ok": False})
@@ -158,6 +159,34 @@ def main():
     r = tc.post("/api/rank/callback", json=dict(body, date=old_day), headers={"X-NSR-Token": TOKEN})
     ok(r.get_json()["applied"] == 0, "구동 기간 밖 날짜는 기록 안 함")
 
+    # 5b) 300위 밖(rank=None) — "수집 전"과 구분되게 그날 행은 남기고(rank NULL) 상태는 not_found
+    nf_day = date.today() - timedelta(days=1)
+    r = tc.post("/api/rank/callback", json=dict(body, date=nf_day.isoformat(), rank=None), headers={"X-NSR-Token": TOKEN})
+    with app.app_context():
+        row = query_one("SELECT `rank` FROM campaign_daily WHERE campaign_id=%s AND date=%s", [cid, nf_day])
+        ok(r.get_json()["applied"] == 1 and row is not None and row["rank"] is None, "300위 밖 → 행 남김, rank NULL")
+        ok(cm.get(cid)["track_status"] == "not_found", "track_status not_found")
+        cs._BACKFILL_AT[cid] = datetime.now()          # 시트가 순위 서버를 부르지 않게
+        sheet = cs.rank_sheet(cm.get(cid))
+        st = {d["date"]: d["state"] for d in sheet["days"]}
+        ok(st.get(nf_day) == "out" and st.get(date.today()) == "ranked", "시트: 어제 out · 오늘 ranked (%s)" % st)
+    # 같은 날 뒤에 순위가 잡히면 NULL 을 덮는다 (하루 두 번 수집)
+    r = tc.post("/api/rank/callback", json=dict(body, date=nf_day.isoformat(), rank=9), headers={"X-NSR-Token": TOKEN})
+    with app.app_context():
+        row = query_one("SELECT `rank` FROM campaign_daily WHERE campaign_id=%s AND date=%s", [cid, nf_day])
+        ok(row["rank"] == 9 and cm.get(cid)["track_status"] == "collected", "뒤늦은 순위가 NULL 을 덮음")
+        # 오늘 행이 없으면 "순위 밖"이 아니라 "조회중"
+        execute("DELETE FROM campaign_daily WHERE campaign_id=%s AND date=%s", [cid, date.today()])
+        execute("UPDATE campaigns SET rank_now=NULL WHERE id=%s", [cid])
+        cs._BACKFILL_AT[cid] = datetime.now()
+        sheet = cs.rank_sheet(cm.get(cid))
+        ok(sheet["today_state"] == "pending" and sheet["today_rank"] is None, "오늘 미수집 → pending(조회중)")
+        # 순위 콜백이 한 번 온 뒤엔 rank_state 도 'out' 이 아니다 (rank_now 없고 track_status collected)
+        ok(cs.rank_state(cm.get(cid)) == "waiting", "목록 칸도 조회중 (%s)" % cs.rank_state(cm.get(cid)))
+        # 반대로 300위 밖 콜백을 받은 갓 등록 캠페인만 'out'
+        execute("UPDATE campaigns SET track_status='not_found' WHERE id=%s", [cid])
+        ok(cs.rank_state(cm.get(cid)) == "out", "not_found 면 순위 밖")
+
     # 6) 폴백 — 오늘 순위를 지우고 화면 진입
     with app.app_context():
         execute("DELETE FROM campaign_daily WHERE campaign_id=%s AND date=%s", [cid, date.today()])
@@ -167,6 +196,10 @@ def main():
         ok(cs.backfill_ranks(c) is True, "폴백 실행")
         got = query_one("SELECT `rank` FROM campaign_daily WHERE campaign_id=%s AND date=%s", [cid, date.today()])
         ok(got and got["rank"] == 12, "폴백으로 오늘 순위 채움 (%s)" % (got or {}).get("rank"))
+        ok(cm.get(cid)["track_status"] == "collected", "폴백 뒤 track_status collected")
+        nf2 = query_one("SELECT `rank` FROM campaign_daily WHERE campaign_id=%s AND date=%s",
+                        [cid, date.today() - timedelta(days=2)])
+        ok(nf2 is not None and nf2["rank"] is None, "폴백도 300위 밖 날을 행(NULL)으로 남김")
         n_old = query_one("SELECT COUNT(*) n FROM campaign_daily WHERE campaign_id=%s AND date=%s",
                           [cid, date.today() - timedelta(days=400)])["n"]
         ok(n_old == 0, "폴백도 구동 기간 밖은 무시")

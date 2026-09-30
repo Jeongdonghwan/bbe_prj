@@ -188,15 +188,19 @@ def spawn_track(campaign):
             "spawn_track 실패 %s %s '%s' %s — %s", campaign.get("order_no"), platform,
             campaign.get("main_keyword"), campaign.get("target_url"), r.get("message") or "응답 없음")
         return None
-    fields = {"track_id": r["trackId"], "track_status": r.get("status") or "queued"}
-    campaign_model.update(campaign["id"], fields)
-    apply_prod_name(campaign, r.get("prodNm"))   # 이미 아는 상품이면 이름이 바로 온다
-    # 오늘 이미 수집된 키워드면 순위가 바로 들어 있다.
-    if r.get("status") == "collected" and r.get("rank") is not None and r.get("date"):
+    # 슬롯은 같은 키워드·상품이면 재사용되므로 응답의 status 는 남의(옛) 수집 결과일 수 있다.
+    # 이 캠페인 구간 안의 수집이 있을 때만 그 결과를 쓰고, 아니면 "수집 전(queued)"으로 둔다.
+    status = "queued"
+    if r.get("status") == "collected" and r.get("date"):
         try:
-            apply_rank(campaign["id"], date.fromisoformat(r["date"]), r["rank"])
+            day = date.fromisoformat(r["date"])
         except (ValueError, TypeError):
-            pass
+            day = None
+        if day and in_rank_window(campaign, day):
+            apply_rank(campaign["id"], day, r.get("rank"))
+            status = "collected" if r.get("rank") is not None else "not_found"
+    campaign_model.update(campaign["id"], {"track_id": r["trackId"], "track_status": status})
+    apply_prod_name(campaign, r.get("prodNm"))   # 이미 아는 상품이면 이름이 바로 온다
     return r["trackId"]
 
 
@@ -283,16 +287,27 @@ def rank_sheet(campaign):
         return {"days": [], "today_rank": None, "delta": None}
     backfill_ranks(campaign)        # 콜백을 놓쳤으면 순위 서버에서 보정 (5분 스로틀)
     c = campaign_model.get(campaign["id"])
+    # 행이 있으면 그날 수집이 된 것이다 — rank NULL 이면 300위 밖, 행이 없으면 아직 수집 전.
     rankmap = {d["date"]: d["rank"] for d in campaign_model.list_daily(c["id"])}
+    live = c["channel"] in TRACKABLE and c["status"] in PENDING_STATUSES   # 아직 수집이 들어올 수 있나
     # 구동 전 기준 순위도 기록되므로 시작일보다 이른 기록이 있으면 거기서부터 보여준다.
     first = min([c["start_date"], *rankmap]) if rankmap else c["start_date"]
-    days, cur = [], min(date.today(), c["end_date"])
+    days, cur, today = [], min(date.today(), c["end_date"]), date.today()
+
+    def state(d):
+        if d in rankmap:
+            return "ranked" if rankmap[d] is not None else "out"
+        return "pending" if (d == today and live) else "missed"   # 오늘은 조회중, 지난날은 수집 누락
+
     while cur >= first:
-        days.append({"date": cur, "rank": rankmap.get(cur)})
+        days.append({"date": cur, "rank": rankmap.get(cur), "state": state(cur)})
         cur -= timedelta(days=1)
-    today_rank = rankmap.get(date.today())
+    today_rank = rankmap.get(today)
     delta = (c["rank_start"] - today_rank) if (c["rank_start"] and today_rank) else None
-    return {"c": c, "days": days, "today_rank": today_rank, "delta": delta}
+    # 시작 순위 칸: 기준값이 없을 때 "순위 밖"은 수집이 한 번이라도 됐을 때만 맞는 말이다.
+    start_state = "ranked" if c["rank_start"] else ("out" if rankmap else ("pending" if live else "none"))
+    return {"c": c, "days": days, "today_rank": today_rank, "today_state": state(today), "delta": delta,
+            "start_state": start_state}
 
 
 def backfill_nv_mid(limit=100):
@@ -426,16 +441,20 @@ def backfill_ranks(campaign, throttle_min=5):
             day = date.fromisoformat(str(row.get("date")))
         except (TypeError, ValueError):
             continue
+        if not in_rank_window(campaign, day):
+            continue
+        prev = campaign_model.daily_rank(campaign["id"], day)
+        if prev and prev["rank"] is not None:
+            continue                       # 이미 순위가 있는 날 — 300위 밖(NULL) 행만 다시 볼 여지가 있다
         rk = row.get("rank")
-        if rk is None or not in_rank_window(campaign, day):
+        if prev and rk is None:
             continue
-        if campaign_model.daily_rank(campaign["id"], day):
-            continue
-        apply_rank(campaign["id"], day, int(rk))
+        apply_rank(campaign["id"], day, int(rk) if rk is not None else None)
         n += 1
-    if n:
+    today = campaign_model.daily_rank(campaign["id"], date.today())
+    if today:
         # 폴백으로 받아왔어도 "수집됨"이다 — 콜백만 이 값을 갱신하면 상태가 어긋난다.
-        campaign_model.mark_tracked(tid, "collected")
+        campaign_model.mark_tracked(campaign["id"], "collected" if today["rank"] is not None else "not_found")
     return bool(n)
 
 
@@ -460,9 +479,15 @@ def in_rank_window(campaign, day):
 
 
 def apply_rank(campaign_id, day, rank):
-    """콜백·폴백이 받은 순위를 기록. 어드민 수동 입력(record_rank)과 같은 자리에 쓴다."""
+    """콜백·폴백이 받은 순위를 기록. 어드민 수동 입력(record_rank)과 같은 자리에 쓴다.
+
+    rank=None 은 "수집했는데 300위 밖"이다. 이것도 그날 행으로 남긴다(rank NULL) — 행이 없으면
+    "아직 수집 전"이고 행이 있으면 "수집됨"이라는 뜻이 되어, 화면이 둘을 구분할 수 있다
+    (2026-09-30 JDH "아직 순위체크가 안 된 당일 건이 왜 순위 밖이라고 나오냐").
+    이미 순위가 있는 날을 NULL 로 덮지는 않는다(하루 두 번 수집 중 한 번만 잡혀도 순위는 순위다).
+    """
     c = campaign_model.get(campaign_id)
-    if not c or rank is None:
+    if not c:
         return None
     prev = campaign_model.daily_rank(campaign_id, day)
     if prev:
@@ -471,6 +496,10 @@ def apply_rank(campaign_id, day, rank):
         done = 0                       # 구동 전 기준 순위 — 작업한 건 없다
     else:
         done = c["daily_qty"]
+    if rank is None:
+        if not prev:
+            campaign_model.upsert_daily(campaign_id, day, None, done)
+        return None
     campaign_model.upsert_daily(campaign_id, day, rank, done)
     fields = {}
     # 늦게 도착한 옛 날짜가 "현재 순위"를 덮어쓰지 않게 — 가장 최근 날짜만 rank_now.

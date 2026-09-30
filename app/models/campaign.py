@@ -401,9 +401,13 @@ def store_without_nv_mid(limit=100):
            ORDER BY id DESC LIMIT %s""", [limit])]
 
 
-def mark_tracked(track_id, status):
-    """콜백이 도착했음을 남긴다 (collected / not_found)."""
-    execute("UPDATE campaigns SET track_status = %s WHERE track_id = %s", [status, track_id])
+def mark_tracked(campaign_id, status):
+    """이 캠페인 구간 안의 수집 결과를 남긴다 (collected / not_found).
+
+    캠페인 단위다 — 같은 track_id 를 쓰는 다른 캠페인(구간 밖, 갓 등록)까지 한 번에 바꾸면
+    수집도 안 된 건이 "순위 밖"으로 보인다.
+    """
+    execute("UPDATE campaigns SET track_status = %s WHERE id = %s", [status, campaign_id])
 
 
 def tracked_without_today_rank(limit=200):
@@ -417,7 +421,7 @@ def tracked_without_today_rank(limit=200):
            WHERE c.track_id IS NOT NULL AND c.status IN ('review','approved','running')
              AND c.end_date >= CURDATE()
              AND NOT EXISTS (SELECT 1 FROM campaign_daily d
-                             WHERE d.campaign_id = c.id AND d.date = CURDATE() AND d.`rank` IS NOT NULL)
+                             WHERE d.campaign_id = c.id AND d.date = CURDATE())
            ORDER BY c.id LIMIT %s""", [limit])]
 
 

@@ -9,15 +9,16 @@
 {% else %}
 <div class="dgrid" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px">
   <div><span>키워드</span><b>{{ c.main_keyword }}</b></div>
-  <div><span>금일 순위</span><b class="num">{% if today_rank %}{{ today_rank }}위{% elif c | rank_state == 'waiting' %}<span class="rk-wait">조회중</span>{% elif c | rank_state == 'out' %}<span class="mut">순위 밖</span>{% else %}-{% endif %}</b></div>
-  <div><span>시작 순위</span><b class="num">{{ c.rank_start ~ '위' if c.rank_start else '순위 밖' }}</b></div>
+  {# 상태는 rank_sheet 가 그날 행의 유무로 판정한다: pending 수집 전 / out 300위 밖 / missed 수집 누락 #}
+  <div><span>금일 순위</span><b class="num">{% if today_rank %}{{ today_rank }}위{% elif today_state == 'pending' %}<span class="rk-wait">조회중</span>{% elif today_state == 'out' %}<span class="mut">순위 밖</span>{% else %}-{% endif %}</b></div>
+  <div><span>시작 순위</span><b class="num">{% if c.rank_start %}{{ c.rank_start }}위{% elif start_state == 'pending' %}<span class="rk-wait">조회중</span>{% elif start_state == 'out' %}<span class="mut">순위 밖</span>{% else %}-{% endif %}</b></div>
   <div><span>시작일 대비</span><b class="num">{% if delta is not none %}{% if delta > 0 %}<span class="up">▲{{ delta }}</span>{% elif delta < 0 %}<span class="dn">▼{{ -delta }}</span>{% else %}—{% endif %}{% else %}-{% endif %}</b></div>
 </div>
 {% if days %}
 <div class="rankgrid">
   {% for d in days %}
   <div><span class="d">{{ d.date | fmt_date('%m/%d') }} ({{ wd[d.date.weekday()] }})</span>
-    <b>{% if d.rank %}{{ d.rank }}위{% if c.rank_start and d.rank != c.rank_start %}{% set dd = c.rank_start - d.rank %}<span class="{{ 'up' if dd > 0 else 'dn' }}" style="font-size:11px;margin-left:3px">{{ '▲' ~ dd if dd > 0 else '▼' ~ -dd }}</span>{% endif %}{% else %}<span class="mut">순위 밖</span>{% endif %}</b></div>
+    <b>{% if d.rank %}{{ d.rank }}위{% if c.rank_start and d.rank != c.rank_start %}{% set dd = c.rank_start - d.rank %}<span class="{{ 'up' if dd > 0 else 'dn' }}" style="font-size:11px;margin-left:3px">{{ '▲' ~ dd if dd > 0 else '▼' ~ -dd }}</span>{% endif %}{% elif d.state == 'pending' %}<span class="rk-wait">조회중</span>{% elif d.state == 'out' %}<span class="mut">순위 밖</span>{% else %}<span class="mut" title="이날은 수집 기록이 없습니다">미수집</span>{% endif %}</b></div>
   {% endfor %}
 </div>
 <p class="thin" style="margin-top:10px">* 등락 표시는 시작 순위 대비 등하락입니다. 순위는 매일 자동으로 수집됩니다 — {{ '플레이스 오후 2시' if channel == 'place' else '쇼핑 오전 11시·오후 5시' }} 기준.</p>

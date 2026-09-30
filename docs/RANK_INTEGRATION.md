@@ -106,7 +106,10 @@ POST /partner/slots   {"keyword": ..., "url": ..., "platform": "shop" | "place"}
 - `platform` 을 생략하면 순위 서버는 쇼핑으로 본다 (platform 없이 부르던 트리플업과의 호환).
 
 - `status` 는 **`"collected"` 또는 `"queued"` 둘뿐**이다 (`pending` 같은 값은 오지 않는다).
-- `collected` 면 `rank` 가 그 자리에 들어 있어 바로 기록한다. `rank: null` 은 300위 밖.
+- `collected` 면 `rank` 가 그 자리에 들어 있어 바로 기록한다. `rank: null` 은 300위 밖 — 이것도
+  그날 `campaign_daily` 행(rank NULL)으로 남긴다. 행이 없으면 "수집 전", 있고 NULL 이면 "수집됐는데 밖".
+- 슬롯은 get-or-create 라 응답의 `status`/`date` 가 **다른 캠페인 때 수집된 옛 결과**일 수 있다.
+  이 캠페인 구간(등록일~종료일) 안의 날짜일 때만 기록·상태 반영하고, 아니면 `queued` 로 둔다.
 - 실패해도 상태 전이는 그대로 진행한다. 누락분은 `scripts/cron.py hourly` 가 줍는다.
 - 이미 `track_id` 가 있으면 다시 부르지 않는다. 서버 쪽은 get-or-create 라 같은 키워드·URL 이면
   같은 `trackId` 를 돌려준다.
@@ -125,6 +128,8 @@ POST /api/rank/callback      (app/blueprints/rank_api.py)
 - **모르는 `trackId` 는 200 + `matched:0`** 으로 넘긴다. 순위 서버가 여러 파트너 사이트에 같은
   payload 를 뿌리므로 남의 슬롯이 오는 게 정상이다. 여기서 4xx 를 내면 상대가 재시도를 반복한다.
 - 캠페인 구동 기간 밖의 날짜는 기록하지 않는다 (슬롯이 캠페인보다 오래 산다).
+- `rank: null`(300위 밖)도 그날 행을 NULL 로 남기고 `track_status` 를 **그 캠페인만** `not_found` 로
+  바꾼다. 같은 `trackId` 의 다른 캠페인은 자기 구간 안의 콜백으로만 바뀐다.
 
 순위 서버 쪽 `.env` 의 `NSR_PARTNER_CALLBACK_URL` 에 우리 주소를 **콤마로 덧붙여야** 한다
 (트리플업 주소를 지우지 말 것). **우리 주소에는 포트를 붙이지 않는다** — 8034 인바운드가
