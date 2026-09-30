@@ -150,6 +150,10 @@ def resolve_active(path):
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+    if app.config["PUBLIC_URL"]:
+        # nginx 뒤에서만. 프록시 없이 켜면 클라이언트가 X-Forwarded-* 를 위조할 수 있다.
+        from werkzeug.middleware.proxy_fix import ProxyFix
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
     from . import db
     from .services import notify_service

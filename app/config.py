@@ -20,6 +20,14 @@ class Config:
 
     # Service name is managed in exactly one place (spec 0).
     APP_NAME = os.getenv("APP_NAME", "마이마케팅")
+
+    # Public origin when served behind nginx (docs/DOMAIN_SETUP.md). When set, the app trusts
+    # X-Forwarded-* from the proxy (ProxyFix) so url_for(_external=True)/og:image get the real
+    # scheme+host, and cookies are marked Secure if the origin is https.
+    PUBLIC_URL = os.getenv("PUBLIC_URL", "").rstrip("/")
+    SESSION_COOKIE_SECURE = PUBLIC_URL.startswith("https://")
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = "Lax"
     KAKAO_CHAT_URL = os.getenv("KAKAO_CHAT_URL", "http://pf.kakao.com/_uuxgxaX/chat")
 
     PER_PAGE = 20
