@@ -35,14 +35,18 @@ def landing():
     from ..constants import BANK_DUE_DAYS, CHANNEL_LABEL, MEDIA_MIN_DAILY, ORDER_CUTOFF, TRAFFIC_CHANNELS
     from ..models import media as media_model
     from ..services import credit_service
-    channels = []
+    channels, media_names = [], []
     for ch, label in TRAFFIC_CHANNELS:
         medias = media_model.list_by_channel(ch)
         prices = [m["unit_price"] for m in medias if m.get("unit_price")]
         channels.append({"key": ch, "label": label, "count": len(medias),
                          "min_price": min(prices) if prices else None,
                          "tracked": ch in ("store", "place")})
+        media_names += [(m["name"], label, ch) for m in medias]
+    # 매체 이름 띠(marquee) — 두 줄로 나눠 반대 방향으로 흐른다
+    half = (len(media_names) + 1) // 2
     return render_template("landing.html", channels=channels, channel_label=CHANNEL_LABEL,
+                           marquee_rows=[media_names[:half], media_names[half:]],
                            total_media=sum(c["count"] for c in channels),
                            min_charge=credit_service.MIN_CHARGE, bank_due_days=BANK_DUE_DAYS,
                            order_cutoff=ORDER_CUTOFF, min_daily=MEDIA_MIN_DAILY)

@@ -1,4 +1,5 @@
-{# 홍보용 랜딩 (2026-09-30) — 앱 셸(사이드바) 없는 단독 화면. /intro 전용 — / 는 대시보드 그대로 (2026-09-30 JDH "별도로 랜딩").
+{# 홍보용 랜딩 (2026-09-30) — 앱 셸(사이드바) 없는 단독 화면. /intro 전용 — / 는 대시보드 그대로 (JDH "별도로 랜딩").
+   톤은 셀프마케팅.com(밝은 바탕·둥근 히어로 카드) + gopung 시안(등장·카운트업 효과). 효과는 js/landing.js.
    숫자는 라우트(main.landing)가 DB·상수에서 읽어 넘긴다 — 여기에 손으로 적지 말 것. #}
 <!DOCTYPE html>
 <html lang="ko">
@@ -9,7 +10,6 @@
 {% include "layout/_seo.html" %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"WebSite","name":"{{ APP_NAME }}","url":"{{ PUBLIC_URL or request.url_root | trim('/') }}","description":"{{ SEO.description }}","inLanguage":"ko"}
@@ -17,87 +17,128 @@
 </head>
 <body class="ld" style="margin:0">
 
+<div class="ld-strip"><a href="/auth/register">광고 대행사 없어도 충분해요 — <b>{{ APP_NAME }} 시작하기</b> →</a></div>
 <header class="ld-nav"><div class="ld-wrap">
   <a class="ld-logo" href="/"><img src="{{ url_for('static', filename='img/logo-sym-violet.png') }}" alt="">{{ APP_NAME }}</a>
-  <nav class="ld-menu"><a href="#products">광고 상품</a><a href="#how">이용 방법</a><a href="#why">특징</a><a href="#pricing">요금</a><a href="#faq">자주 묻는 질문</a></nav>
-  <div class="ld-right"><a class="btn ghost" href="/auth/login">로그인</a><a class="btn pri" href="/auth/register">무료로 시작하기</a></div>
+  <nav class="ld-menu"><a href="#products">광고 상품</a><a href="#how">이용 방법</a><a href="#why">특징</a><a href="#pricing">요금</a><a href="#faq">FAQ</a></nav>
+  <div class="ld-right"><a class="btn ghost" href="/auth/login">로그인</a><a class="btn pri" href="/auth/register"><i data-lucide="plus" style="width:16px;height:16px"></i>광고 시작하기</a></div>
 </div></header>
 
-<section class="ld-hero"><div class="ld-wrap">
+<section class="ld-hero"><div class="ld-wrap"><div class="ld-hero-card">
   <div>
-    <span class="ld-eyebrow"><i data-lucide="sparkles" style="width:14px;height:14px"></i>셀프서브 트래픽 광고 플랫폼</span>
-    <h1>대행사 없이,<br>내 손으로 하는 상위노출</h1>
-    <p class="lead">플레이스 · 쇼핑스토어 · 쿠팡 유입 캠페인을 직접 만들고, 매체 단가 · 진행 상황 · 일자별 순위까지 한 화면에서 확인하세요. 접수는 24시간, 구동은 다음 날부터.</p>
-    <div class="ld-cta"><a class="btn white lg" href="/auth/register">무료 회원가입</a><a class="btn line lg" href="/popular">광고 상품 둘러보기</a></div>
-    <div class="ld-stats">
-      <div><b>{{ total_media }}종</b><span>선택할 수 있는 매체</span></div>
-      <div><b>익일 구동</b><span>접수 24시간</span></div>
-      <div><b>순위 자동 수집</b><span>등록 즉시 기준 순위</span></div>
-      <div><b>단가 공개</b><span>모든 매체, 회원 누구나</span></div>
+    <span class="ld-eyebrow enter" style="--d:.05s"><i data-lucide="sparkles"></i>셀프서브 트래픽 광고 플랫폼</span>
+    <h1 class="enter" style="--d:.15s">대행사 없이, 내 손으로<br><span class="ld-rotate" data-words="플레이스|쇼핑스토어|쿠팡"><span>플레이스</span><span aria-hidden="true">쇼핑스토어</span><span aria-hidden="true">쿠팡</span></span> <span class="hl">상위노출</span></h1>
+    <p class="lead enter" style="--d:.28s">유입 캠페인을 직접 만들고, 매체 단가 · 진행 상황 · 일자별 순위까지 한 화면에서 확인하세요. 접수는 24시간, 구동은 다음 날부터.</p>
+    <div class="ld-cta enter" style="--d:.4s"><a class="btn pri lg" href="/auth/register">무료 회원가입</a><a class="btn soft lg" href="/popular">광고 상품 둘러보기</a></div>
+    <div class="ld-trust enter" style="--d:.52s">
+      <span><i data-lucide="check-circle-2"></i>매체 {{ total_media }}종 단가 공개</span>
+      <span><i data-lucide="check-circle-2"></i>등록 즉시 순위 추적</span>
+      <span><i data-lucide="check-circle-2"></i>월 이용료 없음</span>
     </div>
   </div>
-  <div class="ld-mock" aria-hidden="true">
-    <div class="mh"><i data-lucide="megaphone" style="width:16px;height:16px;color:var(--accent)"></i>캠페인 관리 <span class="st">정상</span></div>
-    <table>
-      <tr><th>순위 키워드</th><th>서비스</th><th>진행</th><th>순위</th></tr>
-      <tr><td><b>강남 필라테스</b></td><td>비비안</td><td>7일차 / 20일</td><td class="rk">18 → 4<span class="up">▲14</span></td></tr>
-      <tr><td><b>무선 청소기</b></td><td>타이탄</td><td>3일차 / 10일</td><td class="rk">52 → 27<span class="up">▲25</span></td></tr>
-      <tr><td><b>캠핑 의자</b></td><td>미라지</td><td>12일차 / 30일</td><td class="rk">9 → 2<span class="up">▲7</span></td></tr>
-    </table>
-    <div class="chart"><i style="height:30%"></i><i style="height:38%"></i><i style="height:46%"></i><i style="height:58%"></i><i style="height:64%"></i><i style="height:78%"></i><i class="now" style="height:100%"></i></div>
-    <div class="cap"><span>일자별 순위</span><span>낮을수록 좋음</span></div>
+  <div class="ld-stage enter" style="--d:.3s" aria-hidden="true">
+    <div class="ld-fc main">
+      <div class="t"><i data-lucide="megaphone"></i>캠페인 관리</div>
+      <table>
+        <tr><th>순위 키워드</th><th>서비스</th><th>진행</th><th>순위</th></tr>
+        <tr><td><b>강남 필라테스</b></td><td>비비안</td><td><span class="st">정상</span> 7일차</td><td class="rk">18 → 4<span class="up">▲14</span></td></tr>
+        <tr><td><b>무선 청소기</b></td><td>타이탄</td><td><span class="st">정상</span> 3일차</td><td class="rk">52 → 27<span class="up">▲25</span></td></tr>
+        <tr><td><b>캠핑 의자</b></td><td>미라지</td><td><span class="st">정상</span> 12일차</td><td class="rk">9 → 2<span class="up">▲7</span></td></tr>
+      </table>
+    </div>
+    <div class="ld-fc rank">
+      <div class="t"><i data-lucide="trending-up"></i>오늘 순위</div>
+      <div class="big">4위 <small>18위</small><em>▲14</em></div>
+      <div class="bars"><i style="--n:0;height:30%"></i><i style="--n:1;height:36%"></i><i style="--n:2;height:44%"></i><i style="--n:3;height:52%"></i><i style="--n:4;height:66%"></i><i style="--n:5;height:80%"></i><i style="--n:6;height:100%"></i></div>
+    </div>
+    <div class="ld-fc credit">
+      <div class="t"><i data-lucide="wallet"></i>보유 크레딧</div>
+      <div class="big">312,000원</div>
+      <div class="sub">캠페인 만들 때 바로 차감</div>
+    </div>
+    <div class="ld-fc pill"><i data-lucide="check-circle-2"></i>검수 통과 · 내일부터 구동</div>
+  </div>
+</div></div></section>
+
+<section class="ld-quick"><div class="ld-wrap">
+  <h3 class="rv">어떤 광고를 찾으세요?</h3>
+  <div class="row">
+    {% for icon, label, href in [
+      ('map-pin', '플레이스 상위노출', '/campaign/place/new'), ('shopping-bag', '스토어 상위노출', '/campaign/store/new'),
+      ('package', '쿠팡 상위노출', '/campaign/coupang/new'), ('trending-up', '순위 추적', '/guide'),
+      ('search', '키워드 조회', '/tools/keyword'), ('award', '인기 트래픽', '/popular'),
+      ('wallet', '크레딧 충전', '/credit/charge'), ('book-open', '이용가이드', '/guide'),
+    ] %}
+    <a class="rv" style="--d:{{ loop.index0 * 0.06 }}s" href="{{ href }}"><span class="ic"><i data-lucide="{{ icon }}"></i></span>{{ label }}</a>
+    {% endfor %}
   </div>
 </div></section>
 
+<section class="ld-sec" id="numbers"><div class="ld-wrap">
+  <div class="hd rv"><div class="ld-kicker">한눈에</div><h2>대행사 없이, <span class="hl">광고를 시작하세요</span></h2><p class="sub">고르고, 충전하고, 접수하면 끝. 나머지는 화면에서 직접 확인합니다.</p></div>
+  <div class="ld-nums">
+    <div class="rv" style="--d:0s"><span class="ic"><i data-lucide="layers"></i></span><b><span data-count="{{ total_media }}">{{ total_media }}</span><small>종</small></b><span>선택할 수 있는 매체</span></div>
+    <div class="rv" style="--d:.1s"><span class="ic"><i data-lucide="clock"></i></span><b><span data-count="24">24</span><small>시간</small></b><span>언제든 접수, 구동은 다음 날부터</span></div>
+    <div class="rv" style="--d:.2s"><span class="ic"><i data-lucide="calendar-range"></i></span><b><span data-count="60">60</span><small>일</small></b><span>최장 광고 기간 · 시작일 직접 선택</span></div>
+    <div class="rv" style="--d:.3s"><span class="ic"><i data-lucide="search"></i></span><b><span data-count="30">30</span><small>회</small></b><span>하루 무료 키워드 검색량 조회</span></div>
+  </div>
+</div></section>
+
+<section class="ld-sec alt" style="padding-top:64px;padding-bottom:64px"><div class="ld-wrap" style="width:100%">
+  <div class="hd rv" style="margin-bottom:28px"><h2>{{ total_media }}종 매체에 <span class="hl">바로 송출</span></h2><p class="sub">실제 운영 중인 리워드 · 유입형 · 기성 프로그램. 이름을 눌러 보지 않아도 단가가 다 보입니다.</p></div>
+  {% for row in marquee_rows %}
+  <div class="ld-marq{% if loop.index0 == 1 %} rev{% endif %}"><div class="track">
+    {% for _ in range(2) %}{% for name, label, ch in row %}<span class="m c-{{ ch }}"><i>{{ name[:1] }}</i>{{ name }}<small>{{ label }}</small></span>{% endfor %}{% endfor %}
+  </div></div>
+  {% endfor %}
+</div></section>
+
 <section class="ld-sec" id="products"><div class="ld-wrap">
-  <div class="ld-kicker">광고 상품</div>
-  <h2>세 채널, 실제 운영 중인 매체만</h2>
-  <p class="sub">리워드 · 유입형 · 기성 프로그램을 채널별로 골라 쓰세요. 단가는 회원이면 누구나 화면에서 바로 봅니다.</p>
+  <div class="hd rv"><div class="ld-kicker">광고 상품</div><h2>세 채널, <span class="hl">실제 운영 중인 매체만</span></h2><p class="sub">채널을 고르면 매체 · 단가 · 최소 일수가 한 화면에 나옵니다. 회원이면 누구나.</p></div>
   <div class="ld-ch">
     {% for ch in channels %}
-    <a href="/campaign/{{ ch.key }}/new">
+    <a class="rv" style="--d:{{ loop.index0 * 0.12 }}s" href="/campaign/{{ ch.key }}/new">
       <span class="ic"><i data-lucide="{{ {'place': 'map-pin', 'store': 'shopping-bag', 'coupang': 'package'}[ch.key] }}"></i></span>
       <b>{{ ch.label }} 캠페인</b>
       <small>{{ {'place': '네이버 지도 · 플레이스 상위노출', 'store': '스마트스토어 · 쇼핑검색 상위노출', 'coupang': '쿠팡 검색 상위노출'}[ch.key] }}</small>
       <div class="pr"><em>매체 {{ ch.count }}종 · 1회</em>{% if ch.min_price %}<b>{{ ch.min_price | fmt_num }}<i>원부터</i></b>{% endif %}</div>
       {% if ch.tracked %}<span class="tag">순위 자동 수집</span>{% else %}<span class="tag gray">순위 수집 준비 중</span>{% endif %}
+      <span class="go"><i data-lucide="arrow-right"></i></span>
     </a>
     {% endfor %}
   </div>
 </div></section>
 
 <section class="ld-sec alt" id="how"><div class="ld-wrap">
-  <div class="ld-kicker">이용 방법</div>
-  <h2>가입부터 구동까지, 네 단계</h2>
-  <p class="sub">상담 대기도, 견적 요청도 없습니다. 화면에서 고르고 바로 접수합니다.</p>
+  <div class="hd rv"><div class="ld-kicker">이용 방법</div><h2>가입부터 구동까지, <span class="hl">네 단계</span></h2><p class="sub">상담 대기도, 견적 요청도 없습니다. 화면에서 고르고 바로 접수합니다.</p></div>
   <div class="ld-steps">
-    <div><b>이메일로 가입</b><span>이메일 · 비밀번호 · 닉네임 · 연락처만 입력하면 끝. 가입 즉시 로그인됩니다.</span></div>
-    <div><b>크레딧 충전</b><span>무통장입금으로 {{ min_charge | fmt_num }}원부터. 입금 확인 후 크레딧이 지급되고, 세금계산서는 사업자 정보로 발행됩니다.</span></div>
-    <div><b>캠페인 만들기</b><span>상품 주소 · 광고 유형 · 키워드 · 일일 유입수({{ min_daily }}회부터) · 기간을 고르면 총액이 바로 계산됩니다.</span></div>
-    <div><b>검수 후 익일 구동</b><span>운영팀 검수를 지나면 다음 날부터 구동. {{ order_cutoff }} 이후 접수는 그 다음 날부터. 순위는 등록 즉시 추적을 시작합니다.</span></div>
+    <div class="rv" style="--d:0s"><b>이메일로 가입</b><span>이메일 · 비밀번호 · 닉네임 · 연락처만 입력하면 끝. 가입 즉시 로그인됩니다.</span></div>
+    <div class="rv" style="--d:.12s"><b>크레딧 충전</b><span>무통장입금으로 {{ min_charge | fmt_num }}원부터. 입금 확인 후 지급, 세금계산서는 사업자 정보로 발행.</span></div>
+    <div class="rv" style="--d:.24s"><b>캠페인 만들기</b><span>상품 주소 · 광고 유형 · 키워드 · 일일 유입수({{ min_daily }}회부터) · 기간을 고르면 총액이 바로 계산.</span></div>
+    <div class="rv" style="--d:.36s"><b>검수 후 익일 구동</b><span>검수를 지나면 다음 날부터 구동. {{ order_cutoff }} 이후 접수는 그 다음 날부터. 순위는 등록 즉시 추적.</span></div>
   </div>
 </div></section>
 
 <section class="ld-sec" id="why"><div class="ld-wrap">
-  <div class="ld-kicker">특징</div>
-  <h2>{{ APP_NAME }}이 다른 이유</h2>
-  <p class="sub">대행사에 맡길 때 답답했던 것들 — 단가, 진행 상황, 순위 — 을 전부 회원 화면에 올렸습니다.</p>
+  <div class="hd rv"><div class="ld-kicker">특징</div><h2>{{ APP_NAME }}이 <span class="hl">다른 이유</span></h2><p class="sub">대행사에 맡길 때 답답했던 것들 — 단가, 진행 상황, 순위 — 을 전부 회원 화면에 올렸습니다.</p></div>
   <div class="ld-feat">
-    <div><span class="ic"><i data-lucide="tag"></i></span><b>단가가 화면에 있습니다</b><span>매체마다 1회 단가가 공개돼 있고, 총액은 단가 × 일일 유입수 × 일수. 숨은 비용이 없습니다.</span></div>
-    <div><span class="ic"><i data-lucide="trending-up"></i></span><b>등록 즉시 순위 추적</b><span>검수 결과를 기다리지 않고 등록 순간부터 순위를 수집해 유입 전 기준 순위를 남깁니다. 일자별 순위 보고서로 변동을 봅니다.</span></div>
-    <div><span class="ic"><i data-lucide="wallet"></i></span><b>크레딧 선충전, 투명한 환불</b><span>캠페인은 크레딧에서 차감. 검수 반려는 전액, 진행 중 중단은 남은 일수만큼 크레딧으로 돌려드립니다.</span></div>
-    <div><span class="ic"><i data-lucide="clock"></i></span><b>24시간 접수 · 익일 구동</b><span>밤에 접수해도 다음 날 구동됩니다. 시작일은 직접 고르고, 기간은 매체 최소 일수부터 60일까지 자유롭게.</span></div>
-    <div><span class="ic"><i data-lucide="search"></i></span><b>키워드 도구 무료</b><span>월간 검색량 · 연관 키워드를 로그인 후 하루 30회까지 무료로 조회하고, 그 키워드로 바로 캠페인을 만듭니다.</span></div>
-    <div><span class="ic"><i data-lucide="award"></i></span><b>운영팀 주간 추천과 후기</b><span>운영팀이 매주 채널별 추천 매체를 고르고, 완료된 캠페인의 익명 후기를 매체마다 모아 보여줍니다.</span></div>
+    {% for icon, t, s in [
+      ('tag', '단가가 화면에 있습니다', '매체마다 1회 단가가 공개돼 있고, 총액은 단가 × 일일 유입수 × 일수. 숨은 비용이 없습니다.'),
+      ('trending-up', '등록 즉시 순위 추적', '검수를 기다리지 않고 등록 순간부터 순위를 수집해 유입 전 기준 순위를 남깁니다. 일자별 보고서로 변동을 봅니다.'),
+      ('wallet', '크레딧 선충전, 투명한 환불', '캠페인은 크레딧에서 차감. 검수 반려는 전액, 진행 중 중단은 남은 일수만큼 크레딧으로 돌려드립니다.'),
+      ('clock', '24시간 접수 · 익일 구동', '밤에 접수해도 다음 날 구동됩니다. 시작일은 직접 고르고, 기간은 매체 최소 일수부터 60일까지.'),
+      ('search', '키워드 도구 무료', '월간 검색량 · 연관 키워드를 로그인 후 하루 30회까지 무료로 조회하고, 그 키워드로 바로 캠페인을 만듭니다.'),
+      ('award', '운영팀 주간 추천과 후기', '운영팀이 매주 채널별 추천 매체를 고르고, 완료된 캠페인의 익명 후기를 매체마다 모아 보여줍니다.'),
+    ] %}
+    <div class="rv" style="--d:{{ (loop.index0 % 3) * 0.1 }}s"><span class="ic"><i data-lucide="{{ icon }}"></i></span><b>{{ t }}</b><span>{{ s }}</span></div>
+    {% endfor %}
   </div>
 </div></section>
 
 <section class="ld-sec alt" id="pricing"><div class="ld-wrap">
-  <div class="ld-kicker">요금</div>
-  <h2>단가 × 일일 유입수 × 일수, 그게 전부</h2>
-  <p class="sub">월 이용료나 세팅비가 없습니다. 쓴 만큼 크레딧에서 차감됩니다.</p>
+  <div class="hd rv"><div class="ld-kicker">요금</div><h2>단가 × 일일 유입수 × 일수, <span class="hl">그게 전부</span></h2><p class="sub">월 이용료나 세팅비가 없습니다. 쓴 만큼 크레딧에서 차감됩니다.</p></div>
   <div class="ld-price">
-    <table>
+    <table class="rv">
       <tr><th>채널</th><th>매체</th><th>1회 단가</th><th>예시 · 100회 × 10일</th></tr>
       {% for ch in channels %}
       <tr><td><b>{{ ch.label }}</b></td><td>{{ ch.count }}종</td>
@@ -105,7 +146,7 @@
         <td class="num">{% if ch.min_price %}{{ (ch.min_price * 1000) | fmt_num }}원 <small>부터</small>{% else %}-{% endif %}</td></tr>
       {% endfor %}
     </table>
-    <div class="ld-formula">
+    <div class="ld-formula rv" style="--d:.15s">
       <div class="f">1회 단가 <i>×</i> 일일 유입수 <i>×</i> 일수</div>
       <ul>
         <li><i data-lucide="check"></i>크레딧 충전은 {{ min_charge | fmt_num }}원부터, 부가세 10%는 충전 입금액에만 붙습니다.</li>
@@ -118,9 +159,7 @@
 </div></section>
 
 <section class="ld-sec" id="faq"><div class="ld-wrap">
-  <div class="ld-kicker">자주 묻는 질문</div>
-  <h2>궁금한 것들</h2>
-  <p class="sub">더 자세한 내용은 <a href="/guide" style="color:var(--accent);font-weight:700">이용가이드</a>에 있습니다.</p>
+  <div class="hd rv"><div class="ld-kicker">FAQ</div><h2>자주 묻는 질문</h2><p class="sub">더 자세한 내용은 <a href="/guide" style="color:var(--accent);font-weight:700">이용가이드</a>에 있습니다.</p></div>
   <div class="ld-faq">
     {% for q, a in [
       ('정말 대행사 없이 혼자 할 수 있나요?', '네. 상품 주소를 붙이고 광고 유형 · 키워드 · 기간을 고르면 총액이 바로 계산되고, 접수하면 운영팀이 검수 후 구동합니다. 진행 상황과 순위는 캠페인 관리 화면에서 직접 봅니다.'),
@@ -129,16 +168,16 @@
       ('순위는 언제부터 보이나요?', '접수하는 순간 순위 추적이 시작됩니다. 검수 중이어도, 구동 시작일 전이어도 순위가 들어오며 그게 유입 전 기준 순위가 됩니다. 쇼핑 · 스토어와 플레이스가 지원되고, 쿠팡은 준비 중입니다.'),
       ('중간에 그만두면 환불되나요?', '검수 반려는 전액, 진행 중 중단은 남은 일수만큼 크레딧으로 돌려드립니다. 이미 구동된 일수는 정산된 금액이라 환불되지 않습니다.'),
     ] %}
-    <details><summary><b>Q</b>{{ q }}<i data-lucide="chevron-down"></i></summary><p>{{ a }}</p></details>
+    <details class="rv" style="--d:{{ loop.index0 * 0.06 }}s"{% if loop.first %} open{% endif %}><summary><b>Q</b>{{ q }}<i data-lucide="chevron-down"></i></summary><p>{{ a }}</p></details>
     {% endfor %}
   </div>
 </div></section>
 
-<section class="ld-final"><div class="ld-wrap">
-  <h2>오늘 접수하면, 내일부터 구동됩니다</h2>
-  <p>이메일 하나로 1분이면 가입 끝. 단가부터 순위까지 직접 확인하세요.</p>
+<section class="ld-final"><div class="ld-wrap"><div class="box rv">
+  <h2>대행사 없이 누구나 손쉽게!<br>지금 {{ APP_NAME }} 하세요</h2>
+  <p>이메일 하나로 1분이면 가입 끝. 오늘 접수하면 내일부터 구동됩니다.</p>
   <div class="ld-cta"><a class="btn white lg" href="/auth/register">무료 회원가입</a><a class="btn line lg" href="{{ KAKAO_CHAT_URL }}" target="_blank" rel="noopener">카카오톡 상담</a></div>
-</div></section>
+</div></div></section>
 
 <footer class="ld-foot"><div class="ld-wrap">
   <a class="ld-logo" href="/"><img src="{{ url_for('static', filename='img/logo-sym-violet.png') }}" alt="">{{ APP_NAME }}</a>
@@ -148,5 +187,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/lucide@0.469.0/dist/umd/lucide.min.js"></script>
 <script>lucide.createIcons();</script>
+<script src="{{ url_for('static', filename='js/landing.js') }}"></script>
 </body>
 </html>
