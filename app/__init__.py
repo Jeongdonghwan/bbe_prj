@@ -206,10 +206,16 @@ def create_app():
             sv = {}
         strip = {"on": sv.get("strip_on") == "1", "text": sv.get("strip_text") or "",
                  "link": sv.get("strip_link") or "", "bg": sv.get("strip_bg") or "#2563EB"}
-        from .constants import STATUS_CLASS, STATUS_LABEL
+        from .constants import SEO_DESCRIPTION, SEO_KEYWORDS, SEO_TITLE, STATUS_CLASS, STATUS_LABEL
         return {
             "APP_NAME": app.config["APP_NAME"], "strip": strip,
             "KAKAO_CHAT_URL": app.config["KAKAO_CHAT_URL"],
+            # 검색·공유 메타 (layout/_seo.html). 로컬은 PUBLIC_URL 이 비어 요청 호스트를 쓴다.
+            "SEO": {"title": SEO_TITLE, "description": SEO_DESCRIPTION, "keywords": SEO_KEYWORDS},
+            "PUBLIC_URL": app.config["PUBLIC_URL"],
+            "now_year": date.today().year,
+            "NAVER_SITE_VERIFICATION": app.config["NAVER_SITE_VERIFICATION"],
+            "GOOGLE_SITE_VERIFICATION": app.config["GOOGLE_SITE_VERIFICATION"],
             "MENU": MENU,
             # 상태 라벨은 어느 화면에서도 같아야 해서 전역으로 준다 (라우트가 넘기면 그쪽이 이긴다).
             "status_label": STATUS_LABEL, "status_class": STATUS_CLASS,

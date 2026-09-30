@@ -38,6 +38,17 @@ MEDIA_MIN_DAILY = 100
 MEDIA_MAX_DAILY = 0   # 0 = 상한 없음 (2026-09-21 JDH)
 
 CHANNEL_LABEL = {"place": "플레이스", "store": "쇼핑·스토어", "coupang": "쿠팡"}
+
+# 검색·공유용 문구 (2026-09-30). 제목·설명·키워드·OG 이미지(scripts/make_og.py)가 전부 여기서 읽는다.
+# 브랜드명은 config.APP_NAME 이라 여기 넣지 않는다 — 템플릿이 "{APP_NAME} | {SEO_TITLE}" 로 합친다.
+SEO_TITLE = "대행사 없이 직접 하는 플레이스·스토어·쿠팡 상위노출"
+SEO_TAGLINE = "대행사 없이,\n내 손으로 하는 상위노출"          # OG 이미지 두 줄 카피
+SEO_SUB = "플레이스 · 쇼핑스토어 · 쿠팡 유입 캠페인, 단가부터 일자별 순위까지 한 화면에서"
+SEO_DESCRIPTION = ("플레이스 · 쇼핑스토어 · 쿠팡 유입 캠페인을 대행사 없이 직접 만들고 관리하는 셀프서브 광고 "
+                   "플랫폼. 매체 단가 공개, 크레딧 선충전, 접수 24시간·익일 구동, 등록 즉시 순위 자동 수집.")
+SEO_KEYWORDS = ("셀프마케팅, 마이마케팅, 플레이스 상위노출, 스마트스토어 상위노출, 쇼핑 순위, 쿠팡 상위노출, "
+                "트래픽 광고, 유입 광고, 리워드 광고, 네이버 플레이스 순위, 셀프 광고 플랫폼, 대행사 없이 마케팅")
+SEO_DOMAIN_KO = "셀프마이마케팅.kr"
 # 인기 트래픽 페이지·위젯의 탭 순서 (2026-09-22 JDH): 쇼핑·스토어 먼저, 기본 선택도 쇼핑·스토어.
 TRAFFIC_CHANNELS = [("store", "쇼핑·스토어"), ("place", "플레이스"), ("coupang", "쿠팡")]
 CHANNEL_CLASS = {"place": "c-place", "store": "c-store", "coupang": "c-coupang"}

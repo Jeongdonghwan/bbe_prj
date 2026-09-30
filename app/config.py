@@ -28,6 +28,9 @@ class Config:
     SESSION_COOKIE_SECURE = PUBLIC_URL.startswith("https://")
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
+    # Search console ownership tags (네이버 서치어드바이저 / Google Search Console). Empty -> tag omitted.
+    NAVER_SITE_VERIFICATION = os.getenv("NAVER_SITE_VERIFICATION", "")
+    GOOGLE_SITE_VERIFICATION = os.getenv("GOOGLE_SITE_VERIFICATION", "")
     KAKAO_CHAT_URL = os.getenv("KAKAO_CHAT_URL", "http://pf.kakao.com/_uuxgxaX/chat")
 
     PER_PAGE = 20

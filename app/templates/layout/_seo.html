@@ -1,0 +1,27 @@
+{# 검색·공유 메타 — base.html 과 landing.html 이 함께 쓴다. 문구는 constants.SEO_* (컨텍스트 프로세서 SEO).
+   canonical/og:url 은 PUBLIC_URL 이 있을 때만 절대 주소로 (없으면 요청 호스트 — 로컬/IP 접속).
+   어드민·마이페이지 등 로그인 화면은 noindex. #}
+{% set _origin = PUBLIC_URL or (request.url_root | trim('/')) %}
+{% set _canon = _origin ~ request.path %}
+{% set _private = is_admin_path or request.path.startswith(('/my', '/campaign', '/credit', '/notifications', '/api', '/auth/admin')) %}
+<meta name="description" content="{{ SEO.description }}">
+<meta name="keywords" content="{{ SEO.keywords }}">
+<meta name="robots" content="{% if _private %}noindex, nofollow{% else %}index, follow{% endif %}">
+<link rel="canonical" href="{{ _canon }}">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="ko_KR">
+<meta property="og:site_name" content="{{ APP_NAME }}">
+<meta property="og:url" content="{{ _canon }}">
+<meta property="og:title" content="{{ APP_NAME }} | {{ SEO.title }}">
+<meta property="og:description" content="{{ SEO.description }}">
+<meta property="og:image" content="{{ _origin }}{{ url_for('static', filename='img/og.png') }}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="{{ APP_NAME }} — {{ SEO.title }}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ APP_NAME }} | {{ SEO.title }}">
+<meta name="twitter:description" content="{{ SEO.description }}">
+<meta name="twitter:image" content="{{ _origin }}{{ url_for('static', filename='img/og.png') }}">
+{% if NAVER_SITE_VERIFICATION %}<meta name="naver-site-verification" content="{{ NAVER_SITE_VERIFICATION }}">{% endif %}
+{% if GOOGLE_SITE_VERIFICATION %}<meta name="google-site-verification" content="{{ GOOGLE_SITE_VERIFICATION }}">{% endif %}
+<link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo-sym-violet.png') }}">
