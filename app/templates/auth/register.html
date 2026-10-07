@@ -16,6 +16,10 @@
         <div class="f"><label>닉네임</label><input class="in" name="nickname" value="{{ form.get('nickname', '') }}" maxlength="20" required></div>
         <div class="f"><label>연락처 <small>알림톡 수신용</small></label><input class="in" name="phone" value="{{ form.get('phone', '') }}" placeholder="010-1234-5678" required></div>
       </div>
+      <div class="row2">
+        <div class="f"><label>상호</label><input class="in" name="biz_name" value="{{ form.get('biz_name', '') }}" maxlength="60" placeholder="사업자등록증상 상호" required></div>
+        <div class="f"><label>사업자등록번호</label><input class="in" name="biz_no" value="{{ form.get('biz_no', '') }}" inputmode="numeric" maxlength="12" placeholder="123-45-67890" required></div>
+      </div>
       <div class="f"><label>사업자등록증 <small>선택 · JPG/PNG/PDF 10MB 이하 — 나중에 마이페이지에서 올려도 됩니다</small></label><input class="in" type="file" name="biz_cert" accept="image/jpeg,image/png,image/webp,application/pdf" style="padding:7px 10px;height:auto"></div>
       <div class="f" style="margin:10px 0 8px">
         <label class="chk" style="cursor:pointer" id="agreeAll"><input type="checkbox" hidden><i></i><b>전체 동의</b></label>

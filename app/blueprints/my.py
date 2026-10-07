@@ -13,7 +13,6 @@ from .main import render_placeholder
 
 bp = Blueprint("my", __name__)
 
-BIZ_NO_RE = re.compile(r"^\d{3}-?\d{2}-?\d{5}$")
 
 
 def mask_phone(phone):
@@ -65,12 +64,12 @@ def biz():
     f = request.form
     name = (f.get("biz_name") or "").strip()[:60]
     no = (f.get("biz_no") or "").strip()
-    if no and not BIZ_NO_RE.match(no):
-        flash("사업자번호 형식이 올바르지 않습니다. 예) 123-45-67890")
-        return redirect(url_for("my.index"))
     if no:
-        d = no.replace("-", "")
-        no = f"{d[:3]}-{d[3:5]}-{d[5:]}"
+        from .auth import parse_biz_no
+        no = parse_biz_no(no)
+        if not no:
+            flash("사업자등록번호가 올바르지 않습니다. 10자리 번호를 확인해주세요. 예) 123-45-67890")
+            return redirect(url_for("my.index"))
     email = (f.get("biz_email") or "").strip()[:120]
     if email and not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
         flash("이메일 주소 형식이 올바르지 않습니다.")

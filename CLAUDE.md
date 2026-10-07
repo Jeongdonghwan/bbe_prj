@@ -23,6 +23,7 @@
 cp .env.example .env → mysql < schema.sql → python scripts/seed.py → flask run
 
 ## 현재 Phase
+- 2026-10-07 **회원가입 필수값에 상호·사업자등록번호** 추가 — 번호는 `auth.parse_biz_no()`(국세청 검증번호 체크섬, 하이픈 정규화)로만 검증하고 마이페이지 수정도 같은 함수를 쓴다. 카카오 가입은 키가 없어 막혀 있어 아직 미적용(열 때 같은 필수값을 받을 것).
 - 2026-10-07 사업자등록증 인증 + 운영자 알림: 회원가입(선택)·마이페이지 설정에서 사업자등록증(JPG/PNG/WEBP/PDF, 10MB) 제출 → `users.biz_cert_status` pending → 어드민 회원 드로어에서 보기·승인·반려(회원에게 알림, admin_log). **파일은 개인정보라 `instance/biz_certs/`(gitignore, static 밖)에 두고 `/admin/users/<id>/biz-cert` 로만 내준다** — 서버 재설치 시 이 폴더를 백업할 것. 검증은 `services/biz_cert.read_upload`(확장자 + 실제 이미지/PDF 시그니처). 운영자 알림은 `notify_service.notify_admins()` — 활성 운영자 전원의 notifications 에 넣고 헤더 종으로 본다. 발생 지점: 가입(이메일·카카오) · 사업자 인증 제출 · 충전 요청 · 결제 완료(`create_with_credit`) · 회원의 중단/취소(환불). 어드민이 한 중단은 알리지 않는다. 회귀 `tests/admin_notify.py`.
 - 2026-09-28 계정별 매체 단가 / 기간 직접 입력 / 효율 UI 정리:
   - **계정별 단가**: `user_media_prices(user_id, media_id, unit_price, memo)` + 어드민 `/admin/user-prices`. 없으면 `media.unit_price` 를 그대로 쓴다. 적용 지점은 두 곳뿐 — 위저드 렌더(`media.apply_user_prices`)와 제출 시 총액 재계산(`media.price_for`). **총액 대조(client_total)도 같은 값 기준**이라 기본 단가로 위조한 제출은 거절된다. 이미 접수된 주문은 `campaigns.unit_price` 에 박제되므로 단가를 바꿔도 과거 금액은 변하지 않는다.

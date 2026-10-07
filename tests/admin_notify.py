@@ -30,7 +30,13 @@ with app.app_context():
 email = f"certtest{int(time.time())}@example.com"
 tc = app.test_client()
 form = {"email": email, "password": "password123", "password2": "password123", "nickname": "인증테스트",
-        "phone": "010-1234-5678", "agree_terms": "1", "agree_privacy": "1"}
+        "phone": "010-1234-5678", "agree_terms": "1", "agree_privacy": "1",
+        "biz_name": "인증테스트상사", "biz_no": "2208162517"}
+# 상호·사업자번호는 필수, 번호는 검증번호까지 본다
+for bad, name in (({"biz_name": ""}, "상호 없음 → 거절"), ({"biz_no": "123-45-67890"}, "검증번호 틀림 → 거절")):
+    r = tc.post("/auth/register", data={**form, **bad}, content_type="multipart/form-data")
+    with app.app_context():
+        ok(r.status_code == 400 and not query_one("SELECT id FROM users WHERE email=%s", [email]), name)
 # 잘못된 파일이면 회원이 만들어지지 않는다
 r = tc.post("/auth/register", data={**form, "biz_cert": (io.BytesIO(b"nope"), "x.jpg")}, content_type="multipart/form-data")
 with app.app_context():
@@ -39,6 +45,7 @@ r = tc.post("/auth/register", data={**form, "biz_cert": (png(), "cert.png")}, co
 with app.app_context():
     u = query_one("SELECT * FROM users WHERE email=%s", [email])
     ok(r.status_code == 302 and u and u["biz_cert_status"] == "pending" and u["biz_cert_file"], "가입 + 등록증 → pending")
+    ok(u["biz_name"] == "인증테스트상사" and u["biz_no"] == "220-81-62517", "상호·사업자번호 저장 (하이픈 정규화)")
     titles = [n["title"] for n in query("SELECT title FROM notifications WHERE id > %s AND user_id = %s", [start, admin["id"]])]
     ok(any("신규 회원가입" in t for t in titles) and any("사업자 인증 요청" in t for t in titles), "운영자 알림: 가입·인증")
 

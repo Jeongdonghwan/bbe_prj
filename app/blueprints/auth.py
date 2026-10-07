@@ -16,6 +16,18 @@ from ..services import kakao_service
 bp = Blueprint("auth", __name__, url_prefix="/auth")
 
 PHONE_RE = re.compile(r"^01[016789]-?\d{3,4}-?\d{4}$")
+
+
+def parse_biz_no(s):
+    """사업자등록번호 → '123-45-67890', 형식·검증번호가 틀리면 None (국세청 체크섬)."""
+    d = re.sub(r"[\s-]", "", s or "")
+    if not re.fullmatch(r"\d{10}", d):
+        return None
+    n = [int(c) for c in d]
+    total = sum(a * w for a, w in zip(n[:8], (1, 3, 7, 1, 3, 7, 1, 3))) + (n[8] * 5) // 10 + n[8] * 5
+    return f"{d[:3]}-{d[3:5]}-{d[5:]}" if (10 - total % 10) % 10 == n[9] else None
+
+
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
@@ -164,6 +176,8 @@ def register():
         password = f.get("password") or ""
         nickname = (f.get("nickname") or "").strip()
         phone = (f.get("phone") or "").strip().replace(" ", "")
+        biz_name = (f.get("biz_name") or "").strip()[:60]
+        biz_no = parse_biz_no(f.get("biz_no"))
         err = None
         if not EMAIL_RE.match(email):
             err = "이메일 형식이 올바르지 않습니다."
@@ -175,6 +189,10 @@ def register():
             err = "닉네임은 2~20자로 입력해주세요."
         elif not PHONE_RE.match(phone):
             err = "연락처 형식이 올바르지 않습니다. 예) 010-1234-5678"
+        elif not biz_name:
+            err = "상호를 입력해주세요."
+        elif not biz_no:
+            err = "사업자등록번호가 올바르지 않습니다. 10자리 번호를 확인해주세요. 예) 123-45-67890"
         elif f.get("agree_terms") != "1" or f.get("agree_privacy") != "1":
             err = "이용약관과 개인정보 수집·이용에 동의해주세요."
         elif user_model.get_by_email(email):
@@ -190,7 +208,8 @@ def register():
             return render_template("auth/register.html", next_url=next_url, form=f), 400
         uid = user_model.create_local(email, generate_password_hash(password), nickname, _fmt_phone(phone),
                                       f.get("agree_marketing") == "1")
-        notify_service.notify_admins(f"신규 회원가입 · {nickname} ({email})", f"/admin/users?open={uid}")
+        user_model.update_biz(uid, biz_name, biz_no, "", "", "")
+        notify_service.notify_admins(f"신규 회원가입 · {nickname} / {biz_name} {biz_no} ({email})", f"/admin/users?open={uid}")
         if cert:
             user_model.set_biz_cert(uid, biz_cert.save(uid, cert))
             notify_service.notify_admins(f"사업자 인증 요청 · {nickname} — 사업자등록증 확인 필요", f"/admin/users?open={uid}")
