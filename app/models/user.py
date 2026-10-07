@@ -67,16 +67,9 @@ def search_brief(q, limit=30):
                  [term] * 6 + [int(limit)])
 
 
-def count_cert_pending():
-    return query_one("SELECT COUNT(*) AS n FROM users WHERE biz_cert_status = 'pending'")["n"]
-
-
-def set_biz_cert(user_id, filename=None, status="pending"):
-    """사업자등록증 파일·인증 상태. filename 이 None 이면 상태만 바꾼다."""
-    if filename:
-        execute("UPDATE users SET biz_cert_file = %s, biz_cert_status = %s WHERE id = %s", [filename, status, user_id])
-    else:
-        execute("UPDATE users SET biz_cert_status = %s WHERE id = %s", [status, user_id])
+def set_biz_cert(user_id, filename):
+    """사업자등록증 파일 — 보관·열람용. 셀러는 승인 단계가 없다(대행사 신청만 심사)."""
+    execute("UPDATE users SET biz_cert_file = %s WHERE id = %s", [filename, user_id])
 
 
 def update_biz(user_id, biz_name, biz_no, biz_type, biz_item, biz_email):
@@ -124,7 +117,7 @@ def search_term(q):
     return q[6:] if q[:6].lower() == "kakao:" else q
 
 
-def list_admin(q=None, status=None, page=1, per_page=20, cert=None):
+def list_admin(q=None, status=None, page=1, per_page=20):
     from ..db import query, query_one  # local import keeps top clean
     where, params = ["1=1"], []
     if q:
@@ -134,8 +127,6 @@ def list_admin(q=None, status=None, page=1, per_page=20, cert=None):
         params += [f"%{search_term(q)}%"] * 6
     if status:
         where.append("status = %s"); params.append(status)
-    if cert:
-        where.append("biz_cert_status = %s"); params.append(cert)
     w = " AND ".join(where)
     rows = query(
         f"""SELECT u.*, (SELECT COUNT(*) FROM campaigns c WHERE c.user_id = u.id) AS campaign_cnt,

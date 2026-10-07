@@ -75,10 +75,10 @@ with app.app_context():
 r = tc.post("/auth/register", data={**form, "biz_cert": (png(), "cert.png")}, content_type="multipart/form-data")
 with app.app_context():
     u = query_one("SELECT * FROM users WHERE email=%s", [email])
-    ok(r.status_code == 302 and u and u["biz_cert_status"] == "pending" and u["biz_cert_file"], "가입 + 등록증 → pending")
+    ok(r.status_code == 302 and u and u["biz_cert_file"], "가입 + 등록증 저장 (승인 단계 없음)")
     ok(u["biz_name"] == "인증테스트상사" and u["biz_no"] == "220-81-62517", "상호·사업자번호 저장 (하이픈 정규화)")
     titles = [n["title"] for n in query("SELECT title FROM notifications WHERE id > %s AND user_id = %s", [start, admin["id"]])]
-    ok(any("신규 회원가입" in t for t in titles) and any("사업자 인증 요청" in t for t in titles), "운영자 알림: 가입·인증")
+    ok(any("신규 회원가입" in t and "등록증 첨부" in t for t in titles), "운영자 알림: 가입 (등록증 첨부 표시)")
 
 # 충전 요청 알림
 r = tc.post("/credit/charge", data={"confirm": "1", "amount": "10000", "depositor": "홍길동"})
@@ -95,12 +95,10 @@ ok(r.status_code == 200 and r.mimetype == "image/png", "어드민 원본 보기"
 r.close()   # send_file 이 파일을 잡고 있다 (Windows 에선 지우기 전에 닫아야 함)
 ok(tc.get(f"/admin/users/{u['id']}/biz-cert").status_code in (302, 403), "회원은 원본 못 봄")
 ok(b"/biz-cert" in at.get(f"/admin/users/{u['id']}/drawer").data, "드로어에 등록증 섹션")
-lst = at.get("/admin/users?cert=pending").get_data(as_text=True)
-ok("인증 대기" in lst, "인증 대기 탭")
+lst = at.get("/admin/users").get_data(as_text=True)
+ok("인증 대기" not in lst, "셀러는 인증 대기 표시 없음")
 ok(f'/admin/users/{u["id"]}/biz-cert" target="_blank"' in lst, "목록 행에 등록증 바로가기")
-at.post(f"/admin/users/{u['id']}/biz-cert", data={"action": "approve"})
 with app.app_context():
-    ok(query_one("SELECT biz_cert_status s FROM users WHERE id=%s", [u["id"]])["s"] == "approved", "승인")
     # 정리
     from app.services import biz_cert
     os.remove(biz_cert.path(u["biz_cert_file"]))

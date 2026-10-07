@@ -26,7 +26,6 @@ CREATE TABLE IF NOT EXISTS users (
   biz_item        VARCHAR(40) NULL,
   biz_email       VARCHAR(120) NULL,
   biz_cert_file   VARCHAR(80) NULL,
-  biz_cert_status ENUM('none','pending','approved','rejected') NOT NULL DEFAULT 'none',
   notify_campaign TINYINT(1) NOT NULL DEFAULT 1,
   notify_comment  TINYINT(1) NOT NULL DEFAULT 1,
   notify_event    TINYINT(1) NOT NULL DEFAULT 0,

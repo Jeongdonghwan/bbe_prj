@@ -300,10 +300,9 @@ def main():
     if not col("users", "biz_cert_file"):
         cur.execute("ALTER TABLE users ADD COLUMN biz_cert_file VARCHAR(80) NULL AFTER biz_email")
         done.append("users.biz_cert_file")
-    if not col("users", "biz_cert_status"):
-        cur.execute("ALTER TABLE users ADD COLUMN biz_cert_status ENUM('none','pending','approved','rejected') "
-                    "NOT NULL DEFAULT 'none' AFTER biz_cert_file")
-        done.append("users.biz_cert_status")
+    if col("users", "biz_cert_status"):   # 10-07 당일 폐기 — 셀러는 승인 단계 없음(대행사 신청만 심사)
+        cur.execute("ALTER TABLE users DROP COLUMN biz_cert_status")
+        done.append("users.biz_cert_status 제거")
 
     # -- 계정별 매체 단가 (2026-09-28) --------------------------------------
     if not table("user_media_prices"):

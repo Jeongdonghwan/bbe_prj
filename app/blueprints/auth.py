@@ -212,10 +212,10 @@ def register():
         uid = user_model.create_local(email, generate_password_hash(password), nickname, _fmt_phone(phone),
                                       f.get("agree_marketing") == "1")
         user_model.update_biz(uid, biz_name, biz_no, "", "", "")
-        notify_service.notify_admins(f"신규 회원가입 · {nickname} / {biz_name} {biz_no} ({email})", f"/admin/users?open={uid}", sms=True)
         if cert:
             user_model.set_biz_cert(uid, biz_cert.save(uid, cert))
-            notify_service.notify_admins(f"사업자 인증 요청 · {nickname} — 사업자등록증 확인 필요", f"/admin/users?open={uid}")
+        notify_service.notify_admins(f"신규 회원가입 · {nickname} / {biz_name} {biz_no} ({email})"
+                                     f"{' · 등록증 첨부' if cert else ''}", f"/admin/users?open={uid}", sms=True)
         resp = _login(uid, next_url or "/")  # _login clears the session, so flash afterwards
         flash("가입을 환영합니다! 첫 캠페인을 만들어보세요.")
         return resp
