@@ -467,7 +467,6 @@ def credits():
                            total_pages=max(1, -(-total // per_page)),
                            pending_n=credit_model.pending_count(), due_days=due_days,
                            stale_n=credit_model.stale_pending_count(due_days),
-                           users=user_model.list_brief(),
                            recent=credit_model.ledger(member["id"], 1, 100)[0] if member else credit_model.ledger_recent(20),
                            member=member, summary=credit_model.user_summary(member["id"]) if member else None,
                            q=q, found=found)

@@ -82,20 +82,29 @@
   </div>
 
   <div class="card"><div class="ch"><h3>직접 충전 · 차감</h3></div><div class="cb">
-    <form method="post" action="/admin/credits/adjust">
-      <div class="f"><label>회원</label><select class="in" name="user_id" required>
-        <option value="">선택</option>
-        {% for u in users %}<option value="{{ u.id }}"{% if member and member.id == u.id %} selected{% endif %}>{{ u.nickname }}{% if u.email %} ({{ u.email }}){% endif %} · 잔액 {{ u.credit_balance | fmt_num }}원</option>{% endfor %}
-      </select></div>
+    <form method="post" action="/admin/credits/adjust" onsubmit="var f=this,s=f.sign.value==='1'?'충전':'차감';return confirm('{{ member.nickname if member else '' }}님 크레딧을 '+f.amount.value+'원 '+s+'할까요?')">
+      {# 회원이 수백 명이면 드롭다운으로 못 고른다 — 검색으로 회원 보기(?user=)에 들어가면 그 회원이 대상이 된다 (2026-10-07) #}
+      {% if member %}
+      <input type="hidden" name="user_id" value="{{ member.id }}">
+      <div class="f"><label>대상 회원</label>
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--accent);border-radius:8px;background:var(--accent-soft)">
+          <div style="flex:1;min-width:0"><b>{{ member.nickname }}</b>{% if member.biz_name %} <span class="mut">· {{ member.biz_name }}</span>{% endif %}<br><span class="mut" style="font-size:12px">{{ member.email or member.username or '-' }} · 잔액 {{ member.credit_balance | fmt_num }}원</span></div>
+          <a class="btn ghost sm" href="/admin/credits">변경</a></div></div>
+      {% else %}
+      <div class="f"><label>대상 회원</label>
+        <div class="search"><i data-lucide="search" class="i"></i><input class="in" form="memberSearch" name="q" placeholder="아이디 · 닉네임 · 상호 · 전화로 찾기" required></div>
+        <p class="thin" style="margin-top:6px;font-size:12px">검색해서 회원을 고르면 여기에 대상으로 잡힙니다.</p></div>
+      {% endif %}
       <div class="row2">
         <div class="f"><label>구분</label><select class="in" name="sign"><option value="1">충전 (+)</option><option value="-1">차감 (−)</option></select></div>
         <div class="f"><label>금액<small>원</small></label><input class="in num" name="amount" inputmode="numeric" data-money placeholder="100,000" required></div>
       </div>
       <div class="f"><label>메모<small>회원 사용 내역에 표시됩니다</small></label><input class="in" name="memo" maxlength="200" placeholder="예) 무통장 입금 확인 · 9/16"></div>
-      <button class="btn pri" type="submit" style="width:100%">적용</button>
+      <button class="btn pri" type="submit" style="width:100%"{% if not member %} disabled title="먼저 회원을 고르세요"{% endif %}>적용</button>
     </form>
     <p class="thin" style="margin-top:10px">PG 연동 전까지는 이 메뉴에서 입금 확인 후 직접 충전해주세요. 모든 처리는 관리자 로그와 회원 크레딧 내역에 기록됩니다.</p>
   </div></div>
 </div>
+<form id="memberSearch" method="get" action="/admin/credits"></form>
 {% endblock %}
 {% block scripts %}<script src="{{ url_for('static', filename='js/admin.js') }}"></script>{% endblock %}
