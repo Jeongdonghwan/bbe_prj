@@ -21,6 +21,7 @@
         <div style="display:flex;gap:6px"><input class="in" name="biz_no" value="{{ form.get('biz_no', '') }}" inputmode="numeric" maxlength="12" placeholder="숫자 10자리" required style="flex:1">
           <button class="btn sec" type="button" id="bizBtn" style="height:40px;flex:none">확인하기</button></div>
         <div class="hint" id="bizHint"></div></div>
+      <div class="f"><label>세금계산서 발행 이메일 <small>비우면 가입 이메일로 받습니다</small></label><input class="in" type="email" name="biz_email" value="{{ form.get('biz_email', '') }}" maxlength="120" placeholder="tax@company.com"></div>
       <div class="f"><label>사업자등록증 <small>선택 · JPG/PNG/PDF 10MB 이하 — 나중에 마이페이지에서 올려도 됩니다</small></label><input class="in" type="file" name="biz_cert" accept="image/jpeg,image/png,image/webp,application/pdf" style="padding:7px 10px;height:auto"></div>
       <div class="f" style="margin:10px 0 8px">
         <label class="chk" style="cursor:pointer" id="agreeAll"><input type="checkbox" hidden><i></i><b>전체 동의</b></label>

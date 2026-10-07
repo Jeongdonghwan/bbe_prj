@@ -178,6 +178,7 @@ def register():
         nickname = (f.get("nickname") or "").strip()
         phone = (f.get("phone") or "").strip().replace(" ", "")
         biz_name = (f.get("biz_name") or "").strip()[:60]
+        biz_email = (f.get("biz_email") or "").strip().lower()[:120] or email   # 비우면 가입 이메일
         biz_no = parse_biz_no(f.get("biz_no"))
         err = None
         if not EMAIL_RE.match(email):
@@ -194,6 +195,8 @@ def register():
             err = "상호를 입력해주세요."
         elif not biz_no:
             err = "사업자등록번호가 올바르지 않습니다. 10자리 번호를 확인해주세요. 예) 123-45-67890"
+        elif not EMAIL_RE.match(biz_email):
+            err = "세금계산서 발행 이메일 형식이 올바르지 않습니다."
         elif (nts := nts_service.status(biz_no)) and not nts["ok"]:
             err = f"사업자등록번호 확인 결과 '{nts['label']}'입니다. 영업 중인 사업자만 가입할 수 있습니다."
         elif f.get("agree_terms") != "1" or f.get("agree_privacy") != "1":
@@ -211,7 +214,7 @@ def register():
             return render_template("auth/register.html", next_url=next_url, form=f), 400
         uid = user_model.create_local(email, generate_password_hash(password), nickname, _fmt_phone(phone),
                                       f.get("agree_marketing") == "1")
-        user_model.update_biz(uid, biz_name, biz_no, "", "", "")
+        user_model.update_biz(uid, biz_name, biz_no, "", "", biz_email)
         if cert:
             user_model.set_biz_cert(uid, biz_cert.save(uid, cert))
         notify_service.notify_admins(f"신규 회원가입 · {nickname} / {biz_name} {biz_no} ({email})"
