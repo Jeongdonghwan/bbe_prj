@@ -49,6 +49,8 @@ $1 cd $ROOT && $PY scripts/cron.py $2 >> $ROOT/cron.log 2>&1  # bbe-cron"
   # 순위·이름 보정은 5분마다. 순위 서버 콜백이 막히거나 늦어도 화면이 오래 비지 않게 한다
   # (호출은 추적 중인데 오늘 순위가 없는 건에만 나가므로 평소엔 거의 0건이다).
   add_cron "*/5 * * * *" sync_ranks
+  # 블로그 자동 발행: 클라우드 루틴이 04:00·13:00 에 글을 푸시하면 06:00·14:00 에 받아온다 (docs/BLOG_ROUTINE.md)
+  add_cron "0 6,14 * * *" pull_content
   if [ "$NEW" != "$CUR" ]; then
     printf '%s
 ' "$NEW" | sed '/^$/d' | crontab -

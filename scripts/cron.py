@@ -74,6 +74,19 @@ def sync_ranks():
     return f"신규 등록 {spawned} · 순위 보정 {filled} · 이름 보정 {named}"
 
 
+def pull_content():
+    """블로그 루틴이 푸시한 글(content/blog)을 받아온다 — 06:00 · 14:00 (루틴은 04:00 · 13:00).
+
+    글은 요청 때 파일에서 바로 읽으므로 재시작이 필요 없다. 코드 변경이 같이 들어오면
+    실행 중인 앱에는 다음 deploy.sh 때 반영된다(여기서 재시작하지 않는다)."""
+    import subprocess
+    out = subprocess.run(["git", "pull", "--ff-only", "-q"], cwd=ROOT, capture_output=True, text=True, timeout=120)
+    if out.returncode:
+        return "git pull 실패: " + (out.stderr or out.stdout).strip()[:300]
+    n = len(list((ROOT / "content" / "blog").glob("*.md"))) if (ROOT / "content" / "blog").exists() else 0
+    return f"pull 완료 · 블로그 {n}편"
+
+
 def backfill_nvmid():
     """등록 때 못 채운 nvMid 를 순위 서버 검색결과에서 찾아 메운다."""
     from app.services import campaign_service
@@ -87,6 +100,7 @@ JOBS = {
     "refresh_slots": refresh_slots,
     "close_agency": close_agency,
     "sync_ranks": sync_ranks,
+    "pull_content": pull_content,
     "advance_campaigns": advance_campaigns,
 }
 GROUPS = {
