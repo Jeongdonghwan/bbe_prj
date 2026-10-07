@@ -430,8 +430,16 @@ def credits():
     page, per_page = _page()
     due_days = int(bank_settings()["due_days"])
     stale = status == "stale"
+    # 회원별 보기 (2026-10-07 JDH "회원별 충전 이력") — ?user=<id>, ?q= 로 회원 검색
+    uid = request.args.get("user", type=int)
+    member = user_model.get_by_id(uid) if uid else None
+    q = (request.args.get("q") or "").strip()[:40]
+    found = user_model.search_brief(q, 20) if q and not member else []
+    if len(found) == 1:
+        return redirect(url_for("admin.credits", user=found[0]["id"]))
     rows, total = credit_model.list_admin_requests(None if stale else status, page, per_page,
-                                                   stale_days=due_days if stale else None)
+                                                   stale_days=due_days if stale else None,
+                                                   user_id=member["id"] if member else None)
     now = datetime.now()
     for r in rows:
         r["age_d"] = (now - r["created_at"]).days
@@ -440,7 +448,10 @@ def credits():
                            total_pages=max(1, -(-total // per_page)),
                            pending_n=credit_model.pending_count(), due_days=due_days,
                            stale_n=credit_model.stale_pending_count(due_days),
-                           users=user_model.list_brief(), recent=credit_model.ledger_recent(20))
+                           users=user_model.list_brief(),
+                           recent=credit_model.ledger(member["id"], 1, 100)[0] if member else credit_model.ledger_recent(20),
+                           member=member, summary=credit_model.user_summary(member["id"]) if member else None,
+                           q=q, found=found)
 
 
 @bp.route("/credits/<int:req_id>/approve", methods=["POST"])

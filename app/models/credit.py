@@ -44,6 +44,19 @@ def ledger(user_id, page=1, per_page=20):
     return rows, total
 
 
+def user_summary(user_id):
+    """회원 크레딧 요약 — 승인된 충전 합계·건수, 대기 건수, 원장 구분별 합계."""
+    req = query_one("""SELECT COALESCE(SUM(CASE WHEN status='approved' THEN amount END), 0) AS charged,
+                              COALESCE(SUM(CASE WHEN status='approved' THEN total END), 0) AS paid,
+                              SUM(status='approved') AS approved_n, SUM(status='pending') AS pending_n,
+                              SUM(status='rejected') AS rejected_n
+                       FROM charge_requests WHERE user_id = %s""", [user_id])
+    led = {r["type"]: r["s"] for r in query(
+        "SELECT type, COALESCE(SUM(amount), 0) AS s FROM credit_ledger WHERE user_id = %s GROUP BY type", [user_id])}
+    return {**req, "approved_n": req["approved_n"] or 0, "pending_n": req["pending_n"] or 0,
+            "rejected_n": req["rejected_n"] or 0, "ledger": led}
+
+
 def ledger_recent(limit=20):
     return query(
         """SELECT l.*, u.nickname, u.email FROM credit_ledger l JOIN users u ON u.id = l.user_id
@@ -99,14 +112,18 @@ def list_user_requests(user_id, status=None, page=1, per_page=20):
     return rows, total
 
 
-def list_admin_requests(status=None, page=1, per_page=20, stale_days=None):
-    """stale_days: 입금 기한이 지나도록 입금이 안 된 대기 건만 (운영자가 직접 거절하도록 모아 보여준다)."""
+def list_admin_requests(status=None, page=1, per_page=20, stale_days=None, user_id=None):
+    """stale_days: 입금 기한이 지나도록 입금이 안 된 대기 건만 (운영자가 직접 거절하도록 모아 보여준다).
+    user_id: 회원 한 명의 충전 이력만."""
     where, params = "1=1", []
     if stale_days:
         where = "r.status = 'pending' AND r.created_at < DATE_SUB(NOW(), INTERVAL %s DAY)"
         params = [int(stale_days)]
     elif status:
         where, params = "r.status = %s", [status]
+    if user_id:
+        where += " AND r.user_id = %s"
+        params.append(int(user_id))
     rows = query(
         f"""SELECT r.*, u.nickname, u.email, u.credit_balance FROM charge_requests r JOIN users u ON u.id = r.user_id
             WHERE {where} ORDER BY r.status = 'pending' DESC, r.id DESC LIMIT %s OFFSET %s""",

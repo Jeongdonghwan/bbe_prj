@@ -2,14 +2,40 @@
 {% from "macros/pagination.html" import pager %}
 {% block title %}크레딧 관리{% endblock %}
 {% block content %}
-<div class="ph"><div><h1>크레딧 관리</h1><p>무통장 충전 요청 승인·거절, 회원 크레딧 직접 충전·차감.</p></div></div>
+<div class="ph"><div><h1>크레딧 관리</h1><p>무통장 충전 요청 승인·거절, 회원 크레딧 직접 충전·차감. 회원 이름을 누르면 그 회원의 충전 이력만 봅니다.</p></div></div>
+<form class="tbar" method="get" action="/admin/credits" style="margin:-4px 0 14px"><div class="search"><i data-lucide="search" class="i"></i><input class="in" name="q" value="{{ q or '' }}" placeholder="회원 찾기 · 아이디·닉네임·상호·전화"></div></form>
+
+{% if found %}
+<div class="card" style="margin-bottom:14px"><div class="ch"><h3>'{{ q }}' 검색 결과 {{ found | length }}명</h3></div><div class="cb"><div class="lr-links" style="display:flex;flex-wrap:wrap;gap:6px">
+  {% for u in found %}<a class="btn sec sm" href="/admin/credits?user={{ u.id }}">{{ u.nickname }}{% if u.biz_name %} · {{ u.biz_name }}{% endif %} <span class="mut">({{ u.email or u.username or ('kakao:' ~ u.kakao_id) }})</span></a>{% endfor %}
+</div></div></div>
+{% elif q and not member %}<div class="flash"><div>'{{ q }}'에 해당하는 회원이 없습니다.</div></div>{% endif %}
+
+{% if member %}
+<div class="card" style="margin-bottom:14px;border-color:var(--accent)"><div class="cb" style="padding-top:16px">
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+    <h3 style="margin:0;font-size:16px">{{ member.nickname }}{% if member.biz_name %} <span class="mut" style="font-weight:500">· {{ member.biz_name }}</span>{% endif %}</h3>
+    <span class="mut">{{ member.email or member.username or '-' }}</span>
+    <a class="btn sec sm" href="/admin/users?open={{ member.id }}" style="margin-left:auto">회원 상세</a>
+    <a class="btn ghost sm" href="/admin/credits">전체 보기</a>
+  </div>
+  {% set lg = summary.ledger %}
+  <div class="dgrid" style="grid-template-columns:repeat(5,1fr)">
+    <div><span>현재 잔액</span><b class="num">{{ member.credit_balance | fmt_num }}원</b></div>
+    <div><span>승인된 충전 ({{ summary.approved_n }}건)</span><b class="num">{{ summary.charged | fmt_num }}원</b><span>입금 {{ summary.paid | fmt_num }}원</span></div>
+    <div><span>광고비 사용</span><b class="num">{{ (-(lg.get('spend') or 0)) | fmt_num }}원</b></div>
+    <div><span>환불 · 조정</span><b class="num">{{ (lg.get('refund') or 0) | fmt_num }} · {{ (lg.get('adjust') or 0) | fmt_num }}원</b></div>
+    <div><span>대기 · 거절</span><b class="num">{{ summary.pending_n }} · {{ summary.rejected_n }}건</b></div>
+  </div>
+</div></div>
+{% endif %}
 
 <div class="form2">
   <div>
     <div class="card"><div class="cb" style="padding-top:6px">
       <div class="tabs">
         {% for key, label in [('', '전체'), ('pending', '대기'), ('stale', '입금 기한 경과'), ('approved', '승인'), ('rejected', '거절')] %}
-        <a href="/admin/credits{% if key %}?status={{ key }}{% endif %}"><button type="button"{% if (status or '') == key %} class="on"{% endif %}>{{ label }}{% if key == 'pending' and pending_n %}<em>{{ pending_n }}</em>{% elif key == 'stale' and stale_n %}<em>{{ stale_n }}</em>{% endif %}</button></a>
+        <a href="/admin/credits?{% if key %}status={{ key }}{% endif %}{% if member %}&user={{ member.id }}{% endif %}"><button type="button"{% if (status or '') == key %} class="on"{% endif %}>{{ label }}{% if key == 'pending' and pending_n %}<em>{{ pending_n }}</em>{% elif key == 'stale' and stale_n %}<em>{{ stale_n }}</em>{% endif %}</button></a>
         {% endfor %}
       </div>
       {% if status == 'stale' %}<p class="thin" style="padding:6px 0 0">신청 후 {{ due_days }}일이 지나도록 입금이 확인되지 않은 요청입니다. 자동으로 거절하지는 않습니다 — 늦게 입금하는 회원이 있어서, 확인 후 직접 거절하세요.</p>{% endif %}
@@ -19,7 +45,7 @@
         {% for r in rows %}
         <tr{% if r.overdue %} style="background:var(--danger-soft)"{% endif %}>
           <td class="num"><span class="mut">{{ r.created_at | fmt_date('%m.%d %H:%M') }}</span>{% if r.status == 'pending' %}<br><span style="font-size:11px{% if r.overdue %};color:var(--danger);font-weight:700{% endif %}" class="{{ '' if r.overdue else 'mut' }}">{{ '오늘' if r.age_d == 0 else r.age_d ~ '일 경과' }}</span>{% endif %}</td>
-          <td><b>{{ r.nickname }}</b><br><span class="mut" style="font-size:11.5px">{{ r.email or '-' }} · 잔액 {{ r.credit_balance | fmt_num }}원</span></td>
+          <td><a href="/admin/credits?user={{ r.user_id }}" title="이 회원 충전 이력"><b>{{ r.nickname }}</b></a><br><span class="mut" style="font-size:11.5px">{{ r.email or '-' }} · 잔액 {{ r.credit_balance | fmt_num }}원</span></td>
           <td class="num" style="text-align:right">{{ r.amount | fmt_num }}원</td>
           <td class="num" style="text-align:right"><b>{{ r.total | fmt_num }}원</b></td>
           <td>{{ r.depositor }}</td>
@@ -35,17 +61,17 @@
         </tr>
         {% else %}<tr><td colspan="8"><div class="empty">충전 요청이 없습니다.</div></td></tr>{% endfor %}
         </tbody></table></div>
-      {{ pager(page, total_pages, 'admin.credits', status=status) }}
+      {{ pager(page, total_pages, 'admin.credits', status=status, user=member.id if member else None) }}
     </div></div>
 
-    <div class="card" style="margin-top:14px"><div class="ch"><h3>최근 크레딧 변동</h3></div><div class="cb">
+    <div class="card" style="margin-top:14px"><div class="ch"><h3>{% if member %}{{ member.nickname }} 크레딧 내역 <span class="thin">최근 100건</span>{% else %}최근 크레딧 변동{% endif %}</h3></div><div class="cb">
       <div style="overflow-x:auto;margin:0 -18px"><table class="ctable">
         <thead><tr><th>일시</th><th>회원</th><th>구분</th><th style="text-align:right">금액</th><th style="text-align:right">잔액</th><th>내용</th></tr></thead>
         <tbody>
         {% set lg_t = {'charge': '충전', 'spend': '광고비', 'refund': '환불', 'adjust': '조정'} %}
         {% for l in recent %}
         <tr><td class="num"><span class="mut">{{ l.created_at | fmt_date('%m.%d %H:%M') }}</span></td>
-          <td>{{ l.nickname }}</td>
+          <td>{% if member %}{{ member.nickname }}{% else %}<a href="/admin/credits?user={{ l.user_id }}">{{ l.nickname }}</a>{% endif %}</td>
           <td>{{ lg_t.get(l.type, l.type) }}</td>
           <td class="num" style="text-align:right;color:var({{ '--danger' if l.amount < 0 else '--success' }})">{{ '+' if l.amount > 0 }}{{ l.amount | fmt_num }}원</td>
           <td class="num" style="text-align:right">{{ l.balance_after | fmt_num }}원</td>
@@ -59,7 +85,7 @@
     <form method="post" action="/admin/credits/adjust">
       <div class="f"><label>회원</label><select class="in" name="user_id" required>
         <option value="">선택</option>
-        {% for u in users %}<option value="{{ u.id }}">{{ u.nickname }}{% if u.email %} ({{ u.email }}){% endif %} · 잔액 {{ u.credit_balance | fmt_num }}원</option>{% endfor %}
+        {% for u in users %}<option value="{{ u.id }}"{% if member and member.id == u.id %} selected{% endif %}>{{ u.nickname }}{% if u.email %} ({{ u.email }}){% endif %} · 잔액 {{ u.credit_balance | fmt_num }}원</option>{% endfor %}
       </select></div>
       <div class="row2">
         <div class="f"><label>구분</label><select class="in" name="sign"><option value="1">충전 (+)</option><option value="-1">차감 (−)</option></select></div>
