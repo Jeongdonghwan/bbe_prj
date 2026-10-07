@@ -94,7 +94,9 @@ ok(r.status_code == 200 and r.mimetype == "image/png", "어드민 원본 보기"
 r.close()   # send_file 이 파일을 잡고 있다 (Windows 에선 지우기 전에 닫아야 함)
 ok(tc.get(f"/admin/users/{u['id']}/biz-cert").status_code in (302, 403), "회원은 원본 못 봄")
 ok(b"/biz-cert" in at.get(f"/admin/users/{u['id']}/drawer").data, "드로어에 등록증 섹션")
-ok("인증 대기" in at.get("/admin/users?cert=pending").get_data(as_text=True), "인증 대기 탭")
+lst = at.get("/admin/users?cert=pending").get_data(as_text=True)
+ok("인증 대기" in lst, "인증 대기 탭")
+ok(f'/admin/users/{u["id"]}/biz-cert" target="_blank"' in lst, "목록 행에 등록증 바로가기")
 at.post(f"/admin/users/{u['id']}/biz-cert", data={"action": "approve"})
 with app.app_context():
     ok(query_one("SELECT biz_cert_status s FROM users WHERE id=%s", [u["id"]])["s"] == "approved", "승인")
