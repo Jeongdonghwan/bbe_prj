@@ -11,6 +11,7 @@ from app import create_app  # noqa: E402
 from app.db import execute, query, query_one  # noqa: E402
 
 app = create_app(); app.config["TESTING"] = True
+app.config["MM_ALIGO_USER_ID"] = ""   # 실제 알리고로 문자가 나가지 않게
 fails = []
 
 
