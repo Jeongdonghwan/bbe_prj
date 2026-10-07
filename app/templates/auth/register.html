@@ -16,10 +16,11 @@
         <div class="f"><label>닉네임</label><input class="in" name="nickname" value="{{ form.get('nickname', '') }}" maxlength="20" required></div>
         <div class="f"><label>연락처 <small>알림톡 수신용</small></label><input class="in" name="phone" value="{{ form.get('phone', '') }}" placeholder="010-1234-5678" required></div>
       </div>
-      <div class="row2">
-        <div class="f"><label>상호</label><input class="in" name="biz_name" value="{{ form.get('biz_name', '') }}" maxlength="60" placeholder="사업자등록증상 상호" required></div>
-        <div class="f"><label>사업자등록번호</label><input class="in" name="biz_no" value="{{ form.get('biz_no', '') }}" inputmode="numeric" maxlength="12" placeholder="123-45-67890" required><div class="hint" id="bizHint"></div></div>
-      </div>
+      <div class="f"><label>상호</label><input class="in" name="biz_name" value="{{ form.get('biz_name', '') }}" maxlength="60" placeholder="사업자등록증상 상호" required></div>
+      <div class="f"><label>사업자등록번호 <small>확인하기를 눌러 국세청 조회를 마쳐야 가입됩니다</small></label>
+        <div style="display:flex;gap:6px"><input class="in" name="biz_no" value="{{ form.get('biz_no', '') }}" inputmode="numeric" maxlength="12" placeholder="숫자 10자리" required style="flex:1">
+          <button class="btn sec" type="button" id="bizBtn" style="height:40px;flex:none">확인하기</button></div>
+        <div class="hint" id="bizHint"></div></div>
       <div class="f"><label>사업자등록증 <small>선택 · JPG/PNG/PDF 10MB 이하 — 나중에 마이페이지에서 올려도 됩니다</small></label><input class="in" type="file" name="biz_cert" accept="image/jpeg,image/png,image/webp,application/pdf" style="padding:7px 10px;height:auto"></div>
       <div class="f" style="margin:10px 0 8px">
         <label class="chk" style="cursor:pointer" id="agreeAll"><input type="checkbox" hidden><i></i><b>전체 동의</b></label>
@@ -43,18 +44,38 @@
     var on = document.querySelector('#agreeAll input').checked;
     f.querySelectorAll('.chk input[name]').forEach(function (i) { i.checked = on; i.closest('.chk').classList.toggle('on', on); });
   }, 0); });
-  // 사업자번호 — 칸을 벗어나면 국세청 상태를 미리 보여준다 (최종 판정은 서버)
-  var bn = f.querySelector('input[name=biz_no]'), hint = document.getElementById('bizHint');
-  bn.addEventListener('change', function () {
-    hint.className = 'hint'; hint.textContent = bn.value.trim() ? '확인 중…' : '';
-    if (!bn.value.trim()) return;
-    fetch('/auth/biz-check?b_no=' + encodeURIComponent(bn.value)).then(function (r) { return r.json(); }).then(function (j) {
-      hint.textContent = j.label || '';
-      hint.style.color = j.ok ? 'var(--success)' : 'var(--danger)';
-    }).catch(function () { hint.textContent = ''; });
-  });
+  // 사업자번호 — "확인하기"로 국세청 조회를 끝내야 가입 버튼이 통과한다 (서버도 다시 확인한다)
+  var bn = f.querySelector('input[name=biz_no]'), btn = document.getElementById('bizBtn'),
+      hint = document.getElementById('bizHint'), verified = null;   // 확인을 통과한 번호
+  function show(text, color, busy) {
+    hint.innerHTML = '';
+    var s = document.createElement('span');
+    s.textContent = text;
+    if (busy) s.className = 'rk-wait';
+    hint.appendChild(s);
+    hint.style.color = color || '';
+  }
+  function check() {
+    var v = bn.value.trim();
+    if (!v) { show('사업자등록번호를 입력해주세요.', 'var(--danger)'); bn.focus(); return; }
+    btn.disabled = true; show('국세청에서 확인 중입니다…', '', true);
+    fetch('/auth/biz-check?b_no=' + encodeURIComponent(v)).then(function (r) { return r.json(); }).then(function (j) {
+      if (j.ok) {
+        verified = v;
+        show(j.label ? '확인 완료 · ' + j.label : '확인 완료 (국세청 조회를 건너뛰었습니다)', 'var(--success)');
+      } else { verified = null; show(j.label || '확인할 수 없는 번호입니다.', 'var(--danger)'); }
+    }).catch(function () { verified = null; show('조회 중 오류가 났습니다. 잠시 후 다시 눌러주세요.', 'var(--danger)'); })
+      .finally(function () { btn.disabled = false; });
+  }
+  btn.addEventListener('click', check);
+  bn.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); check(); } });
+  bn.addEventListener('input', function () { if (verified !== null && bn.value.trim() !== verified) { verified = null; show('번호가 바뀌었습니다. 다시 확인해주세요.', 'var(--warn)'); } });
+  if (bn.value.trim()) check();   // 서버가 다른 이유로 되돌려 보낸 경우 다시 누르지 않아도 되게
   f.addEventListener('submit', function (e) {
     var t = f.querySelector('input[name=agree_terms]').checked, p = f.querySelector('input[name=agree_privacy]').checked;
+    if (verified === null || bn.value.trim() !== verified) {
+      e.preventDefault(); show('사업자등록번호 확인하기를 눌러 조회를 마쳐주세요.', 'var(--danger)'); bn.focus(); return;
+    }
     if (!t || !p) { e.preventDefault(); alert('이용약관과 개인정보 수집·이용에 동의해주세요.'); }
   });
 })();
