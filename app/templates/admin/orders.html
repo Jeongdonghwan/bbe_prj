@@ -5,8 +5,9 @@
 <div class="ph"><div><h1>주문 관리</h1><p>승인하면 바로 정상이 되고, 구동은 시작일부터 돕니다. 종료일이 지나면 자동으로 완료됩니다. 반려는 사유가 필수입니다.</p></div>
   <div class="act"><a class="btn sec" href="/admin/orders/export?{{ request.query_string.decode() }}">엑셀 내보내기</a><button class="btn sec" type="button" data-modal="rankUploadModal">순위 일괄 업로드</button></div></div>
 <div class="card"><div class="cb" style="padding-top:6px">
-  <div class="tabs"><a href="/admin/orders"><button type="button"{% if not status %} class="on"{% endif %}>전체<em>{{ total_all }}</em></button></a>
-    {% for s in status_order %}<a href="/admin/orders?status={{ s }}{% if channel %}&channel={{ channel }}{% endif %}"><button type="button"{% if status == s %} class="on"{% endif %}>{{ status_label[s] }}<em>{{ counts.get(s, 0) }}</em></button></a>{% endfor %}
+  {% set keep = request.args.to_dict() %}{% set _ = keep.pop('status', None) %}{% set _ = keep.pop('page', None) %}
+  <div class="tabs"><a href="{{ url_for('admin.orders', **keep) }}"><button type="button"{% if not status %} class="on"{% endif %}>전체<em>{{ total_all }}</em></button></a>
+    {% for s in status_order %}<a href="{{ url_for('admin.orders', status=s, **keep) }}"><button type="button"{% if status == s %} class="on"{% endif %}>{{ status_label[s] }}<em>{{ counts.get(s, 0) }}</em></button></a>{% endfor %}
     <a href="/admin/orders/deleted"><button type="button">삭제 이력</button></a></div>
   <form class="tbar" method="get">{% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}
     <select class="in" name="channel" onchange="this.form.submit()"><option value="">모든 채널</option>{% for k, v in channel_label.items() %}<option value="{{ k }}"{% if channel == k %} selected{% endif %}>{{ v }}</option>{% endfor %}</select>
@@ -16,6 +17,7 @@
     <input class="in" type="date" name="from" value="{{ date_from.isoformat() if date_from else '' }}" onchange="this.form.submit()" title="등록일 시작" style="width:150px"><span class="mut">~</span><input class="in" type="date" name="to" value="{{ date_to.isoformat() if date_to else '' }}" onchange="this.form.submit()" title="등록일 끝" style="width:150px">
     <select class="in" name="period" onchange="this.form.submit()"><option value="">전체 기간</option><option value="today"{% if period == 'today' %} selected{% endif %}>오늘 접수</option><option value="week"{% if period == 'week' %} selected{% endif %}>이번 주</option><option value="month"{% if period == 'month' %} selected{% endif %}>이번 달</option></select>
     <div class="search"><i data-lucide="search" class="i"></i><input class="in" name="q" value="{{ q or '' }}" placeholder="주문번호 · 아이디 · 회원 · 업체명"></div></form>
+  <p class="thin" style="margin:2px 0 10px;font-size:12.5px">관리 버튼은 상태마다 다릅니다 — <b>검수</b>: 승인 · 반려 &nbsp;/&nbsp; <b>정상</b>: 중단(남은 일수 환불), 구동이 시작된 뒤에는 완료(종료일 전에 끝낼 때) &nbsp;/&nbsp; <b>완료 · 중단 · 반려</b>: 메모 · 삭제만. 순위 칸을 누르면 일자별 순위 그래프가 열립니다.</p>
   <form method="post" action="/admin/orders/bulk" id="bulkForm"><input type="hidden" name="back" value="{{ request.full_path }}">
   <div class="bulk" id="bulkBar" style="display:none"><span class="chk on"><i></i></span><span id="bulkCount">0</span>건 선택됨 <button class="btn pri sm" name="action" value="approve" type="submit" id="bulkApprove">선택 승인</button><button class="btn sec sm" type="button" id="bulkReject">선택 반려</button><button class="btn sec sm" type="submit" formaction="/admin/orders/export?{{ request.query_string.decode() }}" formmethod="post" formtarget="_blank">선택 엑셀 내보내기</button></div>
   <div style="overflow-x:auto;margin:0 -18px"><table class="otable"><thead><tr><th><input type="checkbox" id="chkAll"></th><th>주문</th><th>회원</th><th>채널</th><th>업체 · 키워드</th><th>매체</th><th>기간 · 수량</th><th>링크</th><th>상태</th><th>순위</th><th>관리</th></tr></thead><tbody>
@@ -30,7 +32,17 @@
       <td class="num">{{ r.start_date | fmt_date }}~{{ r.end_date | fmt_date }}<br><span class="mut">{{ r.daily_qty }}/일{% if r.status == 'running' and r.day_idx %} · {{ r.day_idx }}일차{% endif %}</span></td>
       <td><a class="lnk" href="{{ r.target_url }}" target="_blank" rel="noopener">확인</a></td>
       <td><span class="st {{ status_class[r.status] }}">{{ status_label[r.status] }}</span></td>
-      <td>{% if r.channel == 'coupang' %}<span class="mut">미지원</span>{% else %}<span class="rankcell" data-ranks="{{ r.id }}" title="순위 보고서 열기"><i data-lucide="line-chart" class="i i14" style="color:var(--accent);vertical-align:-2px;margin-right:3px"></i>{% if r.status == 'running' and not r.day_idx %}{% if r.rank_now %}<span class="num mut">기준 {{ r.rank_now }}위</span>{% elif r | rank_state == 'waiting' %}<span class="rk-wait">순위 조회중</span>{% else %}<span class="mut">{{ r.start_date | fmt_date }} 시작</span>{% endif %}{% elif r.rank_start and r.rank_now and r.rank_start != r.rank_now %}<span class="rank num">{{ r.rank_start }} → <b>{{ r.rank_now }}</b></span>{% elif r.rank_now %}<span class="num mut">기준 {{ r.rank_now }}위</span>{% elif r | rank_state == 'waiting' %}<span class="rk-wait">순위 조회중</span>{% elif r | rank_state == 'out' %}<span class="mut">순위 밖</span>{% else %}<span class="mut">순위표</span>{% endif %}</span>{% endif %}</td>
+      <td>{# 순위 칸 (2026-10-07): 시작→현재 / 현재 / 시작 전 기준 / 조회중 / 순위 밖. 쿠팡은 순위 서버 수집기가 없다. #}
+        {% if r.channel == 'coupang' %}<span class="mut" title="쿠팡은 순위 자동 수집을 지원하지 않습니다">쿠팡 · 순위 수집 안 함</span>
+        {% else %}<span class="rankcell" data-ranks="{{ r.id }}" title="일자별 순위 그래프 보기"><i data-lucide="line-chart" class="i i14" style="color:var(--accent);vertical-align:-2px;margin-right:3px"></i>
+          {%- set before = r.status in ('review', 'approved') or (r.status == 'running' and not r.day_idx) -%}
+          {%- if r.rank_start and r.rank_now and r.rank_start != r.rank_now and not before -%}
+            {% set d = r.rank_start - r.rank_now %}<span class="rank num">{{ r.rank_start }}위 → <b>{{ r.rank_now }}위</b> <span class="{{ 'up' if d > 0 else 'dn' }}">{{ '▲' ~ d if d > 0 else '▼' ~ -d }}</span></span>
+          {%- elif r.rank_now -%}<span class="num"><b>{{ r.rank_now }}위</b>{% if before %} <span class="mut" style="font-size:11.5px">(구동 전)</span>{% endif %}</span>
+          {%- elif r | rank_state == 'waiting' -%}<span class="rk-wait">순위 조회중</span>
+          {%- elif r | rank_state == 'out' -%}<span class="mut">300위 밖</span>
+          {%- else -%}<span class="mut">순위 기록 없음</span>{%- endif -%}
+        </span>{% endif %}</td>
       <td><div class="rowact on">
         {% if r.status == 'review' %}<button type="button" style="color:var(--success)" data-act="approve" data-id="{{ r.id }}" data-confirm="{{ r.order_no }} 주문을 승인할까요? 승인하면 바로 정상이 됩니다.">승인</button><button type="button" style="color:var(--danger)" data-reject="{{ r.id }}" data-order="{{ r.order_no }}">{% if r.warn.block %}반려 사유 입력{% else %}반려{% endif %}</button>
         {% elif r.status == 'approved' %}<button type="button" data-act="start" data-id="{{ r.id }}" data-confirm="{{ r.order_no }} 지금 시작할까요?" title="{{ r.start_date | fmt_date }} 시작일이 되면 자동으로 진행됩니다. 앞당길 때만 누르세요.">지금 시작</button><button type="button" style="color:var(--danger)" data-reject="{{ r.id }}" data-order="{{ r.order_no }}">반려</button>
