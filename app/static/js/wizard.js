@@ -326,6 +326,13 @@
     } catch (e) { /* private mode */ }
   }
   function restore() {
+    // 초안은 새로고침·뒤로가기로 같은 화면에 돌아왔을 때만 되살린다. 메인 등에서 새로 들어오면
+    // 지난 입력이 남아 있으면 안 된다 (2026-10-07 QA #1). 연장·복사는 서버가 값을 채워 준다.
+    var nav = (performance.getEntriesByType && performance.getEntriesByType('navigation')[0]) || {};
+    if (nav.type !== 'reload' && nav.type !== 'back_forward') {
+      try { sessionStorage.removeItem(KEY); } catch (e) { /* ignore */ }
+      return;
+    }
     var v;
     try { v = JSON.parse(sessionStorage.getItem(KEY) || 'null'); } catch (e) { return; }
     if (!v) return;

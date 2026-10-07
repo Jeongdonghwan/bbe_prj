@@ -184,3 +184,9 @@
   .poppage .p-top3{grid-template-columns:1fr}
   .poppage .p-grid{grid-template-columns:repeat(2,1fr)}
 }
+
+/* 인기 트래픽 상세도 가운데 팝업 (2026-10-07 QA #11) */
+.p-drawer{top:50%; left:50%; right:auto; bottom:auto; width:min(560px,calc(100% - 32px)); max-height:min(86vh,820px); border:1px solid var(--p-line-2); border-radius:16px; overflow:hidden;
+  transform:translate(-50%,-46%) scale(.98); opacity:0; pointer-events:none; transition:transform .18s, opacity .18s; box-shadow:0 24px 60px rgba(0,0,0,.2)}
+.p-drawer.p-on{transform:translate(-50%,-50%); opacity:1; pointer-events:auto}
+.p-drawer .p-db{min-height:0}

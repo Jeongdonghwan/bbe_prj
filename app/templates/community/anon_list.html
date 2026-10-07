@@ -11,18 +11,23 @@
     <form class="card" method="post" action="/community/anon/write" enctype="multipart/form-data" id="writeForm" style="display:none;padding:14px;margin:8px 0 4px">
       <div class="f"><input class="in" name="title" placeholder="제목" maxlength="200" required></div>
       <div class="f"><textarea class="in" name="body" rows="5" placeholder="업체명·전화번호는 자동으로 가려집니다." required></textarea></div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><select class="in" name="channel_tag" style="width:auto;height:36px"><option value="">태그 없음</option>{% for k, v in tag_label.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select><label class="btn sec sm" style="cursor:pointer"><i data-lucide="image" class="i i14"></i>이미지<input type="file" name="image" accept="image/*" hidden></label><span class="anonlbl"><i data-lucide="lock" class="i i14"></i>{{ nick }}</span><button class="btn pri sm" type="submit" style="margin-left:auto">등록</button></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><select class="in" name="channel_tag" style="width:auto;height:36px" required><option value="">태그 선택</option>{% for k, v in tag_label.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select><label class="btn sec sm" style="cursor:pointer"><i data-lucide="image" class="i i14"></i><span id="imgName">이미지</span><input type="file" name="image" accept="image/png,image/jpeg,image/gif,image/webp" hidden></label><span class="anonlbl"><i data-lucide="lock" class="i i14"></i>{{ nick }}</span><button class="btn pri sm" type="submit" style="margin-left:auto">등록</button></div>
     </form>
     {% else %}
-    <div class="card write" style="margin:8px 0 4px"><div class="avatar"><i data-lucide="venetian-mask" class="i i16"></i></div><span class="thin" style="flex:1">로그인하면 익명으로 글을 쓸 수 있어요</span><a class="btn kakao sm" href="/auth/login" style="background:var(--kakao);color:#191600">로그인</a></div>
+    <div class="card write" style="margin:8px 0 4px"><div class="avatar"><i data-lucide="venetian-mask" class="i i16"></i></div><span class="thin" style="flex:1">로그인하면 익명으로 글을 쓸 수 있어요</span><a class="btn pri sm" href="/auth/login">로그인</a></div>
     {% endif %}
 
-    <form class="cat-tabs" method="get" style="flex-wrap:nowrap;overflow-x:auto">
-      <input type="hidden" name="sort" value="{{ sort }}">{% if tag %}<input type="hidden" name="tag" value="{{ tag }}">{% endif %}
-      {% for key, label in [('new','최신'),('hot','인기'),('answers','답변 많은')] %}<a href="/community/anon?sort={{ key }}{% if tag %}&tag={{ tag }}{% endif %}{% if q %}&q={{ q | urlencode }}{% endif %}"{% if sort == key %} class="on"{% endif %}>{{ label }}</a>{% endfor %}
-      <span style="flex:none;width:1px;height:16px;background:var(--border);margin:0 4px"></span>
-      {% for k, v in tag_label.items() %}<a href="/community/anon?sort={{ sort }}{% if tag != k %}&tag={{ k }}{% endif %}{% if q %}&q={{ q | urlencode }}{% endif %}"{% if tag == k %} class="on"{% endif %}>{{ v }}</a>{% endfor %}
-      <input class="search-input" type="text" name="q" value="{{ q or '' }}" placeholder="검색어 입력" style="flex:0 1 200px;min-width:120px;margin-left:auto;height:34px;border:1px solid var(--border);border-radius:8px;padding:0 12px;background:var(--surface);outline:none;font-size:13px">
+    {# 2026-10-07 QA #7·#8 — 정렬은 검색칸 옆 셀렉트, 태그는 우측 정렬 #}
+    <form class="cat-tabs" method="get" style="flex-wrap:wrap;gap:8px 4px">
+      {% if tag %}<input type="hidden" name="tag" value="{{ tag }}">{% endif %}
+      <select class="in" name="sort" onchange="this.form.submit()" style="width:auto;height:34px;font-size:13px;padding:0 10px">
+        {% for key, label in [('', '전체'), ('new', '최신순'), ('hot', '인기순'), ('answers', '댓글순')] %}<option value="{{ key }}"{% if (sort_param or '') == key %} selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+      <input class="search-input" type="text" name="q" value="{{ q or '' }}" placeholder="검색어 입력" style="flex:0 1 200px;min-width:120px;height:34px;border:1px solid var(--border);border-radius:8px;padding:0 12px;background:var(--surface);outline:none;font-size:13px">
+      <span style="margin-left:auto;display:flex;gap:4px;flex-wrap:wrap">
+        <a href="/community/anon?sort={{ sort_param or '' }}{% if q %}&q={{ q | urlencode }}{% endif %}"{% if not tag %} class="on"{% endif %}>전체</a>
+        {% for k, v in tag_label.items() %}<a href="/community/anon?sort={{ sort_param or '' }}&tag={{ k }}{% if q %}&q={{ q | urlencode }}{% endif %}"{% if tag == k %} class="on"{% endif %}>{{ v }}</a>{% endfor %}
+      </span>
     </form>
     {% if q %}<div class="thin" style="margin:6px 0 0">'{{ q }}' 검색 결과 <a class="lnk" href="/community/anon?sort={{ sort }}">검색닫기</a></div>{% endif %}
 
@@ -60,4 +65,22 @@
   {% include "community/_anon_side.html" %}
 </div>
 {% endblock %}
-{% block scripts %}<script>(function(){var b=document.getElementById('writeBox'),f=document.getElementById('writeForm');if(b&&f){b.addEventListener('click',function(){b.style.display='none';f.style.display='block';f.querySelector('input[name=title]').focus();});}})();</script>{% endblock %}
+{% block scripts %}<script>
+(function () {
+  var b = document.getElementById('writeBox'), f = document.getElementById('writeForm');
+  if (!b || !f) return;
+  b.addEventListener('click', function () { b.style.display = 'none'; f.style.display = 'block'; f.querySelector('input[name=title]').focus(); });
+  var img = f.querySelector('input[name=image]');
+  img.addEventListener('change', function () { document.getElementById('imgName').textContent = img.files[0] ? img.files[0].name : '이미지'; });
+  // 서버에서 거절되면 목록으로 돌아가며 입력이 사라져 "등록이 안 된다"로 보였다 (QA #5) — 보내기 전에 막는다.
+  f.addEventListener('submit', function (e) {
+    var msg = null, file = img.files[0];
+    if (!f.channel_tag.value) msg = '태그를 선택해주세요.';
+    else if (f.title.value.trim().length < 2) msg = '제목을 2자 이상 입력해주세요.';
+    else if (f.body.value.trim().length < 5) msg = '본문을 5자 이상 입력해주세요.';
+    else if (file && !/\.(png|jpe?g|gif|webp)$/i.test(file.name)) msg = '이미지는 JPG · PNG · GIF · WEBP만 올릴 수 있습니다. (아이폰 HEIC 사진은 카메라 설정을 "높은 호환성"으로 바꿔주세요)';
+    else if (file && file.size > 5000000) msg = '이미지는 5MB 이하여야 합니다.';
+    if (msg) { e.preventDefault(); alert(msg); }
+  });
+})();
+</script>{% endblock %}

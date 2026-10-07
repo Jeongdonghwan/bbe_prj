@@ -5,6 +5,7 @@
 {% import "macros/traffic.html" as t %}
 {# Prototype #p-dash, violet redesign 2026-09-03: ad grid + slide banner + campaign cards, FAQ left / tall community right. #}
 
+{% if not current_user %}<div style="display:flex;justify-content:flex-end;gap:6px;margin:-6px 0 12px"><a class="btn sec sm" href="/auth/login">로그인</a><a class="btn pri sm" href="/auth/register">회원가입</a></div>{% endif %}
 {% if grid_banners %}
 <div class="adgrid">
   {% for b in grid_banners %}<a href="{{ b.link or '#' }}"{% if b.link and b.link.startswith('http') %} target="_blank" rel="noopener"{% endif %}><img src="{{ b.image_url }}" alt="{{ b.title }}" loading="lazy"></a>{% endfor %}

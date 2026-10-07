@@ -32,5 +32,10 @@
   });
   var dc = document.getElementById('dclose'); if (dc) dc.addEventListener('click', close);
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+  // 팝업(.drawer.pop) 바깥을 누르면 닫는다 — 행·순위 버튼·다른 모달 클릭은 제외
+  document.addEventListener('click', function (e) {
+    if (drawer.classList.contains('on') && drawer.classList.contains('pop') && !drawer.contains(e.target) &&
+        !e.target.closest('tr[data-open], [data-ranks], .modal')) close();
+  });
   if (window.OPEN_ID) open(window.OPEN_ID, document.querySelector('tr[data-open="' + window.OPEN_ID + '"]'));
 })();

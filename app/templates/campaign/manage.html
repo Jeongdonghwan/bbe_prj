@@ -2,7 +2,7 @@
 {% from "macros/pagination.html" import pager %}
 {% block title %}{{ channels[channel] }} 캠페인 관리{% endblock %}
 {% block content %}
-<div class="ph"><div><h1>{{ channels[channel] }} 캠페인 관리</h1><p>행을 클릭하면 오른쪽에 상세가 열립니다.</p></div>
+<div class="ph"><div><h1>{{ channels[channel] }} 캠페인 관리</h1><p>행을 클릭하면 상세가 팝업으로 열립니다.</p></div>
   <div class="act"><div class="chan-tabs">{% for key, label in channels.items() %}<a href="/campaign/{{ key }}"><button type="button"{% if key == channel %} class="on"{% endif %}><i class="dot c-{{ key }}"></i>{{ label }}</button></a>{% endfor %}</div><a class="btn pri" href="/campaign/{{ channel }}/new">+ 새 캠페인</a></div></div>
 
 <div class="mstat">
@@ -58,7 +58,7 @@
 </div></div>
 
 <div class="modal" id="rankModal"><div class="modal-box" style="max-width:840px;max-height:88vh;overflow-y:auto;padding:18px 20px" id="rankBody"></div></div>
-<div class="drawer" id="drawer"><div class="dh"><h3>불러오는 중…</h3><button class="icon-btn x" id="dclose" type="button"><i data-lucide="x" class="i"></i></button></div><div class="db" id="drawerBody"></div></div>
+<div class="drawer pop" id="drawer"><div class="dh"><h3>불러오는 중…</h3><button class="icon-btn x" id="dclose" type="button"><i data-lucide="x" class="i"></i></button></div><div class="db" id="drawerBody"></div></div>
 {% endblock %}
 {% block scripts %}
 <script>window.DRAWER_BASE = "/campaign/{{ channel }}/"; window.OPEN_ID = {{ open_id or 'null' }};</script>

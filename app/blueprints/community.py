@@ -21,7 +21,7 @@ bp = Blueprint("community", __name__, url_prefix="/community")
 INFO_CATEGORIES = {"guide": "가이드", "data": "데이터", "update": "업데이트"}
 READ_CHARS_PER_MIN = 500
 SESSION_KEY = "series_reads"
-TAG_LABEL = {"place": "플레이스", "store": "스토어", "coupang": "쿠팡", "tool": "도구"}
+TAG_LABEL = {"place": "플레이스", "store": "N스토어", "coupang": "쿠팡", "tool": "기타"}
 IMG_EXT = {"png", "jpg", "jpeg", "gif", "webp"}
 ANON_TAGS = ["#순위안오름", "#매체추천", "#첫캠페인", "#병원", "#맛집", "#환불", "#키워드"]
 
@@ -128,6 +128,7 @@ def _board_list(slug, template, sorts, default_sort, side):
         r["preview"] = (r.get("body") or "")[:180]
     nick = nick_service.preview(slug) if g.get("user") else None
     return render_template(template, rows=rows, page=page, total_pages=max(1, -(-total // per_page)), sort=sort, tag=tag, q=q,
+                           sort_param=request.args.get("sort") if request.args.get("sort") in sorts else None,
                            tag_label=TAG_LABEL, nick=nick, **side)
 
 
@@ -149,6 +150,9 @@ def _write_post(slug, list_endpoint, detail_endpoint):
     tag = request.form.get("channel_tag") or None
     if tag not in TAG_LABEL:
         tag = None
+    if slug == "anon" and not tag:          # 2026-10-07 QA #6 — 태그 없는 익명 글은 받지 않는다
+        flash("태그를 선택해주세요.")
+        return redirect(url_for(list_endpoint))
     if len(title) < 2 or len(body) < 5:
         flash("제목 2자, 본문 5자 이상 입력해주세요.")
         return redirect(url_for(list_endpoint))

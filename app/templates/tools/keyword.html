@@ -1,11 +1,11 @@
 {% extends "layout/base.html" %}
 {% block title %}키워드 조회{% endblock %}
 {% block content %}
-<div class="ph"><div><h1>키워드 조회</h1><p>키워드 최대 5개의 월간 검색량(PC · 모바일)과 경쟁도를 조회합니다.</p></div>{% if rows %}<div class="act"><a class="btn sec" href="/tools/keyword?q={{ keywords | urlencode }}&sort={{ sort }}&csv=1">CSV 다운로드</a></div>{% endif %}</div>
+<div class="ph"><div><h1>키워드 조회</h1><p>키워드 최대 5개의 월간 검색량(PC · 모바일)과 경쟁도를 조회합니다. 플레이스 · 쇼핑검색 키워드 상관없이 조회할 수 있어요.</p></div>{% if rows %}<div class="act"><a class="btn sec" href="/tools/keyword?q={{ keywords | urlencode }}&sort={{ sort }}&csv=1">CSV 다운로드</a></div>{% endif %}</div>
 {% include "tools/_quota.html" %}
 <div class="card" style="margin-bottom:16px"><div class="cb" style="padding-top:16px">
   <form method="post" action="/tools/keyword" data-busy="조회중…" style="display:flex;gap:8px;align-items:end;flex-wrap:wrap">
-    <div class="f" style="flex:1;min-width:260px;margin:0"><label>키워드 <small>쉼표로 구분, 최대 5개</small></label><input class="in" name="q" value="{{ keywords }}" placeholder="예) 일산 갈비, 부평 피부과, 송도 스터디카페" required></div>
+    <div class="f" style="flex:1;min-width:260px;margin:0"><label>키워드 <small>쉼표로 구분, 최대 5개</small></label><input class="in" name="q" value="{{ keywords }}" placeholder="예) 한우 선물세트, 무선 청소기, 일산 갈비, 부평 피부과" required></div>
     <button class="btn pri" type="submit">조회</button>
   </form>
 </div></div>
