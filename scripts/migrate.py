@@ -296,6 +296,33 @@ def main():
         cur.execute("ALTER TABLE users ADD COLUMN last_login_at DATETIME NULL AFTER status")
         done.append("users.last_login_at")
 
+    # -- 최고 관리자 (2026-10-07) -----------------------------------------
+    if not col("users", "is_super"):
+        cur.execute("ALTER TABLE users ADD COLUMN is_super TINYINT(1) NOT NULL DEFAULT 0 AFTER role")
+        done.append("users.is_super")
+    cur.execute("SELECT COUNT(*) FROM users WHERE role = 'admin' AND is_super = 1")
+    if not cur.fetchone()[0]:
+        # 처음 한 번: 로그인할 수 있는(비밀번호 있는) 가장 오래된 활성 운영자를 최고 관리자로
+        cur.execute("""UPDATE users SET is_super = 1 WHERE id = (SELECT id FROM (
+            SELECT id FROM users WHERE role = 'admin' AND status = 'active' AND password_hash IS NOT NULL
+            ORDER BY id LIMIT 1) t)""")
+        if cur.rowcount:
+            done.append("최고 관리자 지정(가장 오래된 운영자)")
+
+    # -- 회원 운영 메모 (2026-10-07) ----------------------------------------
+    if not col("users", "admin_memo"):
+        cur.execute("ALTER TABLE users ADD COLUMN admin_memo VARCHAR(500) NULL AFTER biz_cert_file")
+        done.append("users.admin_memo")
+
+    # -- 주문 삭제 이력 (2026-10-07) ----------------------------------------
+    if not table("deleted_orders"):
+        cur.execute("""CREATE TABLE deleted_orders (
+            id INT AUTO_INCREMENT PRIMARY KEY, campaign_id INT NOT NULL, order_no VARCHAR(20) NOT NULL,
+            user_id INT NULL, snapshot MEDIUMTEXT NOT NULL, memo VARCHAR(300) NOT NULL, refunded INT NOT NULL DEFAULT 0,
+            deleted_by INT NULL, deleted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_deleted_orders_at (deleted_at)) ENGINE=InnoDB""")
+        done.append("deleted_orders")
+
     # -- 사업자등록증 인증 (2026-10-07) -------------------------------------
     if not col("users", "biz_cert_file"):
         cur.execute("ALTER TABLE users ADD COLUMN biz_cert_file VARCHAR(80) NULL AFTER biz_email")

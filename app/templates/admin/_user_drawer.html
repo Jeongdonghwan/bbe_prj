@@ -1,12 +1,14 @@
 <div class="dh"><div class="avatar">{{ u.nickname[:2] }}</div><div><h3>{{ u.nickname }} <span class="mono" style="font-size:13px;font-weight:500;color:var(--text-2)">{{ u.login_id }}</span></h3><div style="font-size:12px;color:var(--text-2)">{{ u.phone or '-' }} · {{ u.created_at | fmt_date('%Y.%m.%d') }} {{ u.signup_via }} · {{ '정상' if u.status == 'active' else '정지' }}</div></div><button class="icon-btn x" id="dclose" type="button"><i data-lucide="x" class="i"></i></button></div>
 <div class="db">
-  <div class="dsec"><div class="dgrid"><div><span>누적 결제</span><b class="num">{{ paid_total | won }}</b></div><div><span>크레딧 잔액</span><b class="num">{{ u.credit_balance | fmt_num }}원 <a class="lnk" href="/admin/credits?user={{ u.id }}" style="font-size:12px;font-weight:600">충전 이력</a></b></div><div><span>등급</span><b>{{ {'biz': '사업자', 'agency': '대행사', 'master': '총판'}.get(u.grade, u.grade) }}</b></div><div><span>사업자</span><b>{{ u.biz_name or '-' }}</b></div><div><span>사업자번호</span><b>{{ u.biz_no or '-' }}</b></div></div></div>
+  <div class="dsec"><div class="dgrid"><div><span>누적 결제</span><b class="num">{{ paid_total | won }}</b></div><div><span>크레딧 잔액</span><b class="num">{{ u.credit_balance | fmt_num }}원 <a class="lnk" href="/admin/credits?user={{ u.id }}" style="font-size:12px;font-weight:600">충전 이력</a></b></div><div><span>등급</span><b>{{ {'biz': '사업자', 'agency': '대행사', 'master': '총판'}.get(u.grade, u.grade) }}</b></div><div><span>사업자</span><b>{{ u.biz_name or '-' }}</b></div><div><span>사업자번호</span><b>{{ u.biz_no or '-' }}</b></div><div><span>세금계산서 이메일</span><b style="font-size:13px">{{ u.biz_email or '-' }}</b></div><div><span>연락처</span><b>{{ u.phone or '-' }}</b></div></div></div>
+  <div class="dsec"><h6>운영 메모</h6><form method="post" action="/admin/users/{{ u.id }}/memo"><textarea class="in" name="memo" rows="3" maxlength="500" placeholder="스토어 이름, 주력 상품, 상담 내용 등 (운영자만 봄)">{{ u.admin_memo or '' }}</textarea><button class="btn sec sm" type="submit" style="margin-top:6px">메모 저장</button></form></div>
   <div class="dsec"><h6>사업자등록증</h6>
     {% if u.biz_cert_file %}
     {% set cert_url = '/admin/users/' ~ u.id ~ '/biz-cert' %}
     {% if not u.biz_cert_file.endswith('.pdf') %}<a href="{{ cert_url }}" target="_blank" rel="noopener"><img src="{{ cert_url }}" alt="사업자등록증" style="width:100%;max-height:360px;object-fit:contain;border:1px solid var(--border);border-radius:10px;background:var(--bg)"></a>{% endif %}
     <div style="display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap">
       <a class="btn sec sm" href="{{ cert_url }}" target="_blank" rel="noopener"><i data-lucide="external-link" class="i i14"></i>원본 보기{% if u.biz_cert_file.endswith('.pdf') %} (PDF){% endif %}</a>
+      <a class="btn sec sm" href="{{ cert_url }}?dl=1"><i data-lucide="download" class="i i14"></i>다운로드</a>
     </div>
     {% else %}<div class="empty" style="padding:12px 0">제출된 사업자등록증이 없습니다.</div>{% endif %}
   </div>

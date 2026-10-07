@@ -67,6 +67,11 @@ def search_brief(q, limit=30):
                  [term] * 6 + [int(limit)])
 
 
+def set_admin_memo(user_id, memo):
+    """운영자만 보는 회원 메모 — 주력 상품·스토어 등 (2026-10-07 QA #8)."""
+    execute("UPDATE users SET admin_memo = %s WHERE id = %s", [(memo or "").strip()[:500] or None, user_id])
+
+
 def set_biz_cert(user_id, filename):
     """사업자등록증 파일 — 보관·열람용. 셀러는 승인 단계가 없다(대행사 신청만 심사)."""
     execute("UPDATE users SET biz_cert_file = %s WHERE id = %s", [filename, user_id])
@@ -157,9 +162,17 @@ def touch_login(user_id):
 
 def list_admins():
     return query(
-        """SELECT id, email, username, nickname, status, last_login_at, created_at,
+        """SELECT id, email, username, nickname, status, is_super, last_login_at, created_at,
                   (password_hash IS NOT NULL) AS has_pw
-           FROM users WHERE role = 'admin' ORDER BY id""")
+           FROM users WHERE role = 'admin' ORDER BY is_super DESC, id""")
+
+
+def super_count():
+    return query_one("SELECT COUNT(*) AS n FROM users WHERE role = 'admin' AND is_super = 1 AND status = 'active'")["n"]
+
+
+def set_super(user_id, on):
+    execute("UPDATE users SET is_super = %s WHERE id = %s AND role = 'admin'", [1 if on else 0, user_id])
 
 
 def active_admin_count():

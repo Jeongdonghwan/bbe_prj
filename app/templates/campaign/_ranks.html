@@ -15,6 +15,19 @@
   <div><span>시작일 대비</span><b class="num">{% if delta is not none %}{% if delta > 0 %}<span class="up">▲{{ delta }}</span>{% elif delta < 0 %}<span class="dn">▼{{ -delta }}</span>{% else %}—{% endif %}{% else %}-{% endif %}</b></div>
 </div>
 {% if days %}
+{% if chart %}
+<div style="border:1px solid var(--border);border-radius:12px;padding:8px 6px 2px;margin-bottom:12px;overflow-x:auto">
+  <svg viewBox="0 0 {{ chart.w }} {{ chart.h + 18 }}" style="width:100%;min-width:520px;height:auto;display:block" role="img" aria-label="일자별 순위 그래프">
+    <line x1="28" x2="{{ chart.w - 28 }}" y1="{{ chart.y_best }}" y2="{{ chart.y_best }}" stroke="var(--border)" stroke-dasharray="3 4"/>
+    <line x1="28" x2="{{ chart.w - 28 }}" y1="{{ chart.y_worst }}" y2="{{ chart.y_worst }}" stroke="var(--border)" stroke-dasharray="3 4"/>
+    <text x="2" y="{{ chart.y_best + 4 }}" font-size="11" fill="var(--success)">{{ chart.best }}위</text>
+    <text x="2" y="{{ chart.y_worst + 4 }}" font-size="11" fill="var(--text-3)">{{ chart.worst }}위</text>
+    {% for s in chart.segs %}<polyline points="{{ s }}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>{% endfor %}
+    {% for d in chart.dots %}<circle cx="{{ d.x }}" cy="{{ d.y }}" r="3.5" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"><title>{{ d.label }} · {{ d.r }}위</title></circle>{% endfor %}
+    {% for t in chart.ticks %}<text x="{{ t.x }}" y="{{ chart.h + 12 }}" font-size="10.5" fill="var(--text-3)" text-anchor="middle">{{ t.label }}</text>{% endfor %}
+  </svg>
+</div>
+{% endif %}
 <div class="rankgrid">
   {% for d in days %}
   <div><span class="d">{{ d.date | fmt_date('%m/%d') }} ({{ wd[d.date.weekday()] }})</span>

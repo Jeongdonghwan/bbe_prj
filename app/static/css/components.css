@@ -721,3 +721,10 @@ tr:hover .rowact button, tr.sel .rowact button{opacity:1}
   transform:translate(-50%,-46%) scale(.98);opacity:0;pointer-events:none;transition:transform .2s,opacity .2s;box-shadow:0 0 0 100vmax rgba(15,10,40,.38),0 24px 60px rgba(0,0,0,.18);z-index:40}
 .drawer.pop.on{transform:translate(-50%,-50%);opacity:1;pointer-events:auto}
 .drawer.pop .dh{border-radius:var(--radius) var(--radius) 0 0}
+
+/* 주문 관리 (2026-10-07 QA #3·#21): 일괄 버튼은 왼쪽에 나란히, 행 버튼은 항상 보이고 간격을 둔다 */
+.bulk .btn{margin-left:0}
+.rowact.on{opacity:1;display:flex;flex-wrap:wrap;gap:6px;min-width:150px}
+/* 주문 표가 넓어도 관리 버튼 칸은 오른쪽에 고정해 항상 보이게 */
+.otable th:last-child,.otable td:last-child{position:sticky;right:0;background:var(--surface);box-shadow:-8px 0 10px -8px rgba(0,0,0,.12);z-index:1}
+.otable thead th:last-child{background:var(--bg)}

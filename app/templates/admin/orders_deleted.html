@@ -1,0 +1,23 @@
+{% extends "layout/base.html" %}
+{% from "macros/pagination.html" import pager %}
+{% block title %}삭제 이력{% endblock %}
+{% block content %}
+<div class="ph"><div><h1>주문 관리 · 삭제 이력</h1><p>삭제된 주문과 삭제 사유. 삭제 시점의 주문 내용이 그대로 남아 있습니다.</p></div></div>
+<div class="card"><div class="cb" style="padding-top:6px">
+  <div class="tabs"><a href="/admin/orders"><button type="button">전체<em>{{ total_all }}</em></button></a><a href="/admin/orders/deleted"><button type="button" class="on">삭제 이력<em>{{ total }}</em></button></a></div>
+  <form class="tbar" method="get"><div class="search"><i data-lucide="search" class="i"></i><input class="in" name="q" value="{{ q or '' }}" placeholder="주문번호 · 회원 · 사유"></div></form>
+  <div style="overflow-x:auto;margin:0 -18px"><table><thead><tr><th>삭제일</th><th>주문</th><th>회원</th><th>채널 · 업체 · 키워드</th><th>삭제 당시 상태</th><th style="text-align:right">결제 · 환불</th><th>사유</th><th>처리자</th></tr></thead><tbody>
+    {% for r in rows %}{% set c = r.snap %}
+    <tr><td class="num"><span class="mut">{{ r.deleted_at | fmt_date('%Y.%m.%d %H:%M') }}</span></td>
+      <td class="ord">{{ r.order_no }}</td>
+      <td>{{ r.nickname or '(탈퇴 회원)' }}<br><span class="mut" style="font-size:11px">{{ r.email or '' }}</span></td>
+      <td><span class="pill p-{{ c.channel }}">{{ channel_label.get(c.channel, c.channel) }}</span> <b>{{ c.biz_name }}</b><br><span class="mut">{{ c.main_keyword }} · {{ (c.start_date or '')[:10] }}~{{ (c.end_date or '')[:10] }}</span></td>
+      <td>{{ status_label.get(c.status, c.status) }}</td>
+      <td class="num" style="text-align:right">{{ (c.paid_amount or 0) | fmt_num }}원{% if r.refunded %}<br><span style="color:var(--success);font-size:12px">+{{ r.refunded | fmt_num }}원 환불</span>{% endif %}</td>
+      <td style="white-space:normal;max-width:260px">{{ r.memo }}</td>
+      <td><span class="mut">{{ r.admin_name or '-' }}</span></td></tr>
+    {% else %}<tr><td colspan="8"><div class="empty">삭제된 주문이 없습니다.</div></td></tr>{% endfor %}
+  </tbody></table></div>
+  {{ pager(page, total_pages, 'admin.orders_deleted', q=q) }}
+</div></div>
+{% endblock %}

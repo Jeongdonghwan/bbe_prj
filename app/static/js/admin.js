@@ -30,32 +30,19 @@
       var f = $('actForm'); f.action = '/admin/orders/' + b.dataset.id + '/action'; $('actName').value = b.dataset.act; f.submit();
     });
   });
-  // ---- 행 삭제. 아직 안 돌려준 크레딧이 있으면 금액까지 알려주고 묻는다.
+  // ---- 행 삭제 — 사유(메모) 필수 모달. 아직 안 돌려준 크레딧이 있으면 금액까지 알려준다 (QA #23)
   document.querySelectorAll('[data-del]').forEach(function (b) {
     b.addEventListener('click', function () {
-      var refund = +(b.dataset.refund || 0);
-      var msg = b.dataset.order + ' 주문을 삭제할까요? 되돌릴 수 없습니다.';
-      if (refund > 0) { msg += ' 남은 ' + refund.toLocaleString() + '원은 회원 크레딧으로 환불됩니다.'; }
-      if (!confirm(msg)) { return; }
-      var f = document.createElement('form');
-      f.method = 'post';
-      f.action = b.dataset.del;
-      var back = document.createElement('input');
-      back.type = 'hidden'; back.name = 'back'; back.value = location.pathname + location.search;
-      f.appendChild(back);
-      document.body.appendChild(f);
-      f.submit();
+      var dm = $('deleteModal'), refund = +(b.dataset.refund || 0);
+      if (!dm) return;
+      $('deleteForm').action = b.dataset.del;
+      $('deleteOrder').textContent = b.dataset.order;
+      $('deleteMsg').textContent = '삭제 사유를 남겨야 삭제됩니다. 삭제한 주문은 \'삭제 이력\' 탭에서 볼 수 있습니다.'
+        + (refund > 0 ? ' 남은 ' + refund.toLocaleString() + '원은 회원 크레딧으로 환불됩니다.' : '');
+      dm.classList.add('on'); dm.querySelector('textarea').value = ''; dm.querySelector('textarea').focus();
     });
   });
 
-  // status select -> submit (reject asks reason)
-  document.querySelectorAll('.statusForm select').forEach(function (s) {
-    s.addEventListener('change', function () {
-      var f = s.closest('form');
-      if (s.value === 'rejected') { openReject([f.dataset.id], f.dataset.order); s.selectedIndex = 0; return; }
-      if (s.value !== s.options[0].value) f.submit();
-    });
-  });
   // memo modal
   document.querySelectorAll('[data-memo]').forEach(function (b) {
     b.addEventListener('click', function () { $('memoForm').action = '/admin/orders/' + b.dataset.memo + '/action'; $('memoOrder').textContent = b.dataset.order; $('memoText').value = b.dataset.text; $('memoModal').classList.add('on'); });
@@ -66,7 +53,12 @@
   function refreshBulk() { var n = document.querySelectorAll('.rowchk:checked').length; if (bar) { bar.style.display = n ? 'flex' : 'none'; $('bulkCount').textContent = n; } }
   chks.forEach(function (c) { c.addEventListener('change', refreshBulk); });
   var all = $('chkAll'); if (all) all.addEventListener('change', function () { chks.forEach(function (c) { c.checked = all.checked; }); refreshBulk(); });
-  var br = $('bulkReject'); if (br) br.addEventListener('click', function () { var ids = Array.prototype.map.call(document.querySelectorAll('.rowchk:checked'), function (c) { return c.value; }); if (ids.length) openReject(ids, 'bulk ' + ids.length + '건'); });
+  var ba = $('bulkApprove');
+  if (ba) ba.addEventListener('click', function (e) {
+    var n = document.querySelectorAll('.rowchk:checked').length;
+    if (!confirm('선택한 ' + n + '건을 승인할까요? 승인하면 바로 정상이 됩니다.')) e.preventDefault();
+  });
+  var br = $('bulkReject'); if (br) br.addEventListener('click', function () { var ids = Array.prototype.map.call(document.querySelectorAll('.rowchk:checked'), function (c) { return c.value; }); if (ids.length && confirm('선택한 ' + ids.length + '건을 반려할까요? 다음 화면에서 사유를 입력합니다.')) openReject(ids, 'bulk ' + ids.length + '건'); });
 
   // ---- fetch toggles (media / popular visibility)
   document.querySelectorAll('[data-toggle]').forEach(function (t) {
@@ -134,10 +126,11 @@
   }
 
   // ---- 순위 보고서 모달 (회원 화면과 같은 표)
-  var rm = $('rankModal'), rb = $('rankBody');
-  if (rm && rb) {
-    var closeRanks = function () { rm.classList.remove('on'); };
-    rm.addEventListener('click', function (e) { if (e.target === rm) closeRanks(); });
+  // 이름을 rm 으로 쓰면 위의 반려 모달 변수(rm)를 덮어써 '반려' 클릭 시 순위 모달이 열리며 오류가 났다 (QA #1·#4)
+  var rkm = $('rankModal'), rb = $('rankBody');
+  if (rkm && rb) {
+    var closeRanks = function () { rkm.classList.remove('on'); };
+    rkm.addEventListener('click', function (e) { if (e.target === rkm) closeRanks(); });
     document.querySelectorAll('[data-ranks]').forEach(function (b) {
       b.addEventListener('click', function (e) {
         e.stopPropagation();
@@ -145,7 +138,7 @@
           .then(function (r) { return r.text(); })
           .then(function (html) {
             rb.innerHTML = html;
-            rm.classList.add('on');
+            rkm.classList.add('on');
             var x = $('rkclose');
             if (x) x.addEventListener('click', closeRanks);
             if (window.lucide) window.lucide.createIcons();

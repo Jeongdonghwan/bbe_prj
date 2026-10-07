@@ -115,7 +115,7 @@ def orders():
         "admin/orders.html", rows=rows, page=page, total_pages=max(1, -(-total // per_page)), counts=counts,
         total_all=sum(counts.values()), status=status, channel=channel, media_id=media_id, period=period, q=q, medias=medias,
         status_order=status_tabs(counts), status_label=STATUS_LABEL, status_class=STATUS_CLASS, channel_label=CHANNEL_LABEL,
-        pay_method_label=PAY_METHOD_LABEL, accounts=campaign_model.accounts_with_campaigns(),
+        pay_method_label=PAY_METHOD_LABEL, account=user_model.get_by_id(flt["user_id"]) if flt.get("user_id") else None,
         user_id=flt.get("user_id"), date_from=flt.get("date_from"), date_to=flt.get("date_to"),
     )
 
@@ -216,21 +216,38 @@ def order_rank(campaign_id):
 @bp.route("/orders/<int:campaign_id>/delete", methods=["POST"])
 @admin_required
 def order_delete(campaign_id):
-    """주문 완전 삭제. 아직 안 돌려준 크레딧이 있으면 먼저 환불하고 지운다."""
+    """주문 삭제. 메모 필수, 삭제 전 내용은 deleted_orders 에 남는다(삭제 이력 탭).
+    아직 안 돌려준 크레딧이 있으면 먼저 환불하고 지운다."""
     from ..services import credit_service
     c = campaign_model.get(campaign_id) or abort(404)
+    memo = (request.form.get("memo") or "").strip()
+    if len(memo) < 2:
+        flash("삭제 사유(메모)를 입력해주세요.")
+        return _back(url_for("admin.orders"))
     outstanding = (c["paid_amount"] or 0) - (c["refund_amount"] or 0)
     refunded = 0
     # 구동이 끝난 건(done/stopped)은 이미 정산된 매출이라 돌려주지 않는다.
     if c["status"] in ("review", "approved", "running") and c["pay_method"] == "credit" and outstanding > 0:
         credit_service.refund(c["user_id"], outstanding, campaign_id, f"주문 삭제 · {c['order_no']}")
         refunded = outstanding
+    campaign_model.archive_deleted(c, memo, refunded, g.user["id"])
     campaign_model.purge(campaign_id)
     _log("order_delete", "campaign", campaign_id,
-         f"{c['order_no']} 삭제 ({STATUS_LABEL.get(c['status'], c['status'])})"
+         f"{c['order_no']} 삭제 ({STATUS_LABEL.get(c['status'], c['status'])}) · {memo}"
          + (f" · {refunded:,}원 환불" if refunded else ""))
     flash(f"{c['order_no']} 주문을 삭제했습니다." + (f" 잔여 {refunded:,}원을 환불했습니다." if refunded else ""))
     return _back(url_for("admin.orders"))
+
+
+@bp.route("/orders/deleted")
+@admin_required
+def orders_deleted():
+    q = (request.args.get("q") or "").strip()[:60] or None
+    page, per_page = _page()
+    rows, total = campaign_model.list_deleted(q, page, per_page)
+    counts = campaign_model.admin_status_counts()
+    return render_template("admin/orders_deleted.html", rows=rows, q=q, page=page, total_pages=max(1, -(-total // per_page)),
+                           total=total, total_all=sum(counts.values()), channel_label=CHANNEL_LABEL, status_label=STATUS_LABEL)
 
 
 @bp.route("/orders/bulk", methods=["POST"])
@@ -938,7 +955,7 @@ def _gen_password(n=14):
 def operators():
     """운영자 계정 관리. 발급한 비밀번호는 한 번만 보여주고 저장하지 않는다."""
     return render_template("admin/operators.html", rows=user_model.list_admins(),
-                           me=g.user["id"], new_pw=session.pop("new_admin_pw", None))
+                           me=g.user["id"], i_am_super=bool(g.user.get("is_super")), new_pw=session.pop("new_admin_pw", None))
 
 
 USERNAME_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{2,29}$")
@@ -1030,12 +1047,36 @@ def operators_revoke(user_id):
         abort(400)
     if user_id == g.user["id"]:
         flash("본인 권한은 회수할 수 없습니다. 다른 운영자에게 요청하세요.")
+    elif u.get("is_super"):
+        flash("최고 관리자는 권한을 회수할 수 없습니다. 먼저 최고 관리자 지정을 해제하세요.")
     elif user_model.active_admin_count() <= 1:
         flash("마지막 운영자라 회수할 수 없습니다. 다른 운영자를 먼저 추가하세요.")
     else:
         user_model.set_role(user_id, "user")
         _log("admin_revoke", "user", user_id, f"{u['email'] or u['nickname']} 운영 권한 회수")
         flash(f"{u['nickname']}의 운영 권한을 회수했습니다. 계정은 일반 회원으로 남습니다.")
+    return redirect(url_for("admin.operators"))
+
+
+@bp.route("/operators/<int:user_id>/super", methods=["POST"])
+@admin_required
+def operators_super(user_id):
+    """최고 관리자 지정·해제 — 최고 관리자만 할 수 있다. 최소 한 명은 남아야 한다 (2026-10-07 QA #13)."""
+    u = user_model.get_by_id(user_id) or abort(404)
+    if u["role"] != "admin":
+        abort(400)
+    if not g.user.get("is_super"):
+        flash("최고 관리자만 지정·해제할 수 있습니다.")
+        return redirect(url_for("admin.operators"))
+    on = not u.get("is_super")
+    if on and u["status"] != "active":
+        flash("정지된 운영자는 최고 관리자로 지정할 수 없습니다.")
+    elif not on and user_model.super_count() <= 1:
+        flash("최고 관리자는 최소 한 명 있어야 합니다. 다른 운영자를 먼저 지정하세요.")
+    else:
+        user_model.set_super(user_id, on)
+        _log("admin_super", "user", user_id, f"{u['email'] or u['nickname']} 최고 관리자 {'지정' if on else '해제'}")
+        flash(f"{u['nickname']}을(를) 최고 관리자로 {'지정' if on else '해제'}했습니다.")
     return redirect(url_for("admin.operators"))
 
 
@@ -1047,6 +1088,8 @@ def operators_status(user_id):
         abort(400)
     if user_id == g.user["id"]:
         flash("본인 계정은 정지할 수 없습니다.")
+    elif u.get("is_super") and u["status"] == "active":
+        flash("최고 관리자는 정지할 수 없습니다. 먼저 최고 관리자 지정을 해제하세요.")
     elif u["status"] == "active" and user_model.active_admin_count() <= 1:
         flash("마지막 운영자라 정지할 수 없습니다.")
     else:
@@ -1087,12 +1130,26 @@ def user_drawer(user_id):
 @bp.route("/users/<int:user_id>/biz-cert")
 @admin_required
 def user_biz_cert(user_id):
-    """사업자등록증 원본 — 운영자만. 파일은 instance/biz_certs 에 있어 정적 경로로는 못 연다."""
+    """사업자등록증 원본 — 운영자만. 파일은 instance/biz_certs 에 있어 정적 경로로는 못 연다. ?dl=1 이면 다운로드."""
     from ..services import biz_cert
     u = user_model.get_by_id(user_id) or abort(404)
     if not u.get("biz_cert_file") or not os.path.exists(biz_cert.path(u["biz_cert_file"])):
         abort(404)
-    return send_file(biz_cert.path(u["biz_cert_file"]), max_age=0)
+    ext = u["biz_cert_file"].rsplit(".", 1)[-1]
+    name = f"사업자등록증_{u.get('biz_name') or u['nickname']}_{u.get('biz_no') or u['id']}.{ext}"
+    return send_file(biz_cert.path(u["biz_cert_file"]), max_age=0, as_attachment=bool(request.args.get("dl")),
+                     download_name=name)
+
+
+@bp.route("/users/<int:user_id>/memo", methods=["POST"])
+@admin_required
+def user_memo(user_id):
+    u = user_model.get_by_id(user_id) or abort(404)
+    memo = request.form.get("memo") or ""
+    user_model.set_admin_memo(user_id, memo)
+    _log("user_memo", "user", user_id, f"{u['nickname']} 메모: {memo.strip()[:80]}")
+    flash(f"{u['nickname']} 메모를 저장했습니다.")
+    return _back(url_for("admin.users", q=request.args.get("q"), open=user_id))
 
 
 
@@ -1130,7 +1187,7 @@ def user_prices():
                            channel=channel, ch_counts=ch_counts,
                            custom_n=custom_n.get(uid, 0) if uid else 0,
                            custom_users=decorate(media_model.users_with_custom_prices()),
-                           channel_label=CHANNEL_LABEL)
+                           saved=request.args.get("saved", type=int), channel_label=CHANNEL_LABEL)
 
 
 @bp.route("/user-prices/<int:user_id>/save", methods=["POST"])
@@ -1175,11 +1232,13 @@ def user_prices_save(user_id):
             changed += 1
     if changed or cleared:
         _log("user_price", "user", user_id, f"{u['nickname']} 계정 단가 {changed}건 지정 · {cleared}건 해제")
-    msg = f"단가 {changed}건 저장, {cleared}건 해제했습니다."
+    msg = f"{u['biz_name'] or u['nickname']} 단가 {changed}건 저장, {cleared}건 해제했습니다."
     if bad:
         msg += f" 값이 올바르지 않아 건너뛴 매체: {', '.join(bad[:5])}"
+        flash(msg)
+        return back                      # 잘못 넣은 값이 있으면 고칠 수 있게 그 화면에 남는다
     flash(msg)
-    return back
+    return redirect(url_for("admin.user_prices", saved=user_id))   # 목록으로 — 방금 저장한 회원 행을 강조
 
 
 @bp.route("/users/<int:user_id>/passwd", methods=["POST"])

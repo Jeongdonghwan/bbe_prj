@@ -42,7 +42,7 @@
             <button class="btn sec sm" type="button" data-idcancel>취소</button>
           </form>
         </td>
-        <td class="mut" style="font-size:12px">{{ u.email or '—' }}{% if u.id == me %} <span class="tag t-pin">나</span>{% endif %}</td>
+        <td class="mut" style="font-size:12px">{{ u.email or '—' }}{% if u.id == me %} <span class="tag t-pin">나</span>{% endif %}{% if u.is_super %} <span class="tag t-must">최고 관리자</span>{% endif %}</td>
         <td>{{ u.nickname }}</td>
         <td>{% if u.has_pw and (u.username or u.email) %}<span class="st s-run">가능</span>{% else %}<span class="st s-rej">불가</span>{% endif %}</td>
         <td class="num mut" style="font-size:12px">{{ u.last_login_at | fmt_date('%Y.%m.%d %H:%M') if u.last_login_at else '—' }}</td>
@@ -54,12 +54,14 @@
           </form>
         </td>
         <td>
-          {% if u.id != me %}
           <div class="inline-f" style="justify-content:flex-end">
-            <form method="post" action="/admin/operators/{{ u.id }}/status" onsubmit="return confirm('상태를 변경할까요?')"><button class="btn sec sm" type="submit"{% if u.status == 'active' %} style="color:var(--danger)"{% endif %}>{{ '정지' if u.status == 'active' else '해제' }}</button></form>
-            <form method="post" action="/admin/operators/{{ u.id }}/revoke" onsubmit="return confirm('운영 권한을 회수할까요? 계정은 일반 회원으로 남습니다.')"><button class="btn sec sm" type="submit" style="color:var(--danger)">권한 회수</button></form>
-          </div>
+          {% if i_am_super %}<form method="post" action="/admin/operators/{{ u.id }}/super" onsubmit="return confirm('{{ u.nickname }}을(를) 최고 관리자에서 {{ '해제' if u.is_super else '지정' }}할까요?'.replace('에서 지정', '로 지정'))"><button class="btn sec sm" type="submit">{{ '최고 관리자 해제' if u.is_super else '최고 관리자 지정' }}</button></form>{% endif %}
+          {% if u.id != me and not u.is_super %}
+            <form method="post" action="/admin/operators/{{ u.id }}/status" onsubmit="return confirm('{{ u.nickname }}을(를) {{ '정지' if u.status == 'active' else '정지 해제' }}할까요?')"><button class="btn sec sm" type="submit"{% if u.status == 'active' %} style="color:var(--danger)"{% endif %}>{{ '정지' if u.status == 'active' else '해제' }}</button></form>
+            <form method="post" action="/admin/operators/{{ u.id }}/revoke" onsubmit="return confirm('{{ u.nickname }}의 운영 권한을 회수할까요? 계정은 일반 회원으로 남습니다.')"><button class="btn sec sm" type="submit" style="color:var(--danger)">권한 회수</button></form>
+          {% elif u.is_super and u.id != me %}<span class="mut" style="font-size:12px">정지·회수 불가</span>
           {% endif %}
+          </div>
         </td>
       </tr>
       {% else %}

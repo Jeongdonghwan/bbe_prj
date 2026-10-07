@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS users (
   nickname        VARCHAR(30) NOT NULL,
   phone           VARCHAR(20),
   role            ENUM('user','admin') NOT NULL DEFAULT 'user',
+  is_super        TINYINT(1) NOT NULL DEFAULT 0,
   credit_balance    INT NOT NULL DEFAULT 0,
   grade           ENUM('biz','agency','master') NOT NULL DEFAULT 'biz',
   biz_name        VARCHAR(60) NULL,
@@ -26,6 +27,7 @@ CREATE TABLE IF NOT EXISTS users (
   biz_item        VARCHAR(40) NULL,
   biz_email       VARCHAR(120) NULL,
   biz_cert_file   VARCHAR(80) NULL,
+  admin_memo      VARCHAR(500) NULL,
   notify_campaign TINYINT(1) NOT NULL DEFAULT 1,
   notify_comment  TINYINT(1) NOT NULL DEFAULT 1,
   notify_event    TINYINT(1) NOT NULL DEFAULT 0,
@@ -188,6 +190,19 @@ CREATE TABLE IF NOT EXISTS campaign_daily (
   rank        INT NULL,
   UNIQUE KEY uq_campaign_daily (campaign_id, date),
   FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS deleted_orders (
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  campaign_id INT NOT NULL,
+  order_no    VARCHAR(20) NOT NULL,
+  user_id     INT NULL,
+  snapshot    MEDIUMTEXT NOT NULL,
+  memo        VARCHAR(300) NOT NULL,
+  refunded    INT NOT NULL DEFAULT 0,
+  deleted_by  INT NULL,
+  deleted_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_deleted_orders_at (deleted_at)
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS status_log (

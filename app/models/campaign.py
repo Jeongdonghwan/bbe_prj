@@ -425,6 +425,30 @@ def tracked_without_today_rank(limit=200):
            ORDER BY c.id LIMIT %s""", [limit])]
 
 
+def archive_deleted(c, memo, refunded, admin_id):
+    """삭제 전에 주문 내용을 남긴다 — 주문 관리 '삭제 이력' 탭에서 본다 (2026-10-07 QA #23)."""
+    import json as _json
+    snap = {k: (v.isoformat() if hasattr(v, "isoformat") else v) for k, v in c.items()}
+    execute("""INSERT INTO deleted_orders (campaign_id, order_no, user_id, snapshot, memo, refunded, deleted_by)
+               VALUES (%s,%s,%s,%s,%s,%s,%s)""",
+            [c["id"], c["order_no"], c["user_id"], _json.dumps(snap, ensure_ascii=False, default=str), memo[:300], refunded, admin_id])
+
+
+def list_deleted(q=None, page=1, per_page=20):
+    import json as _json
+    where, params = "1=1", []
+    if q:
+        where = "(d.order_no LIKE %s OR u.nickname LIKE %s OR u.email LIKE %s OR d.memo LIKE %s)"
+        params = [f"%{q}%"] * 4
+    rows = query(f"""SELECT d.*, u.nickname, u.email, a.nickname AS admin_name FROM deleted_orders d
+                     LEFT JOIN users u ON u.id = d.user_id LEFT JOIN users a ON a.id = d.deleted_by
+                     WHERE {where} ORDER BY d.id DESC LIMIT %s OFFSET %s""", params + [per_page, (page - 1) * per_page])
+    for r in rows:
+        r["snap"] = _json.loads(r["snapshot"])
+    total = query_one(f"SELECT COUNT(*) AS n FROM deleted_orders d LEFT JOIN users u ON u.id = d.user_id WHERE {where}", params)["n"]
+    return rows, total
+
+
 def purge(campaign_id):
     """캠페인과 딸린 기록을 완전히 지운다 (어드민 삭제). 크레딧 원장은 회계 기록이라 남긴다."""
     for t in ("campaign_daily", "status_log", "payments", "reviews"):

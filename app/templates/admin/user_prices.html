@@ -1,21 +1,36 @@
 {% extends "layout/base.html" %}
 {% block title %}계정별 단가{% endblock %}
 {% block content %}
+{# 2026-10-07 QA #10~12: 왼쪽(메인) = 단가를 따로 쓰는 회원, 오른쪽(넓힘) = 회원 찾기 + 단가 설정.
+   저장은 확인 팝업 → 저장 → 이 페이지 목록으로 돌아와 방금 저장한 회원 행을 강조한다. #}
 <div class="ph"><div><h1>계정별 단가</h1>
   <p>회원마다 다른 매체 단가를 줍니다. 비워두면 매체 기본 단가를 그대로 씁니다.</p></div>
   <div class="act"><a class="btn sec" href="/admin/users">회원 목록</a></div></div>
 
-<div class="form2">
+<div class="form2" style="grid-template-columns:minmax(0,1fr) minmax(0,1.25fr)">
+  <div class="card"><div class="ch"><h3>단가를 따로 쓰는 회원 <span class="thin">{{ custom_users | length }}명</span></h3></div><div class="cb">
+    {% if custom_users %}
+    <div style="overflow-x:auto;margin:0 -18px"><table>
+      <thead><tr><th>회원</th><th>아이디</th><th style="text-align:right">지정 매체</th><th></th></tr></thead><tbody>
+      {% for a in custom_users %}
+      <tr{% if (user and user.id == a.id) or saved == a.id %} class="sel"{% endif %}{% if saved == a.id %} style="background:var(--success-soft)"{% endif %}>
+        <td><b>{{ a.biz_name or a.nickname }}</b>{% if a.biz_name %}<br><span class="mut" style="font-size:11.5px">{{ a.nickname }}</span>{% endif %}{% if saved == a.id %} <span class="tag t-evt">방금 저장</span>{% endif %}</td>
+        <td><span class="mono mut" style="font-size:12px">{{ a.login_id }}</span></td>
+        <td class="num" style="text-align:right">{{ a.n }}건</td>
+        <td style="text-align:right"><a class="btn sec sm" href="/admin/user-prices?user={{ a.id }}">설정</a></td></tr>
+      {% endfor %}
+      </tbody></table></div>
+    {% else %}<div class="empty">아직 없습니다. 모두 매체 기본 단가를 씁니다.</div>{% endif %}
+  </div></div>
+
   <div>
-    <div class="card"><div class="cb" style="padding-top:14px">
+    <div class="card"><div class="ch"><h3>단가 설정</h3></div><div class="cb" style="padding-top:6px">
       <form class="tbar" method="get" style="margin-bottom:0">
-        {% if user %}<input type="hidden" name="user" value="{{ user.id }}">{% endif %}
         {% if channel %}<input type="hidden" name="channel" value="{{ channel }}">{% endif %}
         <div class="search" style="flex:1"><i data-lucide="search" class="i"></i>
-          <input class="in" name="q" value="{{ q or '' }}" placeholder="아이디 · 이름 · 회사명으로 회원 찾기" autofocus></div>
+          <input class="in" name="q" id="upQ" value="{{ q or '' }}" placeholder="아이디 · 이름 · 회사명으로 회원 찾기"{% if not user %} autofocus{% endif %}></div>
         <button class="btn sec" type="submit">검색</button>
       </form>
-
       {% if q %}
       <div style="overflow-x:auto;margin:10px -18px 0"><table>
         <thead><tr><th>아이디</th><th>회원</th><th style="text-align:right">지정 단가</th><th></th></tr></thead><tbody>
@@ -24,12 +39,12 @@
           <td><span class="mono">{{ a.login_id }}</span></td>
           <td><b>{{ a.nickname }}</b>{% if a.biz_name %} <span class="mut">{{ a.biz_name }}</span>{% endif %}</td>
           <td class="num" style="text-align:right">{% if a.n %}{{ a.n }}건{% else %}<span class="mut">—</span>{% endif %}</td>
-          <td><div class="inline-f" style="justify-content:flex-end">
-            <a href="/admin/user-prices?user={{ a.id }}{% if channel %}&channel={{ channel }}{% endif %}"><button class="btn sec sm" type="button">단가 설정</button></a>
-          </div></td>
+          <td style="text-align:right"><a class="btn sec sm" href="/admin/user-prices?user={{ a.id }}{% if channel %}&channel={{ channel }}{% endif %}&q={{ q | urlencode }}">단가 설정</a></td>
         </tr>
         {% else %}<tr><td colspan="4"><div class="empty">'{{ q }}' 에 맞는 회원이 없습니다.</div></td></tr>{% endfor %}
         </tbody></table></div>
+      {% elif not user %}
+      <div class="empty" style="padding:24px 0">회원을 검색하거나 왼쪽 목록에서 '설정'을 누르세요.</div>
       {% endif %}
     </div></div>
 
@@ -46,12 +61,10 @@
       </div>
       <p class="thin" style="margin:6px 0 10px">
         칸을 비우면 기본 단가로 돌아갑니다. 바꾼 단가는 <b>앞으로 만드는 캠페인</b>에만 적용되고,
-        이미 접수된 주문 금액은 그대로입니다. <b>지금 보이는 {{ channel_label[channel] }} 탭만 저장</b>되니
-        다른 채널은 그 탭에서 따로 저장하세요.
+        이미 접수된 주문 금액은 그대로입니다. <b>지금 보이는 {{ channel_label[channel] }} 탭만 저장</b>됩니다.
       </p>
-      <form method="post" action="/admin/user-prices/{{ user.id }}/save">
+      <form method="post" action="/admin/user-prices/{{ user.id }}/save" id="upForm">
         <input type="hidden" name="back_channel" value="{{ channel }}">
-        {% if q %}<input type="hidden" name="back_q" value="{{ q }}">{% endif %}
         <div style="overflow-x:auto;margin:0 -18px"><table>
           <thead><tr><th>매체</th><th style="text-align:right">기본 단가</th>
             <th style="width:130px">이 회원 단가</th><th>메모</th></tr></thead>
@@ -74,28 +87,24 @@
         <div style="display:flex;gap:8px;margin-top:12px">
           <button class="btn pri" type="submit">{{ channel_label[channel] }} 단가 저장</button>
           <button class="btn sec" type="submit" name="reset" value="1" style="color:var(--danger)"
-                  onclick="return confirm('이 회원의 단가 설정을 모든 채널에서 지우고 기본 단가로 되돌릴까요?')">전체 해제</button>
+                  onclick="this.form.dataset.reset='1';return confirm('이 회원의 단가 설정을 모든 채널에서 지우고 기본 단가로 되돌릴까요?')">전체 해제</button>
         </div>
       </form>
     </div></div>
-    {% elif not q %}
-    <div class="card" style="margin-top:14px"><div class="cb">
-      <div class="empty">위에서 회원을 검색해 고르면 매체별 단가를 설정할 수 있습니다.</div>
-    </div></div>
     {% endif %}
   </div>
-
-  <div class="card"><div class="ch"><h3>단가를 따로 쓰는 회원</h3></div><div class="cb">
-    {% if custom_users %}
-    <div style="overflow-x:auto;margin:0 -18px"><table>
-      <thead><tr><th>회원</th><th style="text-align:right">매체</th></tr></thead><tbody>
-      {% for a in custom_users %}
-      <tr><td><a class="lnk" href="/admin/user-prices?user={{ a.id }}">{{ a.biz_name or a.nickname }}</a>
-        <br><span class="mut mono" style="font-size:11px">{{ a.login_id }}</span></td>
-        <td class="num" style="text-align:right">{{ a.n }}건</td></tr>
-      {% endfor %}
-      </tbody></table></div>
-    {% else %}<div class="empty">아직 없습니다. 모두 매체 기본 단가를 씁니다.</div>{% endif %}
-  </div></div>
 </div>
 {% endblock %}
+{% block scripts %}<script>
+(function () {
+  // 검색 후 다시 그려지면 autofocus 가 커서를 맨 앞에 둔다 — 끝으로 옮긴다 (QA #10)
+  var q = document.getElementById('upQ');
+  if (q && document.activeElement === q) { var n = q.value.length; q.setSelectionRange(n, n); }
+  // 저장 전 확인 (QA #11)
+  var f = document.getElementById('upForm');
+  if (f) f.addEventListener('submit', function (e) {
+    if (f.dataset.reset) return;
+    if (!confirm('{{ (user.biz_name or user.nickname) if user else '' }} 회원의 {{ channel_label[channel] if user else '' }} 단가를 저장할까요?')) e.preventDefault();
+  });
+})();
+</script>{% endblock %}

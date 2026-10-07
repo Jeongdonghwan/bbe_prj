@@ -17,20 +17,25 @@
 <div class="card"><div class="cb" style="padding-top:6px">
   <div class="tabs"><a href="/admin/users"><button type="button"{% if not status %} class="on"{% endif %}>전체<em>{{ counts.values() | sum }}</em></button></a><a href="/admin/users?status=active"><button type="button"{% if status == 'active' %} class="on"{% endif %}>정상<em>{{ counts.get('active', 0) }}</em></button></a><a href="/admin/users?status=suspended"><button type="button"{% if status == 'suspended' %} class="on"{% endif %}>정지<em>{{ counts.get('suspended', 0) }}</em></button></a></div>
   <form class="tbar" method="get">{% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}<div class="search"><i data-lucide="search" class="i"></i><input class="in" name="q" value="{{ q or '' }}" placeholder="아이디 · 닉네임 · 전화 · 상호"></div></form>
-  <div style="overflow-x:auto;margin:0 -18px"><table><thead><tr><th>아이디</th><th>닉네임</th><th>연락처</th><th>가입일</th><th style="text-align:right">누적 결제</th><th style="text-align:right">캠페인</th><th>등급</th><th>상태</th><th></th></tr></thead><tbody>
+  <div style="overflow-x:auto;margin:0 -18px"><table class="otable"><thead><tr><th>아이디</th><th>닉네임 · 상호</th><th>사업자번호</th><th>연락처</th><th>가입일</th><th style="text-align:right">누적 결제</th><th style="text-align:right">캠페인</th><th>메모</th><th>등급</th><th>상태</th><th>관리</th></tr></thead><tbody>
     {% for u in rows %}
     <tr data-open="{{ u.id }}"{% if u.id == open_id %} class="sel"{% endif %}><td><span class="mono">{{ u.login_id }}</span><br><span class="mut" style="font-size:11px">{{ u.signup_via }}</span></td>
-      <td><b>{{ u.nickname }}</b>{% if u.role == 'admin' %} <span class="tag t-pin">관리자</span>{% endif %}{% if u.biz_name %}<br><span class="mut">{{ u.biz_name }}</span>{% endif %}</td><td class="num">{{ u.phone or '-' }}</td><td class="num mut">{{ u.created_at | fmt_date('%Y.%m.%d') }}</td>
-      <td class="num" style="text-align:right">{{ u.paid_total | won }}</td><td class="num" style="text-align:right">{{ u.campaign_cnt }}</td><td>{% if u.role != 'admin' %}<form method="post" action="/admin/users/{{ u.id }}/grade?q={{ q or '' }}"><select class="sel-in" name="grade" onchange="this.form.submit()">{% for k, v in grade_label.items() %}<option value="{{ k }}"{% if u.grade == k %} selected{% endif %}>{{ v }}</option>{% endfor %}</select></form>{% else %}—{% endif %}</td>
+      <td><b>{{ u.nickname }}</b>{% if u.role == 'admin' %} <span class="tag t-pin">관리자</span>{% endif %}{% if u.biz_name %}<br><span class="mut">{{ u.biz_name }}</span>{% endif %}</td><td class="num">{{ u.biz_no or '-' }}{% if u.biz_cert_file %}<br><a class="lnk" href="/admin/users/{{ u.id }}/biz-cert?dl=1" style="font-size:11.5px">등록증 다운로드</a>{% endif %}</td><td class="num">{{ u.phone or '-' }}</td><td class="num mut">{{ u.created_at | fmt_date('%Y.%m.%d') }}</td>
+      <td class="num" style="text-align:right">{{ u.paid_total | won }}</td><td class="num" style="text-align:right">{{ u.campaign_cnt }}</td><td style="max-width:200px;white-space:normal"><span class="mut" style="font-size:12px">{{ (u.admin_memo or '')[:40] }}{% if (u.admin_memo or '') | length > 40 %}…{% endif %}</span></td><td>{% if u.role != 'admin' %}<form method="post" action="/admin/users/{{ u.id }}/grade?q={{ q or '' }}"><select class="sel-in" name="grade" data-prev="{{ u.grade }}" onchange="if(confirm('{{ u.nickname }} 등급을 ' + this.options[this.selectedIndex].text + '(으)로 바꿀까요?')){this.form.submit()}else{this.value=this.dataset.prev}">{% for k, v in grade_label.items() %}<option value="{{ k }}"{% if u.grade == k %} selected{% endif %}>{{ v }}</option>{% endfor %}</select></form>{% else %}—{% endif %}</td>
       <td>{% if u.status == 'active' %}<span class="st s-run">정상</span>{% else %}<span class="st s-rej">정지</span>{% endif %}</td>
-      <td><div class="rowact" style="opacity:1">{% if u.biz_cert_file %}<a href="/admin/users/{{ u.id }}/biz-cert" target="_blank" rel="noopener" style="color:var(--accent);font-weight:600">등록증</a>{% endif %}{% if u.role != 'admin' %}<button type="button" data-pw="{{ u.id }}" data-who="{{ u.nickname }}" data-email="{{ u.email or '' }}">비밀번호</button>
-        <form method="post" action="/admin/users/{{ u.id }}/status?q={{ q or '' }}" onsubmit="return confirm('상태를 변경할까요?')"><button type="submit"{% if u.status == 'active' %} style="color:var(--danger)"{% endif %}>{% if u.status == 'active' %}정지{% else %}정지 해제{% endif %}</button></form>
+      <td><div class="rowact on">{% if u.biz_cert_file %}<a href="/admin/users/{{ u.id }}/biz-cert" target="_blank" rel="noopener"><button type="button" style="color:var(--accent)">등록증</button></a>{% endif %}<button type="button" data-umemo="{{ u.id }}" data-who="{{ u.nickname }}" data-text="{{ u.admin_memo or '' }}">메모</button>{% if u.role != 'admin' %}<a href="/admin/user-prices?user={{ u.id }}"><button type="button">단가</button></a><a href="/admin/credits?user={{ u.id }}"><button type="button">크레딧</button></a><button type="button" data-pw="{{ u.id }}" data-who="{{ u.nickname }}" data-email="{{ u.email or '' }}">비밀번호</button>
+        <form method="post" action="/admin/users/{{ u.id }}/status?q={{ q or '' }}" onsubmit="return confirm('{{ u.nickname }} 회원을 {{ '정지' if u.status == 'active' else '정지 해제' }}할까요?')"><button type="submit"{% if u.status == 'active' %} style="color:var(--danger)"{% endif %}>{% if u.status == 'active' %}정지{% else %}정지 해제{% endif %}</button></form>
         <form method="post" action="/admin/users/{{ u.id }}/delete?q={{ q or '' }}" onsubmit="return confirm('{{ u.nickname }} 회원을 삭제할까요? 캠페인·크레딧·게시글이 있으면 삭제되지 않습니다.')"><button type="submit" style="color:var(--danger)">삭제</button></form>{% endif %}</div></td></tr>
-    {% else %}<tr><td colspan="9"><div class="empty">회원이 없습니다.</div></td></tr>{% endfor %}
+    {% else %}<tr><td colspan="11"><div class="empty">회원이 없습니다.</div></td></tr>{% endfor %}
   </tbody></table></div>
   {{ pager(page, total_pages, 'admin.users', q=q, status=status) }}
 </div></div>
-<div class="drawer" id="drawer"><div class="dh"><h3>불러오는 중…</h3><button class="icon-btn x" id="dclose" type="button"><i data-lucide="x" class="i"></i></button></div><div class="db"></div></div>
+<div class="modal" id="umemoModal"><form class="modal-box" method="post" id="umemoForm" action="">
+  <input type="hidden" name="back" value="{{ request.full_path }}">
+  <h3>운영 메모 <span class="thin" id="umemoWho"></span></h3><p class="thin" style="margin:4px 0 12px">운영자만 봅니다. 스토어 이름, 주력 상품, 상담 내용 등을 남겨 두세요.</p>
+  <div class="f"><textarea class="in" name="memo" id="umemoText" rows="5" maxlength="500" placeholder="예) 스마트스토어 '○○몰' · 주력: 캠핑의자 · 10/7 단가 문의"></textarea></div>
+  <div style="display:flex;gap:8px"><button class="btn sec" type="button" data-close style="flex:1">취소</button><button class="btn pri" type="submit" style="flex:1">저장</button></div></form></div>
+<div class="drawer pop" id="drawer"><div class="dh"><h3>불러오는 중…</h3><button class="icon-btn x" id="dclose" type="button"><i data-lucide="x" class="i"></i></button></div><div class="db"></div></div>
 
 <div class="modal" id="pwModal"><form class="modal-box" method="post" id="pwForm" action="">
   <h3>비밀번호 설정 <span class="thin" id="pwWho"></span></h3>
@@ -40,7 +45,18 @@
   <div style="display:flex;gap:8px"><button class="btn sec" type="button" data-close style="flex:1">취소</button><button class="btn pri" type="submit" style="flex:1">설정</button></div>
 </form></div>
 {% endblock %}
-{% block scripts %}<script>window.DRAWER_BASE = "/admin/users/"; window.OPEN_ID = {{ open_id or 'null' }};</script>
+{% block scripts %}<script>
+document.querySelectorAll('[data-umemo]').forEach(function (b) {
+  b.addEventListener('click', function (e) {
+    e.stopPropagation();
+    document.getElementById('umemoForm').action = '/admin/users/' + b.dataset.umemo + '/memo';
+    document.getElementById('umemoWho').textContent = b.dataset.who;
+    document.getElementById('umemoText').value = b.dataset.text;
+    document.getElementById('umemoModal').classList.add('on');
+  });
+});
+document.getElementById('umemoModal').addEventListener('click', function (e) { if (e.target === this || e.target.closest('[data-close]')) this.classList.remove('on'); });
+</script><script>window.DRAWER_BASE = "/admin/users/"; window.OPEN_ID = {{ open_id or 'null' }};</script>
 <script src="{{ url_for('static', filename='js/campaign_manage.js') }}"></script>
 <script>
 (function () {

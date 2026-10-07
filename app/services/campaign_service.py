@@ -314,7 +314,33 @@ def rank_sheet(campaign):
     # 시작 순위 칸: 기준값이 없을 때 "순위 밖"은 수집이 한 번이라도 됐을 때만 맞는 말이다.
     start_state = "ranked" if c["rank_start"] else ("out" if rankmap else ("pending" if live else "none"))
     return {"c": c, "days": days, "today_rank": today_rank, "today_state": state(today), "delta": delta,
-            "start_state": start_state}
+            "start_state": start_state, "chart": _rank_chart(days)}
+
+
+def _rank_chart(days, w=760, h=170, pad=28):
+    """일자별 순위 선그래프 좌표 (SVG). 순위는 낮을수록 좋으니 1위가 위쪽. 순위 없는 날은 선을 끊는다."""
+    pts = [d for d in reversed(days)]          # 오래된 날 → 최근
+    ranked = [d["rank"] for d in pts if d["rank"]]
+    if len(ranked) < 2:
+        return None
+    lo, hi = min(ranked), max(ranked)
+    span = max(1, hi - lo)
+    n = len(pts)
+    x = lambda i: pad + (w - 2 * pad) * (i / max(1, n - 1))
+    y = lambda r: pad + (h - 2 * pad) * ((r - lo) / span)
+    segs, cur, dots = [], [], []
+    for i, d in enumerate(pts):
+        if d["rank"]:
+            cur.append(f"{x(i):.1f},{y(d['rank']):.1f}")
+            dots.append({"x": round(x(i), 1), "y": round(y(d["rank"]), 1), "r": d["rank"], "label": d["date"].strftime("%m/%d")})
+        elif cur:
+            segs.append(" ".join(cur)); cur = []
+    if cur:
+        segs.append(" ".join(cur))
+    step = max(1, n // 8)                      # 날짜 눈금 최대 8개
+    ticks = [{"x": round(x(i), 1), "label": d["date"].strftime("%m/%d")} for i, d in enumerate(pts) if i % step == 0 or i == n - 1]
+    return {"w": w, "h": h, "segs": segs, "dots": dots, "ticks": ticks, "best": lo, "worst": hi,
+            "y_best": round(y(lo), 1), "y_worst": round(y(hi), 1)}
 
 
 def backfill_nv_mid(limit=100):
