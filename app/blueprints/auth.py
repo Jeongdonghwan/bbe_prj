@@ -6,10 +6,11 @@ from functools import wraps
 
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from flask import (Blueprint, abort, current_app, flash, g, redirect, render_template, request, session,
+from flask import (Blueprint, abort, current_app, flash, g, jsonify, redirect, render_template, request, session,
                    url_for)
 
 from ..services import biz_cert, notify_service
+from ..services import nts as nts_service
 from ..models import user as user_model
 from ..services import kakao_service
 
@@ -193,6 +194,8 @@ def register():
             err = "상호를 입력해주세요."
         elif not biz_no:
             err = "사업자등록번호가 올바르지 않습니다. 10자리 번호를 확인해주세요. 예) 123-45-67890"
+        elif (nts := nts_service.status(biz_no)) and not nts["ok"]:
+            err = f"사업자등록번호 확인 결과 '{nts['label']}'입니다. 영업 중인 사업자만 가입할 수 있습니다."
         elif f.get("agree_terms") != "1" or f.get("agree_privacy") != "1":
             err = "이용약관과 개인정보 수집·이용에 동의해주세요."
         elif user_model.get_by_email(email):
@@ -217,6 +220,18 @@ def register():
         flash("가입을 환영합니다! 첫 캠페인을 만들어보세요.")
         return resp
     return render_template("auth/register.html", next_url=next_url, form={})
+
+
+@bp.route("/biz-check")
+def biz_check():
+    """가입 화면에서 번호 입력 즉시 상태를 보여준다. 최종 판정은 register() 가 다시 한다."""
+    b_no = parse_biz_no(request.args.get("b_no"))
+    if not b_no:
+        return jsonify(ok=False, label="번호 형식 또는 검증번호가 올바르지 않습니다.")
+    r = nts_service.status(b_no)
+    if r is None:
+        return jsonify(ok=True, label=None)   # 확인 불가(키 없음·국세청 장애) — 막지 않는다
+    return jsonify(ok=r["ok"], label=r["label"])
 
 
 # ---- kakao -----------------------------------------------------------------

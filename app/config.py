@@ -65,3 +65,6 @@ class Config:
     NAVER_AD_ACCESS_LICENSE = os.getenv("NAVER_AD_ACCESS_LICENSE", "")
     NAVER_AD_SECRET_KEY = os.getenv("NAVER_AD_SECRET_KEY", "")
     NAVER_AD_CUSTOMER_ID = os.getenv("NAVER_AD_CUSTOMER_ID", "")
+
+    # 국세청 사업자 상태조회 (data.go.kr 15081808, 일반 인증키 Decoding). Empty -> checksum only.
+    DATA_GO_KR_KEY = os.getenv("DATA_GO_KR_KEY", "")

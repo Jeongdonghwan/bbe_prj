@@ -18,7 +18,7 @@
       </div>
       <div class="row2">
         <div class="f"><label>상호</label><input class="in" name="biz_name" value="{{ form.get('biz_name', '') }}" maxlength="60" placeholder="사업자등록증상 상호" required></div>
-        <div class="f"><label>사업자등록번호</label><input class="in" name="biz_no" value="{{ form.get('biz_no', '') }}" inputmode="numeric" maxlength="12" placeholder="123-45-67890" required></div>
+        <div class="f"><label>사업자등록번호</label><input class="in" name="biz_no" value="{{ form.get('biz_no', '') }}" inputmode="numeric" maxlength="12" placeholder="123-45-67890" required><div class="hint" id="bizHint"></div></div>
       </div>
       <div class="f"><label>사업자등록증 <small>선택 · JPG/PNG/PDF 10MB 이하 — 나중에 마이페이지에서 올려도 됩니다</small></label><input class="in" type="file" name="biz_cert" accept="image/jpeg,image/png,image/webp,application/pdf" style="padding:7px 10px;height:auto"></div>
       <div class="f" style="margin:10px 0 8px">
@@ -43,6 +43,16 @@
     var on = document.querySelector('#agreeAll input').checked;
     f.querySelectorAll('.chk input[name]').forEach(function (i) { i.checked = on; i.closest('.chk').classList.toggle('on', on); });
   }, 0); });
+  // 사업자번호 — 칸을 벗어나면 국세청 상태를 미리 보여준다 (최종 판정은 서버)
+  var bn = f.querySelector('input[name=biz_no]'), hint = document.getElementById('bizHint');
+  bn.addEventListener('change', function () {
+    hint.className = 'hint'; hint.textContent = bn.value.trim() ? '확인 중…' : '';
+    if (!bn.value.trim()) return;
+    fetch('/auth/biz-check?b_no=' + encodeURIComponent(bn.value)).then(function (r) { return r.json(); }).then(function (j) {
+      hint.textContent = j.label || '';
+      hint.style.color = j.ok ? 'var(--success)' : 'var(--danger)';
+    }).catch(function () { hint.textContent = ''; });
+  });
   f.addEventListener('submit', function (e) {
     var t = f.querySelector('input[name=agree_terms]').checked, p = f.querySelector('input[name=agree_privacy]').checked;
     if (!t || !p) { e.preventDefault(); alert('이용약관과 개인정보 수집·이용에 동의해주세요.'); }

@@ -27,13 +27,43 @@ with app.app_context():
     admin = query_one("SELECT id FROM users WHERE role='admin' AND status='active' ORDER BY id LIMIT 1")
     start = query_one("SELECT COALESCE(MAX(id),0) m FROM notifications")["m"]
 
+# 국세청 상태조회 — 스텁 서버로 응답 형식을 흉내 낸다 (실제 키 없이)
+import json, threading  # noqa: E401,E402
+from http.server import BaseHTTPRequestHandler, HTTPServer  # noqa: E402
+from app.services import nts  # noqa: E402
+CODES = {"2208162517": "01", "1248100998": "03"}   # 나머지는 미등록
+
+
+class Stub(BaseHTTPRequestHandler):
+    def do_POST(self):
+        b_no = json.loads(self.rfile.read(int(self.headers["Content-Length"])))["b_no"][0]
+        out = json.dumps({"data": [{"b_no": b_no, "b_stt_cd": CODES.get(b_no, "")}]}).encode()
+        self.send_response(200); self.send_header("Content-Length", str(len(out))); self.end_headers(); self.wfile.write(out)
+
+    def log_message(self, *a):
+        pass
+
+
+srv = HTTPServer(("127.0.0.1", 5098), Stub)
+threading.Thread(target=srv.serve_forever, daemon=True).start()
+nts.URL = "http://127.0.0.1:5098/status"
+app.config["DATA_GO_KR_KEY"] = "stub+key/="
+tc0 = app.test_client()
+ok(tc0.get("/auth/biz-check?b_no=220-81-62517").get_json()["ok"] is True, "진위확인: 계속사업자 통과")
+ok(tc0.get("/auth/biz-check?b_no=124-81-00998").get_json()["ok"] is False, "진위확인: 폐업자 거절")
+ok(tc0.get("/auth/biz-check?b_no=120-81-47521").get_json()["label"] == "국세청에 등록되지 않은 번호", "진위확인: 미등록")
+nts.URL = "http://127.0.0.1:1/down"; nts._CACHE.clear()
+ok(tc0.get("/auth/biz-check?b_no=220-81-62517").get_json()["ok"] is True, "국세청 장애 → 막지 않음")
+nts.URL = "http://127.0.0.1:5098/status"; nts._CACHE.clear()
+
 email = f"certtest{int(time.time())}@example.com"
 tc = app.test_client()
 form = {"email": email, "password": "password123", "password2": "password123", "nickname": "인증테스트",
         "phone": "010-1234-5678", "agree_terms": "1", "agree_privacy": "1",
         "biz_name": "인증테스트상사", "biz_no": "2208162517"}
 # 상호·사업자번호는 필수, 번호는 검증번호까지 본다
-for bad, name in (({"biz_name": ""}, "상호 없음 → 거절"), ({"biz_no": "123-45-67890"}, "검증번호 틀림 → 거절")):
+for bad, name in (({"biz_name": ""}, "상호 없음 → 거절"), ({"biz_no": "123-45-67890"}, "검증번호 틀림 → 거절"),
+                  ({"biz_no": "124-81-00998"}, "폐업 사업자 → 가입 거절")):
     r = tc.post("/auth/register", data={**form, **bad}, content_type="multipart/form-data")
     with app.app_context():
         ok(r.status_code == 400 and not query_one("SELECT id FROM users WHERE email=%s", [email]), name)
