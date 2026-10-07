@@ -14,7 +14,7 @@
     {% for c in queue %}
     <tr{% if c.warn.block %} style="background:var(--danger-soft)"{% endif %}><td class="ord">{{ c.order_no }}</td>
       <td><b>{{ c.biz_name }}</b> <span class="mut">{{ c.main_keyword }}</span>{% if c.warn.block %}<br><span style="color:var(--danger);font-size:12px">⚠ 금지 문구 "{{ c.warn.block | join(', ') }}" 감지</span>{% elif c.warn.warn %}<br><span style="color:var(--warn);font-size:12px">주의 문구 "{{ c.warn.warn | join(', ') }}"</span>{% endif %}</td>
-      <td>{{ c.media_name }}</td><td><span class="mut">{% if c.age_min >= 60 %}{{ c.age_min // 60 }}시간 {% endif %}{{ c.age_min % 60 }}분 전</span></td>
+      <td>{{ c.media_name }}</td><td><span class="mut">{% set m = c.age_min %}{% if m >= 1440 %}{{ m // 1440 }}일 전{% elif m >= 60 %}{{ m // 60 }}시간 전{% else %}{{ m }}분 전{% endif %}</span></td>
       <td><div class="rowact" style="opacity:1"><form method="post" action="/admin/orders/{{ c.id }}/action"><input type="hidden" name="action" value="approve"><input type="hidden" name="back" value="/admin"><button style="color:var(--success)" type="submit">승인</button></form><button type="button" style="color:var(--danger)" data-reject="{{ c.id }}" data-order="{{ c.order_no }}" data-back="/admin">반려</button></div></td></tr>
     {% else %}<tr><td colspan="5"><div class="empty">검수 대기 건이 없습니다.</div></td></tr>{% endfor %}
   </tbody></table></div></div></div>
