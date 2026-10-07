@@ -4,11 +4,19 @@
 {% block content %}
 {% set board_label = {'notice': '공지', 'info': '마케팅 정보', 'series': '입문 시리즈'} %}
 {% set tag_cls = {'must': 't-must', 'update': 't-upd', 'maint': 't-mnt', 'event': 't-evt'} %}
-<div class="ph"><div><h1>공지 · 정보글</h1><p>공지사항, 마케팅 정보, 입문 시리즈를 한 곳에서 씁니다.</p></div><div class="act"><a class="btn pri" href="/admin/content?new=1"><i data-lucide="pen-line" class="i i16"></i>새 글</a></div></div>
+<div class="ph"><div><h1>공지 · 정보글</h1><p>공지사항, 마케팅 정보, 입문 시리즈를 한 곳에서 씁니다.</p></div></div>
 <div class="form2">
   <div>
     <div class="card" style="margin-bottom:16px"><div class="cb" style="padding-top:6px">
       <div class="tabs">{% for key, label in [('all','전체'),('notice','공지'),('info','마케팅 정보'),('series','입문 시리즈'),('draft','임시저장')] %}<a href="/admin/content?tab={{ key }}"><button type="button"{% if tab == key %} class="on"{% endif %}>{{ label }}<em>{{ counts[key] }}</em></button></a>{% endfor %}</div>
+      {# 2026-10-07 QA #14: 새 글 버튼을 게시판 바로 위로, 검색·정렬 추가 #}
+      <form class="tbar" method="get" style="margin-top:4px"><input type="hidden" name="tab" value="{{ tab }}">
+        <a class="btn pri sm" href="/admin/content?tab={{ tab }}&new=1"><i data-lucide="pen-line" class="i i14"></i>새 글 쓰기</a>
+        <select class="in" name="sort" onchange="this.form.submit()" style="width:auto;margin-left:auto">
+          {% for k, v in [('', '기본 순서'), ('new', '최신순'), ('old', '오래된순'), ('views', '조회순'), ('title', '제목순')] %}<option value="{{ k }}"{% if (sort or '') == k %} selected{% endif %}>{{ v }}</option>{% endfor %}
+        </select>
+        <div class="search"><i data-lucide="search" class="i"></i><input class="in" name="q" value="{{ q or '' }}" placeholder="제목 · 본문 검색"></div>
+      </form>
       <form method="post" action="/admin/content/bulk-delete" onsubmit="return confirm('선택한 글을 삭제할까요? 되돌릴 수 없습니다.')">
       <input type="hidden" name="back" value="{{ request.full_path }}">
       <div class="bulk" id="bulkBar" style="display:none"><span class="chk on"><i></i></span><span id="bulkCount">0</span>건 선택됨
@@ -27,7 +35,7 @@
         {% else %}<tr><td colspan="8"><div class="empty">글이 없습니다.</div></td></tr>{% endfor %}
       </tbody></table></div>
       </form>
-      {{ pager(page, total_pages, 'admin.content', tab=tab) }}
+      {{ pager(page, total_pages, 'admin.content', tab=tab, q=q, sort=sort) }}
     </div></div>
     {% if new %}{% set e = edit or {} %}
     <div class="card"><div class="ch"><h3>{% if edit %}글 수정{% else %}새 글{% endif %}</h3></div><div class="cb">

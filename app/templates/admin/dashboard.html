@@ -23,7 +23,7 @@
       {% for m in by_media %}<div class="kv"><span>{{ m.name }}</span><b class="num">{{ m.n }}건 · {{ m.amount | won }}</b></div>{% else %}<div class="empty" style="padding:12px 0">오늘 접수 없음</div>{% endfor %}
     </div></div>
     <div class="card"><div class="ch"><h3>최근 처리</h3></div><div class="cb"><ul class="timeline" style="margin-top:4px">
-      {% for l in logs %}<li class="on"><b>{{ l.summary or l.action }}</b><span>{{ l.created_at | fmt_date('%m.%d %H:%M') }} · {{ l.admin_name or '시스템' }}</span></li>{% else %}<li><span class="thin">처리 이력이 없습니다.</span></li>{% endfor %}
+      {% for l in logs %}<li class="on"><b>{{ l.summary or l.action }}</b>{% if l.c_biz %}<span style="display:block;color:var(--text-2)">{{ l.c_biz }} · {{ l.c_kw }} · {{ l.c_media }}</span>{% endif %}<span>{{ l.created_at | fmt_date('%m.%d %H:%M') }} · {{ l.admin_name or '시스템' }}</span></li>{% else %}<li><span class="thin">처리 이력이 없습니다.</span></li>{% endfor %}
     </ul></div></div>
   </div>
 </div>

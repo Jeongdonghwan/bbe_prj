@@ -1,37 +1,80 @@
 {% extends "layout/base.html" %}
 {% block title %}인기 트래픽 설정{% endblock %}
 {% block content %}
-<div class="ph"><div><h1>인기 트래픽 설정</h1><p>채널 × 카테고리별 1·2·3위와 추천 문구를 정합니다. 저장 즉시 사용자 화면에 반영됩니다.</p></div>
-  <div class="act"><div class="chan-tabs">{% for k, v in channel_label.items() %}<a href="/admin/popular?channel={{ k }}"><button type="button"{% if channel == k %} class="on"{% endif %}><i class="dot c-{{ k }}"></i>{{ v }}</button></a>{% endfor %}</div><button class="btn sec" type="button" data-modal="catModal">+ 카테고리</button></div></div>
-<div class="form2">
-  <div class="card"><div class="ch"><h3>{{ channel_label[channel] }} 카테고리</h3><a class="more" href="/popular?ch={{ channel }}" target="_blank">사용자 화면<i data-lucide="external-link" class="i i14"></i></a></div><div class="cb">
-    {% for c in cats %}
-    <div class="catrow"><b>{{ c.name }}</b><div class="tops">{% for n in summary.get(c.id, []) %}<span>{{ n }}</span>{% else %}<span class="thin">미설정</span>{% endfor %}</div><span class="thin">{{ metas[c.id].updated_at | fmt_date if metas.get(c.id) else '—' }}</span><span class="toggle{% if c.is_active %} on{% endif %}" data-toggle="/admin/popular/{{ c.id }}/toggle"><i></i></span><a href="/admin/popular?channel={{ channel }}&edit={{ c.id }}"><button class="btn sec sm" type="button"{% if edit and edit.cat.id == c.id %} style="border-color:var(--accent);color:var(--accent)"{% endif %}>{% if edit and edit.cat.id == c.id %}수정 중{% else %}수정{% endif %}</button></a></div>
-    {% else %}<div class="empty">카테고리가 없습니다. 오른쪽 위 [+ 카테고리]로 추가하세요.</div>{% endfor %}
-  </div></div>
-  {% if edit %}
-  <div class="card"><div class="ch"><h3>{{ edit.cat.name }} 수정</h3><a class="icon-btn" style="margin-left:auto" href="/admin/popular?channel={{ channel }}"><i data-lucide="x" class="i"></i></a></div><div class="cb">
-    <form method="post" action="/admin/popular/{{ edit.cat.id }}/save" id="popForm">
-      <div class="row2"><div class="f"><label>카테고리명</label><input class="in" name="name" value="{{ edit.cat.name }}" required></div><div class="f"><label>정렬</label><input class="in num" name="sort" type="number" value="{{ edit.cat.sort }}"></div></div>
-      <div class="f"><label>순위 · 매체 · 추천 문구</label>
-        {% for r in [1, 2, 3] %}{% set s = edit.sets.get(r) %}
-        <div class="rankset" data-rank="{{ r }}"><span class="n{% if r == 1 %} g{% endif %}">{{ r }}</span><select class="in" style="height:36px" name="media_{{ r }}"><option value="">선택</option>{% for m in medias %}<option value="{{ m.id }}"{% if s and s.media_id == m.id %} selected{% endif %}>{{ m.name }} ({{ m.eff }}%)</option>{% endfor %}</select><input class="in" style="height:36px" name="note_{{ r }}" value="{{ s.note if s and s.note else '' }}" maxlength="80" placeholder="추천 문구"><span style="display:flex;gap:2px">{% if r > 1 %}<button class="btn ghost sm" type="button" data-move="up" title="위로">↑</button>{% endif %}{% if r < 3 %}<button class="btn ghost sm" type="button" data-move="down" title="아래로">↓</button>{% endif %}</span></div>
-        {% endfor %}
+{# 사용자 화면: /popular (메뉴 '인기 트래픽') 상단 "이번 주 운영팀 추천" 3장 + 대시보드 '운영팀 주간 인기 트래픽' 위젯 메달.
+   카드의 설명·후기·단가는 매체사 관리 값이고, 여기서는 순위(1~3)와 운영팀 한줄평을 정한다. #}
+<div class="ph"><div><h1>인기 트래픽 설정</h1><p>회원 화면 <b>인기 트래픽</b> 페이지 맨 위 '이번 주 운영팀 추천' 3장과 대시보드 위젯의 1~3위가 여기서 정해집니다.</p></div>
+  <div class="act"><div class="chan-tabs">{% for k, v in channel_label.items() %}<a href="/admin/popular?channel={{ k }}"><button type="button"{% if channel == k %} class="on"{% endif %}><i class="dot c-{{ k }}"></i>{{ v }}</button></a>{% endfor %}</div>
+    <a class="btn sec" href="/popular?ch={{ channel }}" target="_blank" rel="noopener"><i data-lucide="external-link" class="i i14"></i>회원 화면 보기</a></div></div>
+
+<div class="card" style="margin-bottom:14px"><div class="ch">
+  <h3>{{ channel_label[channel] }} · 운영팀 추천 TOP 3</h3>
+  <form method="get" style="display:flex;gap:6px;align-items:center;margin-left:auto"><input type="hidden" name="channel" value="{{ channel }}">
+    <select class="in" name="week" onchange="this.form.submit()" style="width:auto;height:34px">
+      {% for w in weeks %}<option value="{{ w.isoformat() }}"{% if w == week %} selected{% endif %}>{{ w.strftime('%Y.%m.%d') }} 주{% if w == this_week %} (이번 주){% elif w > this_week %} (다음 주){% endif %}</option>{% endfor %}
+    </select>
+    <button class="btn pri sm" type="button" id="editTop">수정</button></form></div>
+  <div class="cb">
+    {% if weekly_empty_now and week == this_week %}<p class="thin" style="color:var(--danger);margin:0 0 10px">이번 주 추천이 비어 있습니다. 비워두면 회원 화면은 순위가 있는 가장 최근 주를 대신 보여줍니다.</p>{% endif %}
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px">
+      {% for r in [1, 2, 3] %}{% set m = (picks | selectattr(0, 'equalto', r) | map(attribute=1) | first) %}
+      <div style="border:1px solid var(--border);border-radius:12px;padding:14px 16px;min-height:120px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="tag {{ 't-must' if r == 1 else 't-upd' }}">{{ r }}위</span>{% if m %}<b style="font-size:15px">{{ m.name }}</b><span class="mut num" style="margin-left:auto">{{ m.unit_price | fmt_num }}원</span>{% endif %}</div>
+        {% if m %}<p class="thin" style="margin:0;font-size:13px;line-height:1.6">{{ m.op_note or '한줄평 없음 — 수정에서 넣을 수 있습니다' }}</p>
+        {% else %}<div class="empty" style="padding:14px 0">비어 있음</div>{% endif %}
       </div>
-      <div class="f"><label>4위 이하<small>효율순 자동, 제외할 매체 체크</small></label>
-        {% for m in medias %}<label class="chk{% if m.id in edit.excludes %} on{% endif %}" style="cursor:pointer"><input type="checkbox" name="exclude" value="{{ m.id }}" hidden{% if m.id in edit.excludes %} checked{% endif %}><i></i>{{ m.name }} <span class="thin">{{ m.eff }}%{% if not m.is_active %} · 비노출{% endif %}</span></label>{% endfor %}
-        <div class="hint">체크 = 4위 이하 목록에서 제외</div></div>
-      <div class="f"><label>이번 주 접수 수 표시</label><label class="chk{% if not edit.meta or edit.meta.show_weekly_cnt %} on{% endif %}" style="cursor:pointer"><input type="checkbox" name="show_weekly" value="1" hidden{% if not edit.meta or edit.meta.show_weekly_cnt %} checked{% endif %}><i></i>표시</label></div>
-      <label class="chk{% if edit.cat.is_active %} on{% endif %}" style="cursor:pointer"><input type="checkbox" name="is_active" value="1" hidden{% if edit.cat.is_active %} checked{% endif %}><i></i>사용자 화면 노출</label>
-      <div style="display:flex;gap:8px;margin-top:12px"><button class="btn pri" style="flex:1" type="submit">저장</button><a class="btn sec" href="/admin/popular?channel={{ channel }}">취소</a><button class="btn ghost" type="submit" formaction="/admin/popular/{{ edit.cat.id }}/delete" style="color:var(--danger)" onclick="return confirm('카테고리를 삭제할까요?')">삭제</button></div>
-    </form>
+      {% endfor %}
+    </div>
   </div></div>
-  {% else %}
-  <div class="card"><div class="cb" style="padding-top:16px"><div class="empty"><i data-lucide="mouse-pointer-click"></i>카테고리를 선택하면 1·2·3위를 설정할 수 있습니다.</div></div></div>
-  {% endif %}
-</div>
-<div class="modal" id="catModal"><form class="modal-box" method="post" action="/admin/popular/category"><input type="hidden" name="channel" value="{{ channel }}">
-  <h3>{{ channel_label[channel] }} 카테고리 추가</h3><div class="f" style="margin-top:12px"><label>카테고리명</label><input class="in" name="name" placeholder="예) 병원 · 의원" required></div>
-  <div style="display:flex;gap:8px"><button class="btn sec" type="button" data-close style="flex:1">취소</button><button class="btn pri" type="submit" style="flex:1">추가</button></div></form></div>
+
+<div class="card"><div class="ch"><h3>회원 화면에 보이는 순서</h3><span class="thin" style="margin-left:auto">추천 순위 → 후기 수 순. 상품 설명·후기·노출 여부는 매체사 관리에서 바꿉니다.</span></div>
+  <div class="cb"><div style="overflow-x:auto;margin:0 -18px"><table>
+    <thead><tr><th style="width:56px">순서</th><th>상품</th><th>분류</th><th style="text-align:right">단가</th><th style="text-align:right">평점 · 후기</th><th>운영팀 한줄평</th><th></th></tr></thead><tbody>
+    {% for m in shown %}
+    <tr><td class="num"><b>{{ loop.index }}</b>{% if m.rank %} <span class="tag t-must">추천 {{ m.rank }}</span>{% endif %}</td>
+      <td><b>{{ m.name }}</b></td>
+      <td><span class="mut">{{ m.group_name or '-' }}</span></td>
+      <td class="num" style="text-align:right">{{ m.unit_price | fmt_num }}원</td>
+      <td class="num" style="text-align:right">{% if m.review_cnt %}★{{ m.rating_avg }} · {{ m.review_cnt }}{% else %}<span class="mut">후기 없음</span>{% endif %}</td>
+      <td style="white-space:normal;max-width:320px"><span class="mut" style="font-size:12.5px">{{ m.op_note or '—' }}</span></td>
+      <td style="text-align:right"><a class="btn sec sm" href="/admin/media?channel={{ channel }}&edit={{ m.id }}">상품 수정</a></td></tr>
+    {% else %}<tr><td colspan="7"><div class="empty">노출 중인 상품이 없습니다.</div></td></tr>{% endfor %}
+  </tbody></table></div></div></div>
+
+<div class="modal" id="topModal"><form class="modal-box" method="post" action="/admin/media/weekly" style="max-width:640px" id="topForm">
+  <input type="hidden" name="channel" value="{{ channel }}"><input type="hidden" name="week" value="{{ week.isoformat() }}">
+  <h3>{{ channel_label[channel] }} 추천 TOP 3 수정 <span class="thin">{{ week_label }}</span></h3>
+  <p class="thin" style="margin:4px 0 14px">같은 상품을 두 순위에 넣으면 뒤쪽은 무시됩니다. 한줄평은 그 상품의 '운영팀 한줄평'으로 저장돼 카드와 상세에 함께 보입니다.</p>
+  {% for r in [1, 2, 3] %}{% set cur = (picks | selectattr(0, 'equalto', r) | map(attribute=1) | first) %}
+  <div style="display:grid;grid-template-columns:56px minmax(0,1fr);gap:10px;align-items:start;margin-bottom:12px">
+    <span class="tag {{ 't-must' if r == 1 else 't-upd' }}" style="justify-self:start;margin-top:9px">{{ r }}위</span>
+    <div>
+      <select class="in" name="rank{{ r }}" data-rank="{{ r }}"><option value="">— 비우기 —</option>
+        {% for m in medias %}{% if m.is_active %}<option value="{{ m.id }}" data-note="{{ m.op_note or '' }}"{% if cur and cur.id == m.id %} selected{% endif %}>{{ m.name }} · {{ m.unit_price | fmt_num }}원</option>{% endif %}{% endfor %}
+      </select>
+      <input class="in" name="note{{ r }}" value="{{ (cur.op_note or '') if cur else '' }}" maxlength="200" placeholder="운영팀 한줄평 (선택)" style="margin-top:6px">
+    </div>
+  </div>
+  {% endfor %}
+  <div style="display:flex;gap:8px;margin-top:6px"><button class="btn sec" type="button" data-close style="flex:1">취소</button><button class="btn pri" type="submit" style="flex:1" id="topSave">저장</button></div>
+</form></div>
 {% endblock %}
-{% block scripts %}<script src="{{ url_for('static', filename='js/admin.js') }}"></script>{% endblock %}
+{% block scripts %}<script>
+(function () {
+  var m = document.getElementById('topModal'), btn = document.getElementById('editTop');
+  btn.addEventListener('click', function () { m.classList.add('on'); btn.textContent = '수정 중…'; });
+  function close() { m.classList.remove('on'); btn.textContent = '수정'; }   // 닫히면 '수정'으로 돌아온다 (QA #16)
+  m.addEventListener('click', function (e) { if (e.target === m || e.target.closest('[data-close]')) close(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && m.classList.contains('on')) close(); });
+  // 상품을 바꾸면 그 상품에 저장된 한줄평을 채워 준다
+  m.querySelectorAll('select[data-rank]').forEach(function (s) {
+    s.addEventListener('change', function () {
+      var o = s.options[s.selectedIndex];
+      m.querySelector('input[name=note' + s.dataset.rank + ']').value = o.dataset.note || '';
+    });
+  });
+  document.getElementById('topForm').addEventListener('submit', function (e) {
+    if (!confirm('{{ channel_label[channel] }} {{ week.strftime("%m.%d") }} 주 추천을 저장할까요? 회원 화면에 바로 반영됩니다.')) e.preventDefault();
+  });
+})();
+</script>{% endblock %}

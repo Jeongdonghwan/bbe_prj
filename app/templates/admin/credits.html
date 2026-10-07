@@ -89,7 +89,7 @@
       </select></div>
       <div class="row2">
         <div class="f"><label>구분</label><select class="in" name="sign"><option value="1">충전 (+)</option><option value="-1">차감 (−)</option></select></div>
-        <div class="f"><label>금액<small>원</small></label><input class="in num" name="amount" type="number" min="1000" step="1000" placeholder="100000" required></div>
+        <div class="f"><label>금액<small>원</small></label><input class="in num" name="amount" inputmode="numeric" data-money placeholder="100,000" required></div>
       </div>
       <div class="f"><label>메모<small>회원 사용 내역에 표시됩니다</small></label><input class="in" name="memo" maxlength="200" placeholder="예) 무통장 입금 확인 · 9/16"></div>
       <button class="btn pri" type="submit" style="width:100%">적용</button>

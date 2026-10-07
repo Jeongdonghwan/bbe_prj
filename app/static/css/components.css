@@ -728,3 +728,10 @@ tr:hover .rowact button, tr.sel .rowact button{opacity:1}
 /* 주문 표가 넓어도 관리 버튼 칸은 오른쪽에 고정해 항상 보이게 */
 .otable th:last-child,.otable td:last-child{position:sticky;right:0;background:var(--surface);box-shadow:-8px 0 10px -8px rgba(0,0,0,.12);z-index:1}
 .otable thead th:last-child{background:var(--bg)}
+/* 매체사 관리 > 오늘의 인기 (2026-10-07 QA #19): 고른 칸은 체크 표시가 보이게, 크기·간격 통일 */
+.pickgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:12px}
+.pickgrid .pill-chk{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:10px;font-size:13.5px;font-weight:600;min-height:40px}
+.pickgrid .pill-chk i{flex:none;width:16px;height:16px;border:1.5px solid var(--line-2);border-radius:4px;position:relative;background:var(--surface)}
+.pickgrid .pill-chk.on i{background:var(--accent);border-color:var(--accent)}
+.pickgrid .pill-chk.on i::after{content:"";position:absolute;left:4px;top:1px;width:5px;height:9px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.rowact.on button,.rowact.on button:not([data-drawer]){opacity:1}   /* 위의 hover 전용 규칙을 이긴다 — 항상 보이는 행 버튼 */

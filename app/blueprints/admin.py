@@ -19,7 +19,6 @@ from ..models import content as content_model
 from ..models import daily_pick as pick_model
 from ..models import media as media_model
 from ..models import payment as payment_model
-from ..models import popular as popular_model
 from ..models import report as report_model
 from ..models import settings as settings_model
 from ..models import user as user_model
@@ -420,10 +419,13 @@ def media_weekly():
         if m and m["channel"] == channel:
             ranks[r] = tid
             seen.add(tid)
+            note = request.form.get(f"note{r}")
+            if note is not None and (note.strip() or None) != m.get("op_note"):
+                media_model.update_fields(tid, {"op_note": note.strip()[:200] or None})   # 추천 카드의 운영팀 한줄평
     weekly_rank.save(channel, ranks, week)
     _log("media_weekly", "media", None, f"{CHANNEL_LABEL[channel]} {week:%m.%d} 주간 추천 {len(ranks)}개")
     flash(f"{week:%Y.%m.%d} 주 추천 순위를 저장했습니다." if ranks else "주간 추천 순위를 비웠습니다.")
-    return redirect(url_for("admin.media", channel=channel, week=week.isoformat()))
+    return redirect(url_for("admin.popular", channel=channel, week=week.isoformat()))
 
 
 @bp.route("/media/picks", methods=["POST"])
@@ -507,7 +509,7 @@ def credits_reject(req_id):
 def credits_adjust():
     from ..services import credit_service
     user_id = request.form.get("user_id", type=int)
-    amount = (request.form.get("amount", type=int) or 0) * (request.form.get("sign", type=int) or 1)
+    amount = int(re.sub(r"\D", "", request.form.get("amount") or "") or 0) * (request.form.get("sign", type=int) or 1)   # "100,000" 허용
     memo = (request.form.get("memo") or "").strip()
     target = user_model.get_by_id(user_id) if user_id else None
     if not target:
@@ -634,80 +636,22 @@ def media_delete(media_id):
 @bp.route("/popular")
 @admin_required
 def popular():
-    channel = request.args.get("channel", "place")
-    if channel not in CHANNEL_LABEL:
-        channel = "place"
-    cats = popular_model.list_categories(channel)
-    summary = popular_model.sets_summary(channel)
-    metas = popular_model.meta_map(channel)
-    edit_id = request.args.get("edit", type=int)
-    edit = None
-    if edit_id:
-        cat = popular_model.get_category(edit_id)
-        if cat and cat["channel"] == channel:
-            sets = {s["rank"]: s for s in popular_model.sets_for(edit_id)}
-            edit = {"cat": cat, "sets": sets, "excludes": popular_model.excludes_for(edit_id), "meta": metas.get(edit_id)}
-    medias = media_model.list_by_channel(channel, False)
-    for m in medias:
-        m["eff"] = media_model.efficiency(m)
-    return render_template("admin/popular.html", channel=channel, cats=cats, summary=summary, metas=metas, edit=edit, medias=medias,
-                           channel_label=CHANNEL_LABEL)
+    """인기 트래픽 설정 — 사용자 /popular 와 대시보드 위젯이 실제로 읽는 '주간 운영팀 추천'을 편집한다.
 
-
-@bp.route("/popular/category", methods=["POST"])
-@admin_required
-def popular_category_create():
-    channel = request.form.get("channel") if request.form.get("channel") in CHANNEL_LABEL else "place"
-    name = (request.form.get("name") or "").strip()[:40]
-    if not name:
-        flash("카테고리명을 입력해주세요.")
-        return redirect(url_for("admin.popular", channel=channel))
-    cid = popular_model.create_category(channel, name)
-    _log("popular_cat_create", "popular_category", cid, f"{CHANNEL_LABEL[channel]} 카테고리 추가 · {name}")
-    return redirect(url_for("admin.popular", channel=channel, edit=cid))
-
-
-@bp.route("/popular/<int:cat_id>/save", methods=["POST"])
-@admin_required
-def popular_save(cat_id):
-    cat = popular_model.get_category(cat_id) or abort(404)
-    f = request.form
-    ranks, notes = {}, {}
-    for r in (1, 2, 3):
-        mid = f.get(f"media_{r}", type=int)
-        ranks[r] = mid or None
-        notes[r] = (f.get(f"note_{r}") or "").strip()
-    chosen = [m for m in ranks.values() if m]
-    if len(chosen) != len(set(chosen)):
-        flash("같은 매체를 두 순위에 넣을 수 없습니다.")
-        return redirect(url_for("admin.popular", channel=cat["channel"], edit=cat_id))
-    excludes = {int(x) for x in f.getlist("exclude") if x.isdigit()}
-    popular_model.save_sets(cat_id, ranks, notes, excludes, f.get("show_weekly") == "1", g.user["id"])
-    popular_model.update_category(cat_id, name=(f.get("name") or cat["name"]).strip()[:40], is_active=f.get("is_active") == "1",
-                                  sort=f.get("sort", type=int))
-    _log("popular_save", "popular_category", cat_id, f"{cat['name']} 순위 저장 · " + ", ".join(str(m) for m in chosen))
-    flash(f"{cat['name']} 저장 — 사용자 화면에 반영됨")
-    return redirect(url_for("admin.popular", channel=cat["channel"], edit=cat_id))
-
-
-@bp.route("/popular/<int:cat_id>/toggle", methods=["POST"])
-@admin_required
-def popular_toggle(cat_id):
-    cat = popular_model.get_category(cat_id) or abort(404)
-    popular_model.update_category(cat_id, is_active=not cat["is_active"])
-    _log("popular_toggle", "popular_category", cat_id, f"{cat['name']} 노출 {'OFF' if cat['is_active'] else 'ON'}")
-    if request.headers.get("X-Requested-With") == "fetch":
-        return jsonify(ok=True, is_active=0 if cat["is_active"] else 1)
-    return redirect(url_for("admin.popular", channel=cat["channel"]))
-
-
-@bp.route("/popular/<int:cat_id>/delete", methods=["POST"])
-@admin_required
-def popular_delete(cat_id):
-    cat = popular_model.get_category(cat_id) or abort(404)
-    popular_model.delete_category(cat_id)
-    _log("popular_cat_delete", "popular_category", cat_id, f"{cat['name']} 삭제")
-    return redirect(url_for("admin.popular", channel=cat["channel"]))
+    2026-10-07 QA #18: 예전 카테고리 세트 화면은 9/22 개편 뒤 사용자 화면에 반영되지 않아 폐기하고
+    매체사 관리에 있던 주간 추천을 이 메뉴로 옮겼다. 추천 1~3위 + 각 상품의 운영팀 한줄평을 팝업에서 고친다.
+    """
+    from ..models import weekly_rank
+    from .campaign import traffic_list
+    channel = request.args.get("channel") if request.args.get("channel") in CHANNEL_LABEL else "store"
+    ctx = _weekly_ctx(channel)
+    this = weekly_rank.week_start()
+    weeks = [this - timedelta(weeks=i) for i in range(0, 8)] + [this + timedelta(weeks=1)]
+    medias = [m for m in media_model.list_by_channel(channel, False)]
+    by_id = {m["id"]: m for m in medias}
+    picks = [(r, by_id.get(t)) for r, t in sorted(ctx["weekly"].items())]
+    return render_template("admin/popular.html", channel=channel, channel_label=CHANNEL_LABEL, medias=medias,
+                           picks=picks, weeks=sorted(set(weeks), reverse=True), shown=traffic_list(channel), **ctx)
 
 
 # =============================================================== content
@@ -718,12 +662,14 @@ def content():
     if tab not in ("all", "notice", "info", "series", "draft"):
         tab = "all"
     page, per_page = _page()
-    rows, total = content_model.admin_list(tab, page, per_page)
+    q = (request.args.get("q") or "").strip()[:60] or None
+    sort = request.args.get("sort") if request.args.get("sort") in content_model.ADMIN_SORTS else None
+    rows, total = content_model.admin_list(tab, page, per_page, q, sort)
     counts = content_model.admin_counts()
     edit_id = request.args.get("edit", type=int)
     edit = content_model.get_any(edit_id) if edit_id else None
     new = request.args.get("new") == "1"
-    return render_template("admin/content.html", rows=rows, tab=tab, page=page, total_pages=max(1, -(-total // per_page)), counts=counts,
+    return render_template("admin/content.html", rows=rows, tab=tab, page=page, total_pages=max(1, -(-total // per_page)), counts=counts, q=q, sort=sort,
                            edit=edit, new=new or edit is not None, notice_categories=content_service.NOTICE_CATEGORIES,
                            info_categories=content_service.INFO_CATEGORIES, channel_label=CHANNEL_LABEL,
                            next_series_no=content_model.next_series_no())
@@ -1317,8 +1263,9 @@ def posts():
     q = (request.args.get("q") or "").strip()[:40] or None
     page, per_page = _page()
     slug = tab if tab in ("anon", "qna") else None
-    rows, total = post_model.list_admin(slug, q, True if tab == "blind" else None, page, per_page)
-    return render_template("admin/posts.html", rows=rows, tab=tab, q=q, page=page,
+    sort = request.args.get("sort") if request.args.get("sort") in post_model.ADMIN_SORTS else None
+    rows, total = post_model.list_admin(slug, q, True if tab == "blind" else None, page, per_page, sort)
+    return render_template("admin/posts.html", rows=rows, tab=tab, q=q, page=page, sort=sort,
                            total_pages=max(1, -(-total // per_page)), counts=post_model.admin_counts(),
                            channel_label=CHANNEL_LABEL)
 

@@ -12,12 +12,13 @@
     });
   }
   var rm = document.getElementById('rankModal'), rb = document.getElementById('rankBody');
-  function closeRanks() { rm.classList.remove('on'); }
-  rm.addEventListener('click', function (e) { if (e.target === rm) closeRanks(); });
+  function closeRanks() { if (rm) rm.classList.remove('on'); }
+  // 회원 목록(어드민)처럼 순위 모달이 없는 화면도 이 파일을 쓴다 — 없으면 여기서 멈춰 행 클릭이 안 붙었다
+  if (rm) rm.addEventListener('click', function (e) { if (e.target === rm) closeRanks(); });
   // 드로어는 fetch 로 나중에 들어오므로 문서에 위임한다 (그때 붙이면 버튼이 안 먹는다).
   document.addEventListener('click', function (e) {
     var b = e.target.closest('[data-ranks]');
-    if (!b) { return; }
+    if (!b || !rm) { return; }
     e.stopPropagation();
     fetch(window.DRAWER_BASE + b.dataset.ranks + '/ranks').then(function (r) { return r.text(); }).then(function (html) {
       rb.innerHTML = html;

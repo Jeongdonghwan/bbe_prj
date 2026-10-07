@@ -10,6 +10,7 @@
     {% endfor %}
   </div>
   <form class="tbar" method="get">{% if tab != 'all' %}<input type="hidden" name="tab" value="{{ tab }}">{% endif %}
+    <select class="in" name="sort" onchange="this.form.submit()" style="width:auto">{% for k, v in [('', '최신순'), ('old', '오래된순'), ('views', '조회순'), ('likes', '공감순'), ('comments', '댓글순')] %}<option value="{{ k }}"{% if (sort or '') == k %} selected{% endif %}>{{ v }}</option>{% endfor %}</select>
     <div class="search"><i data-lucide="search" class="i"></i><input class="in" name="q" value="{{ q or '' }}" placeholder="제목 · 본문 · 닉네임"></div></form>
 
   <form method="post" action="/admin/posts/bulk-delete" id="postBulk" onsubmit="return confirm('선택한 글을 삭제할까요? 댓글도 함께 지워지며 되돌릴 수 없습니다.')">
@@ -40,7 +41,7 @@
       </tbody>
     </table></div>
   </form>
-  {{ pager(page, total_pages, 'admin.posts', tab=tab, q=q) }}
+  {{ pager(page, total_pages, 'admin.posts', tab=tab, q=q, sort=sort) }}
 </div></div>
 {% endblock %}
 {% block scripts %}<script src="{{ url_for('static', filename='js/admin.js') }}"></script>{% endblock %}

@@ -3,23 +3,7 @@
 {% block content %}
 <div class="ph"><div><h1>매체사 관리</h1><p>단가·규칙을 여기서 바꾸면 캠페인 생성 화면에 바로 반영됩니다.</p></div>
   <div class="act"><div class="chan-tabs">{% for k, v in channel_label.items() %}<a href="/admin/media?channel={{ k }}"><button type="button"{% if channel == k %} class="on"{% endif %}><i class="dot c-{{ k }}"></i>{{ v }} {{ counts[k] }}</button></a>{% endfor %}</div><a class="btn pri" href="/admin/media?channel={{ channel }}&new=1">+ 매체사 추가</a></div></div>
-<div class="card" style="margin-bottom:14px"><div class="ch"><h3>이번 주 운영팀 추천</h3><span class="thin">{{ week_label }} · 인기 트래픽 페이지 TOP 3 와 메인 위젯 메달</span></div><div class="cb">
-    {% if weekly_empty_now and week == this_week %}<p class="thin" style="color:var(--danger);margin:0 0 10px">이번 주 순위가 비어 있습니다. 비워두면 사용자 화면은 순위가 들어 있는 가장 최근 주를 대신 보여줍니다.</p>{% endif %}
-    <form method="post" action="/admin/media/weekly" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
-      <input type="hidden" name="channel" value="{{ channel }}">
-      <input type="hidden" name="week" value="{{ week.isoformat() }}">
-      {% for r in [1, 2, 3] %}
-      <div class="f" style="margin:0;min-width:180px;flex:1"><label>{{ r }}위</label>
-        <select class="in" name="rank{{ r }}">
-          <option value="">-</option>
-          {% for m in rows %}{% if m.is_active %}<option value="{{ m.id }}"{% if weekly.get(r) == m.id %} selected{% endif %}>{{ m.name }} · {{ m.unit_price | fmt_num }}원</option>{% endif %}{% endfor %}
-        </select>
-      </div>
-      {% endfor %}
-      <button class="btn pri" type="submit" style="margin-bottom:8px">주간 추천 저장</button>
-    </form>
-    <p class="thin" style="margin:10px 0 0">다른 주를 손보려면 주소에 <code>&week=YYYY-MM-DD</code> 를 붙이세요. 같은 상품을 두 순위에 넣으면 뒤쪽은 무시됩니다.</p>
-  </div></div>
+<div class="card" style="margin-bottom:14px"><div class="cb" style="padding:14px 18px;display:flex;align-items:center;gap:10px"><i data-lucide="trending-up" class="i" style="color:var(--accent)"></i><span>이번 주 운영팀 추천(TOP 3)은 <b>인기 트래픽 설정</b>에서 정합니다.</span><a class="btn sec sm" href="/admin/popular?channel={{ channel }}" style="margin-left:auto">인기 트래픽 설정으로</a></div></div>
 <div class="card" style="margin-bottom:14px"><div class="ch"><h3>오늘의 인기</h3><span class="thin">{{ today | fmt_date }} · 위저드 상단 띠에 표시</span></div><div class="cb">
     <form method="post" action="/admin/media/picks">
       <input type="hidden" name="channel" value="{{ channel }}">

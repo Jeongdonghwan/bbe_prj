@@ -60,6 +60,11 @@
     return d.slice(0, 3) + '-' + d.slice(3, 3 + mid) + '-' + d.slice(3 + mid);
   }
   document.addEventListener('input', function (e) {
+    if (e.target.hasAttribute && e.target.hasAttribute('data-money')) {   // 금액 칸: 천 단위 쉼표 (서버가 숫자만 읽는다)
+      var d = e.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+      e.target.value = d ? Number(d).toLocaleString('ko-KR') : '';
+      return;
+    }
     var t = e.target, kind = t.name === 'phone' ? 'phone' : (t.name === 'biz_no' ? 'biz' : null);
     if (!kind || e.isComposing) return;
     var v = hyphen(t.value, kind);

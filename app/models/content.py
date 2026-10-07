@@ -98,8 +98,15 @@ def count_channel_notices(channel):
 
 
 # ---- admin ---------------------------------------------------------------
-def admin_list(tab="all", page=1, per_page=20):
+ADMIN_SORTS = {"new": "COALESCE(publish_at, created_at) DESC, id DESC", "old": "COALESCE(publish_at, created_at) ASC, id ASC",
+               "views": "views DESC, id DESC", "title": "title ASC, id DESC"}
+
+
+def admin_list(tab="all", page=1, per_page=20, q=None, sort=None):
     where, params = [], []
+    if q:
+        where.append("(title LIKE %s OR body LIKE %s)")
+        params += [f"%{q}%"] * 2
     if tab == "notice":
         where.append("board = 'notice'")
     elif tab == "info":
@@ -109,7 +116,7 @@ def admin_list(tab="all", page=1, per_page=20):
     elif tab == "draft":
         where.append("status = 'draft'")
     w = (" WHERE " + " AND ".join(where)) if where else ""
-    order = "series_no ASC, id ASC" if tab == "series" else "COALESCE(publish_at, created_at) DESC, id DESC"
+    order = ADMIN_SORTS.get(sort) or ("series_no ASC, id ASC" if tab == "series" else ADMIN_SORTS["new"])
     rows = query(f"SELECT * FROM contents{w} ORDER BY {order} LIMIT %s OFFSET %s", params + [per_page, (page - 1) * per_page])
     total = query_one(f"SELECT COUNT(*) AS n FROM contents{w}", params)["n"]
     return rows, total
