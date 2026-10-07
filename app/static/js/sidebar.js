@@ -49,5 +49,22 @@
     }, 20000);
   });
 
+  // 연락처 · 사업자등록번호 칸은 입력하는 대로 하이픈을 넣는다 (2026-10-07). 서버도 다시 정규화한다.
+  function hyphen(v, kind) {
+    var d = v.replace(/\D/g, '');
+    if (kind === 'biz') { d = d.slice(0, 10); return d.length > 5 ? d.slice(0, 3) + '-' + d.slice(3, 5) + '-' + d.slice(5) : d.length > 3 ? d.slice(0, 3) + '-' + d.slice(3) : d; }
+    d = d.slice(0, 11);
+    if (d.length < 4) return d;
+    if (d.length < 8) return d.slice(0, 3) + '-' + d.slice(3);
+    var mid = d.length === 11 ? 4 : 3;               // 010-1234-5678 / 011-123-4567
+    return d.slice(0, 3) + '-' + d.slice(3, 3 + mid) + '-' + d.slice(3 + mid);
+  }
+  document.addEventListener('input', function (e) {
+    var t = e.target, kind = t.name === 'phone' ? 'phone' : (t.name === 'biz_no' ? 'biz' : null);
+    if (!kind || e.isComposing) return;
+    var v = hyphen(t.value, kind);
+    if (v !== t.value) { t.value = v; t.dispatchEvent(new Event('input', { bubbles: false })); }
+  });
+
   if (window.lucide) window.lucide.createIcons();
 })();
