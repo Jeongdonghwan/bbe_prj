@@ -95,7 +95,7 @@ def biz_cert_upload():
         return redirect(url_for("my.index"))
     user_model.set_biz_cert(g.user["id"], biz_cert.save(g.user["id"], up))
     notify_service.notify_admins(f"사업자 인증 요청 · {g.user['nickname']} — 사업자등록증 확인 필요",
-                                 f"/admin/users?open={g.user['id']}")
+                                 f"/admin/users?open={g.user['id']}", sms=True)
     flash("사업자등록증을 제출했습니다. 운영팀 확인 후 인증됩니다.")
     return redirect(url_for("my.index"))
 

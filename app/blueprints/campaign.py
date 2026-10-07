@@ -405,7 +405,7 @@ def cancel(channel, campaign_id):
         campaign_service.cancel(c, g.user["id"])
         flash("주문을 취소했습니다.")
         from ..services.notify_service import notify_admins
-        notify_admins(f"환불 신청(취소) · {g.user['nickname']} [{c['order_no']}]", f"/admin/orders?q={c['order_no']}")
+        notify_admins(f"환불 신청(취소) · {g.user['nickname']} [{c['order_no']}]", f"/admin/orders?q={c['order_no']}", sms=True)
     except campaign_service.CampaignError as e:
         flash(str(e))
     return redirect(url_for("campaign.manage", channel=channel))
@@ -420,7 +420,7 @@ def stop(channel, campaign_id):
         flash(f"캠페인을 중단했습니다. 잔여일분 {c['refund_amount']:,}원이 환불 처리됩니다.")
         from ..services.notify_service import notify_admins
         notify_admins(f"환불 신청(중단) · {g.user['nickname']} [{c['order_no']}] 잔여 {c['refund_amount']:,}원",
-                      f"/admin/orders?q={c['order_no']}")
+                      f"/admin/orders?q={c['order_no']}", sms=True)
     except (campaign_service.CampaignError, payment_service.PaymentError) as e:
         flash(str(e))
     return redirect(url_for("campaign.manage", channel=channel, open=c["id"]))

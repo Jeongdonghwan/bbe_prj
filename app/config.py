@@ -68,3 +68,10 @@ class Config:
 
     # 국세청 사업자 상태조회 (data.go.kr 15081808, 일반 인증키 Decoding). Empty -> checksum only.
     DATA_GO_KR_KEY = os.getenv("DATA_GO_KR_KEY", "")
+
+    # 운영자 문자 알림 (알리고). 같은 서버의 raws_prj 가 ALIGO_* 를 쓰므로 MM_ 접두사로 분리한다.
+    MM_ALIGO_USER_ID = os.getenv("MM_ALIGO_USER_ID", "")
+    MM_ALIGO_API_KEY = os.getenv("MM_ALIGO_API_KEY", "")
+    MM_ALIGO_SENDER = os.getenv("MM_ALIGO_SENDER", "")
+    MM_ALIGO_ADMIN_PHONES = os.getenv("MM_ALIGO_ADMIN_PHONES", "")
+    MM_ALIGO_TEST_MODE = os.getenv("MM_ALIGO_TEST_MODE", "")

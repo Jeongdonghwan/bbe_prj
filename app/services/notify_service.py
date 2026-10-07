@@ -16,11 +16,16 @@ def push(user_id, ntype, title, link=None):
     return execute("INSERT INTO notifications (user_id, type, title, link) VALUES (%s,%s,%s,%s)", [user_id, ntype, title[:200], link])
 
 
-def notify_admins(title, link=None):
-    """운영자 전원에게 알림 (가입·사업자 인증·충전 요청·결제·환불). 헤더 종 배지로 보인다."""
+def notify_admins(title, link=None, sms=False):
+    """운영자 전원에게 알림 (가입·사업자 인증·충전 요청·결제·환불). 헤더 종 배지로 보인다.
+    sms=True 면 운영자 번호(MM_ALIGO_ADMIN_PHONES)로 문자도 — 신규 사업자·충전 요청·환불만 (2026-10-07 JDH)."""
     for a in query("SELECT id FROM users WHERE role = 'admin' AND status = 'active'"):
         execute("INSERT INTO notifications (user_id, type, title, link) VALUES (%s,'admin',%s,%s)",
                 [a["id"], title[:200], link])
+    if sms:
+        from flask import current_app
+        from . import sms as sms_service
+        sms_service.notify_admins(f"[{current_app.config['APP_NAME']}] {title}")
 
 
 def unread_count(user_id):

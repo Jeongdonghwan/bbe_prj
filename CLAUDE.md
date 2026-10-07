@@ -23,6 +23,7 @@
 cp .env.example .env → mysql < schema.sql → python scripts/seed.py → flask run
 
 ## 현재 Phase
+- 2026-10-07 운영자 **문자 알림(알리고)** — `services/sms.py`, `notify_service.notify_admins(..., sms=True)`. 문자는 **신규 사업자(가입·등록증 제출·대행사 신청) · 충전 요청 · 환불(회원 중단/취소)** 만, 결제 완료 등은 종 알림만. **같은 서버의 raws_prj 가 알리고를 `ALIGO_*` 로 쓰므로 여기는 `MM_ALIGO_*`(USER_ID/API_KEY/SENDER/ADMIN_PHONES/TEST_MODE) 이름만 쓰고 Config 로만 읽는다 — raws 코드·이름을 가져다 쓰지 말 것.** 설정이 비면 조용히 건너뛰고, 발송은 스레드라 요청을 막지 않는다. 서버 IP(211.45.175.195)가 이 알리고 계정에 등록돼야 한다(-101). 회귀 `tests/sms_alert.py`(스텁).
 - 2026-10-07 **회원가입 필수값에 상호·사업자등록번호** 추가 — 번호는 `auth.parse_biz_no()`(국세청 검증번호 체크섬, 하이픈 정규화)로만 검증하고 마이페이지 수정도 같은 함수를 쓴다. 카카오 가입은 키가 없어 막혀 있어 아직 미적용(열 때 같은 필수값을 받을 것). 체크섬 뒤에 **국세청 상태조회**(`services/nts.py`, data.go.kr 15081808, `.env DATA_GO_KR_KEY` = 일반 인증키 Decoding)로 미등록·폐업이면 가입 거절, 휴업은 허용. 키가 없거나 국세청이 응답 안 하면 **막지 않는다**(가입 중단 방지). 가입 화면은 번호 칸을 벗어나면 `/auth/biz-check` 로 미리 보여준다. 결과는 프로세스 메모리에 1시간 캐시.
 - 2026-10-07 사업자등록증 인증 + 운영자 알림: 회원가입(선택)·마이페이지 설정에서 사업자등록증(JPG/PNG/WEBP/PDF, 10MB) 제출 → `users.biz_cert_status` pending → 어드민 회원 드로어에서 보기·승인·반려(회원에게 알림, admin_log). **파일은 개인정보라 `instance/biz_certs/`(gitignore, static 밖)에 두고 `/admin/users/<id>/biz-cert` 로만 내준다** — 서버 재설치 시 이 폴더를 백업할 것. 검증은 `services/biz_cert.read_upload`(확장자 + 실제 이미지/PDF 시그니처). 운영자 알림은 `notify_service.notify_admins()` — 활성 운영자 전원의 notifications 에 넣고 헤더 종으로 본다. 발생 지점: 가입(이메일·카카오) · 사업자 인증 제출 · 충전 요청 · 결제 완료(`create_with_credit`) · 회원의 중단/취소(환불). 어드민이 한 중단은 알리지 않는다. 회귀 `tests/admin_notify.py`.
 - 2026-09-28 계정별 매체 단가 / 기간 직접 입력 / 효율 UI 정리:

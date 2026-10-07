@@ -35,7 +35,7 @@ def charge():
         try:
             credit_service.request_charge(g.user, amount, depositor, tax, biz_snapshot)
             from ..services.notify_service import notify_admins
-            notify_admins(f"크레딧 충전 요청 · {g.user['nickname']} {amount:,}원 (입금자 {depositor.strip()})", "/admin/credits")
+            notify_admins(f"크레딧 충전 요청 · {g.user['nickname']} {amount:,}원 (입금자 {depositor.strip()})", "/admin/credits", sms=True)
         except credit_service.CreditError as e:
             flash(str(e))
             return redirect(url_for("credit.charge"))

@@ -403,6 +403,8 @@ def agency_apply():
     if not cert:
         flash("사업자등록증 이미지를 첨부해주세요."); return redirect(back)
     agency_model.create_apply(g.user["id"], biz_no, cert)
+    from ..services.notify_service import notify_admins
+    notify_admins(f"대행사 인증 신청 · {g.user['nickname']} {biz_no}", "/admin/agency", sms=True)
     flash("인증 신청을 접수했습니다. 운영팀 승인 후 제안을 보낼 수 있습니다.")
     return redirect(back)
 
