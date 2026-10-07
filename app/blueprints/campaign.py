@@ -97,6 +97,8 @@ def _prefill(channel):
                    "daily_qty": s["reco_qty"], "slot_reco": s["reco_qty"]}
     elif session.get("campaign_prefill"):
         pre = session.pop("campaign_prefill")
+    if "main_keyword" not in pre and request.args.get("kw"):      # SEO 페이지 CTA (/learn/…) 에서 키워드를 넘긴다
+        pre["main_keyword"] = request.args.get("kw").strip()[:60]
     if "media_id" not in pre and request.args.get("media", type=int):
         pre["media_id"] = request.args.get("media", type=int)
     return pre, editing

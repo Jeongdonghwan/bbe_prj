@@ -2,26 +2,29 @@
    canonical/og:url 은 PUBLIC_URL 이 있을 때만 절대 주소로 (없으면 요청 호스트 — 로컬/IP 접속).
    어드민·마이페이지 등 로그인 화면은 noindex. #}
 {% set _origin = PUBLIC_URL or (request.url_root | trim('/')) %}
-{% set _canon = _origin ~ request.path %}
+{% set _canon = _origin ~ (request.path | urlencode) %}
+{% set _title = meta_title or (APP_NAME ~ " | " ~ SEO.title) %}{% set _desc = meta_desc or SEO.description %}
 {% set _private = is_admin_path or request.path.startswith(('/my', '/campaign', '/credit', '/notifications', '/api', '/auth/admin')) %}
-<meta name="description" content="{{ SEO.description }}">
+<meta name="description" content="{{ _desc }}">
 <meta name="keywords" content="{{ SEO.keywords }}">
 <meta name="robots" content="{% if _private %}noindex, nofollow{% else %}index, follow{% endif %}">
 <link rel="canonical" href="{{ _canon }}">
-<meta property="og:type" content="website">
+<meta property="og:type" content="{{ og_type or 'website' }}">
 <meta property="og:locale" content="ko_KR">
 <meta property="og:site_name" content="{{ APP_NAME }}">
 <meta property="og:url" content="{{ _canon }}">
-<meta property="og:title" content="{{ APP_NAME }} | {{ SEO.title }}">
-<meta property="og:description" content="{{ SEO.description }}">
+<meta property="og:title" content="{{ _title }}">
+<meta property="og:description" content="{{ _desc }}">
 <meta property="og:image" content="{{ _origin }}{{ url_for('static', filename='img/og.png') }}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="{{ APP_NAME }} — {{ SEO.title }}">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="{{ APP_NAME }} | {{ SEO.title }}">
-<meta name="twitter:description" content="{{ SEO.description }}">
+<meta name="twitter:title" content="{{ _title }}">
+<meta name="twitter:description" content="{{ _desc }}">
 <meta name="twitter:image" content="{{ _origin }}{{ url_for('static', filename='img/og.png') }}">
 {% if NAVER_SITE_VERIFICATION %}<meta name="naver-site-verification" content="{{ NAVER_SITE_VERIFICATION }}">{% endif %}
 {% if GOOGLE_SITE_VERIFICATION %}<meta name="google-site-verification" content="{{ GOOGLE_SITE_VERIFICATION }}">{% endif %}
 <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo-sym-violet.png') }}">
+{% for j in jsonld or [] %}<script type="application/ld+json">{{ j | tojson }}</script>
+{% endfor %}<link rel="alternate" type="application/rss+xml" title="{{ APP_NAME }} 블로그" href="{{ _origin }}/rss.xml">

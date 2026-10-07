@@ -1,0 +1,35 @@
+/* SEO 콘텐츠 허브 (/learn/, /blog/) — 읽기용 본문. 클래스는 lr- 접두사, 색은 tokens.css 변수만. */
+.lr{max-width:860px;margin:0 auto}
+.lr-crumb{font-size:12.5px;color:var(--text-3);margin-bottom:10px;display:flex;flex-wrap:wrap;gap:4px}
+.lr-crumb a{color:var(--text-2)}.lr-crumb a:hover{color:var(--accent)}
+.lr h1{font-size:28px;font-weight:800;letter-spacing:-.02em;line-height:1.3;margin:0 0 12px;word-break:keep-all}
+.lr .lead{font-size:16px;color:var(--text-2);line-height:1.75;margin:0 0 20px;word-break:keep-all}
+.lr-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:28px}
+.lr-stats div{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
+.lr-stats span{display:block;font-size:12px;color:var(--text-2)}.lr-stats b{font-size:19px;font-weight:800;color:var(--accent)}
+.lr-sec{margin:0 0 30px}
+.lr h2{font-size:20px;font-weight:800;margin:0 0 12px;letter-spacing:-.01em}
+.lr h3{font-size:16px;font-weight:700;margin:18px 0 6px}
+.lr p{font-size:15px;line-height:1.85;color:var(--text);margin:0 0 10px;word-break:keep-all}
+.lr ul.lr-check{list-style:none;padding:0;margin:0}
+.lr ul.lr-check li{position:relative;padding:9px 0 9px 26px;border-top:1px solid var(--border);font-size:14.5px;line-height:1.6}
+.lr ul.lr-check li::before{content:"";position:absolute;left:4px;top:15px;width:10px;height:6px;border-left:2px solid var(--accent);border-bottom:2px solid var(--accent);transform:rotate(-45deg)}
+.lr table{width:100%;border-collapse:collapse;font-size:14px;background:var(--surface);border:1px solid var(--border)}
+.lr th{background:var(--bg);text-align:left;font-size:12px;color:var(--text-2);padding:9px 12px;position:sticky;top:0}
+.lr td{padding:9px 12px;border-top:1px solid var(--border)}.lr td.num{text-align:right;font-variant-numeric:tabular-nums}
+.lr td a{color:var(--accent);font-weight:600}
+.lr-scroll{overflow:auto;max-height:520px;border-radius:12px;border:1px solid var(--border)}
+.lr-scroll table{border:0}
+.lr-cta{background:var(--accent-soft);border-radius:16px;padding:20px 22px;margin:8px 0 30px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.lr-cta p{margin:0;flex:1;min-width:220px;font-weight:600}
+.lr-faq h3{margin-top:14px}
+.lr-links{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.lr-links a{font-size:13px;padding:6px 11px;border:1px solid var(--border);border-radius:99px;background:var(--surface);color:var(--text-2)}
+.lr-links a:hover{border-color:var(--accent);color:var(--accent)}
+.lr-src{font-size:12px;color:var(--text-3);margin-top:24px}
+.lr-body h2{margin-top:28px}.lr-body ul,.lr-body ol{padding-left:22px;line-height:1.8;font-size:15px}
+.lr-body table{margin:10px 0 16px}
+.lr-list a{display:block;padding:16px 0;border-top:1px solid var(--border)}
+.lr-list a b{display:block;font-size:16.5px;margin-bottom:4px}.lr-list a span{font-size:13.5px;color:var(--text-2)}
+.lr-list a:hover b{color:var(--accent)}
+@media (max-width:640px){.lr h1{font-size:23px}.lr-stats{grid-template-columns:1fr 1fr}}

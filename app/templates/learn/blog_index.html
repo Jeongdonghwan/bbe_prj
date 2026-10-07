@@ -1,0 +1,16 @@
+{% extends "layout/base.html" %}
+{% from "macros/pagination.html" import pager %}
+{% block title %}셀프 마케팅 블로그{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/learn.css') }}">{% endblock %}
+{% block content %}
+<div class="lr">
+  <nav class="lr-crumb" aria-label="위치"><a href="/">홈</a> › <span>블로그</span></nav>
+  <h1>셀프 마케팅 블로그</h1>
+  <p class="lead">플레이스·스마트스토어·쿠팡을 직접 운영하는 사업자를 위한 실행 가이드입니다. <a class="lnk" href="/rss.xml">RSS</a></p>
+  <div class="lr-list">
+    {% for p in rows %}<a href="{{ p.path }}"><b>{{ p.title }}</b><span>{{ p.date.strftime('%Y.%m.%d') }}{% if p.category %} · {{ p.category }}{% endif %} — {{ p.desc }}</span></a>
+    {% else %}<div class="empty">아직 글이 없습니다.</div>{% endfor %}
+  </div>
+  {{ pager(page, total_pages, 'seo.blog_index') }}
+</div>
+{% endblock %}

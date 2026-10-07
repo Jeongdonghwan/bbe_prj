@@ -1,0 +1,49 @@
+{% extends "layout/base.html" %}
+{# SEO 기본 페이지 (seo_pages.build 결과를 그린다). h1 은 이 페이지에 하나뿐 — 섹션은 h2, FAQ 질문은 h3. #}
+{% block title %}{{ page.title }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/learn.css') }}">{% endblock %}
+{% block content %}
+<article class="lr">
+  <nav class="lr-crumb" aria-label="위치"><a href="/">홈</a>{% for n, p in page.crumbs %} › {% if p %}<a href="{{ p }}">{{ n }}</a>{% else %}<span>{{ n }}</span>{% endif %}{% endfor %}</nav>
+  <h1>{{ page.h1 }}</h1>
+  <p class="lead">{{ page.lead }}</p>
+  <div class="lr-stats">{% for k, v in page.stats %}<div><span>{{ k }}</span><b>{{ v }}</b></div>{% endfor %}</div>
+
+  {% for s in page.sections %}
+  <section class="lr-sec">
+    <h2>{{ s.h }}</h2>
+    {% for t in s.p or [] %}<p>{{ t }}</p>{% endfor %}
+    {% if s.related %}
+    <div class="lr-scroll"><table><thead><tr><th>키워드</th><th style="text-align:right">PC</th><th style="text-align:right">모바일</th><th style="text-align:right">합계</th></tr></thead><tbody>
+      {% for r in s.related %}<tr><td>{{ r.k }}</td><td class="num">{{ r.pc | fmt_num }}</td><td class="num">{{ r.mo | fmt_num }}</td><td class="num"><b>{{ (r.pc + r.mo) | fmt_num }}</b></td></tr>{% endfor %}
+    </tbody></table></div>
+    {% endif %}
+    {% if s.links %}<div class="lr-links">{% for n, p in s.links %}<a href="{{ p }}">{{ n }}</a>{% endfor %}</div>{% endif %}
+    {% for m in s.sub or [] %}<h3>{{ m.q }}</h3><p>{{ m.a }}</p>{% endfor %}
+    {% if s.list %}<ul class="lr-check">{% for t in s.list %}<li>{{ t }}</li>{% endfor %}</ul>{% endif %}
+    {% if s.itemlist %}
+    <div class="lr-scroll"><table><thead><tr><th>키워드</th><th style="text-align:right">월간 검색량</th></tr></thead><tbody>
+      {% for n, p, vol in s.itemlist %}<tr><td><a href="{{ p }}">{{ n }}</a></td><td class="num">{{ vol }}</td></tr>{% endfor %}
+    </tbody></table></div>
+    {% endif %}
+  </section>
+  {% if loop.index == 2 %}
+  <div class="lr-cta"><p>'{{ page.kw }}' 순위를 직접 관리해 보세요. 캠페인을 등록하는 순간부터 일자별 순위가 기록됩니다.</p>
+    <a class="btn pri" href="/campaign/{{ page.channel }}/new?kw={{ page.kw | urlencode }}">이 키워드로 캠페인 만들기</a>
+    <a class="btn sec" href="/tools/keyword?q={{ page.kw | urlencode }}">무료 키워드 조회</a></div>
+  {% endif %}
+  {% endfor %}
+
+  {% if page.faq %}
+  <section class="lr-sec lr-faq"><h2>자주 묻는 질문</h2>
+    {% for f in page.faq %}<h3>{{ f.q }}</h3><p>{{ f.a }}</p>{% endfor %}
+  </section>
+  {% endif %}
+
+  {% for title, items in page.links if items %}
+  <section class="lr-sec"><h2>{{ title }}</h2><div class="lr-links">{% for n, p in items %}<a href="{{ p }}">{{ n }}</a>{% endfor %}</div></section>
+  {% endfor %}
+
+  <p class="lr-src">검색량: {{ meta.source }} 월간 조회수, {{ meta.collected }} 기준. 실제 검색량은 시기에 따라 달라질 수 있습니다. 순위·노출은 검색엔진이 정하며 보장할 수 없습니다.</p>
+</article>
+{% endblock %}

@@ -65,16 +65,6 @@ def robots():
     return Response(body, mimetype="text/plain")
 
 
-@bp.route("/sitemap.xml")
-def sitemap():
-    origin = _origin()
-    pages = [("/", "1.0"), ("/intro", "0.9"), ("/popular", "0.8"), ("/guide", "0.8"), ("/auth/register", "0.7"),
-             ("/auth/login", "0.5"), ("/notice", "0.5"), ("/terms", "0.2"), ("/privacy", "0.2")]
-    items = "".join(f"<url><loc>{origin}{p}</loc><priority>{pr}</priority></url>" for p, pr in pages)
-    xml = f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{items}</urlset>'
-    return Response(xml, mimetype="application/xml")
-
-
 def _origin():
     from flask import current_app
     return current_app.config["PUBLIC_URL"] or request.url_root.rstrip("/")

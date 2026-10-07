@@ -16,6 +16,8 @@ MENU = {
             "items": [
                 {"label": "공지사항", "icon": "megaphone", "href": "/notice"},
                 {"label": "이용가이드", "icon": "book-open", "href": "/guide"},
+                {"label": "셀프 마케팅 가이드", "icon": "map", "href": "/learn/"},
+                {"label": "블로그", "icon": "newspaper", "href": "/blog/"},
                 {"label": "크레딧 충전", "icon": "wallet", "href": "/credit/charge"},
                 {"label": "카카오 바로상담", "icon": "message-circle", "href": Config.KAKAO_CHAT_URL, "external": True},
             ],
@@ -141,7 +143,7 @@ def resolve_active(path):
     """Longest-prefix match so /campaign/store and /campaign/store/new are distinct."""
     best = None
     for href, parent, label in _LINKS:
-        if path == href or (href != "/" and path.startswith(href + "/")):
+        if path == href or (href != "/" and path.startswith(href.rstrip("/") + "/")):
             if best is None or len(href) > len(best[0]):
                 best = (href, parent, label)
     return best
@@ -159,8 +161,8 @@ def create_app():
     from .services import notify_service
     db.init_app(app)
 
-    from .blueprints import main, auth, notice, campaign, credit, tools, community, my, admin, rank_api
-    for bp in (main.bp, auth.bp, notice.bp, campaign.bp, campaign.api, campaign.prod, campaign.pop, rank_api.bp, credit.bp, tools.bp, community.bp, community.notif_bp, my.bp, admin.bp):
+    from .blueprints import main, auth, notice, campaign, credit, tools, community, my, admin, rank_api, seo
+    for bp in (main.bp, auth.bp, notice.bp, campaign.bp, campaign.api, campaign.prod, campaign.pop, rank_api.bp, credit.bp, tools.bp, community.bp, community.notif_bp, my.bp, admin.bp, seo.bp):
         app.register_blueprint(bp)
 
     app.before_request(auth.load_current_user)

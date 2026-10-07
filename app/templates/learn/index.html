@@ -1,0 +1,17 @@
+{% extends "layout/base.html" %}
+{% block title %}셀프 마케팅 가이드{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/learn.css') }}">{% endblock %}
+{% block content %}
+<div class="lr">
+  <nav class="lr-crumb" aria-label="위치"><a href="/">홈</a> › <span>셀프 마케팅 가이드</span></nav>
+  <h1>셀프 마케팅 가이드</h1>
+  <p class="lead">대행사 없이 플레이스·스마트스토어·쿠팡 마케팅을 직접 하려는 사장님·판매자를 위한 자료실입니다. 업종·지역별 손님 검색량(네이버 실측, {{ meta.collected }} 기준)으로 우리 시장의 수요부터 확인하고, 직접 하는 순서와 비용 계산까지 이어서 보세요. 총 {{ h.count | fmt_num }}개 페이지.</p>
+  <section class="lr-sec"><h2>플랫폼별 방법</h2><div class="lr-links">{% for n, p in h.topics %}<a href="{{ p }}">{{ n }}</a>{% endfor %}</div></section>
+  <section class="lr-sec"><h2>업종별 마케팅</h2><div class="lr-links">{% for b in h.biz %}<a href="/learn/{{ b }}-마케팅/">{{ b }} 마케팅</a>{% endfor %}</div></section>
+  <section class="lr-sec"><h2>지역별 마케팅</h2>
+    {% for sido, rgs in h.regions.items() %}<h3>{{ sido }}</h3><div class="lr-links">{% for rg in rgs %}<a href="/learn/{{ rg }}-마케팅/">{{ rg }}</a>{% endfor %}</div>{% endfor %}
+  </section>
+  <section class="lr-sec" id="store"><h2>스마트스토어 카테고리별 판매</h2><div class="lr-links">{% for kw in h.store %}<a href="/learn/스마트스토어-{{ kw }}-판매/">{{ kw }}</a>{% endfor %}</div></section>
+  <section class="lr-sec"><h2>블로그</h2><p>실행 가이드·체크리스트·비용 정리는 <a class="lnk" href="/blog/">블로그</a>에서 매일 업데이트됩니다.</p></section>
+</div>
+{% endblock %}
