@@ -1,6 +1,7 @@
 """/admin/* — operator screens. Every write is recorded in admin_log."""
 import csv
 import io
+import os
 import re
 import secrets
 from datetime import date, datetime, timedelta
@@ -903,10 +904,12 @@ def users():
     q = (request.args.get("q") or "").strip()[:40] or None
     status = request.args.get("status") or None
     page, per_page = _page()
-    rows, total = user_model.list_admin(q, status if status in ("active", "suspended") else None, page, per_page)
+    cert = "pending" if request.args.get("cert") == "pending" else None
+    rows, total = user_model.list_admin(q, status if status in ("active", "suspended") else None, page, per_page, cert)
     from ..constants import GRADE_LABEL
     return render_template("admin/users.html", rows=rows, q=q, status=status, page=page, total_pages=max(1, -(-total // per_page)),
                            counts=user_model.count_by_status(), open_id=request.args.get("open", type=int), grade_label=GRADE_LABEL,
+                           cert=cert, cert_pending=user_model.count_cert_pending(),
                            new_pw=session.pop("new_user_pw", None))
 
 
@@ -1070,6 +1073,35 @@ def user_drawer(user_id):
     return render_template("admin/_user_drawer.html", u=u, campaigns=campaign_model.list_by_user(user_id, 20),
                            posts=post_model.list_by_user(user_id, 20), paid_total=campaign_model.total_paid(user_id),
                            status_label=STATUS_LABEL, status_class=STATUS_CLASS, channel_label=CHANNEL_LABEL)
+
+
+@bp.route("/users/<int:user_id>/biz-cert")
+@admin_required
+def user_biz_cert(user_id):
+    """사업자등록증 원본 — 운영자만. 파일은 instance/biz_certs 에 있어 정적 경로로는 못 연다."""
+    from ..services import biz_cert
+    u = user_model.get_by_id(user_id) or abort(404)
+    if not u.get("biz_cert_file") or not os.path.exists(biz_cert.path(u["biz_cert_file"])):
+        abort(404)
+    return send_file(biz_cert.path(u["biz_cert_file"]), max_age=0)
+
+
+@bp.route("/users/<int:user_id>/biz-cert", methods=["POST"])
+@admin_required
+def user_biz_cert_review(user_id):
+    u = user_model.get_by_id(user_id) or abort(404)
+    approve = request.form.get("action") == "approve"
+    if not u.get("biz_cert_file"):
+        abort(400)
+    user_model.set_biz_cert(user_id, status="approved" if approve else "rejected")
+    reason = (request.form.get("reason") or "").strip()[:100]
+    from ..services.notify_service import push
+    push(user_id, "agency", "사업자 인증이 완료되었습니다." if approve
+         else f"사업자 인증이 반려되었습니다{' — ' + reason if reason else ''}. 마이페이지에서 다시 제출해주세요.", "/my")
+    _log("biz_cert_" + ("approve" if approve else "reject"), "user", user_id,
+         f"{u['nickname']} 사업자 인증 {'승인' if approve else '반려'}{' · ' + reason if reason else ''}")
+    flash(f"{u['nickname']} 사업자 인증을 {'승인' if approve else '반려'}했습니다.")
+    return redirect(url_for("admin.users", open=user_id, cert=request.args.get("cert")))
 
 
 # =============================================================== 계정별 단가

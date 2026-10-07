@@ -9,6 +9,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from flask import (Blueprint, abort, current_app, flash, g, redirect, render_template, request, session,
                    url_for)
 
+from ..services import biz_cert, notify_service
 from ..models import user as user_model
 from ..services import kakao_service
 
@@ -178,11 +179,21 @@ def register():
             err = "이용약관과 개인정보 수집·이용에 동의해주세요."
         elif user_model.get_by_email(email):
             err = "이미 가입된 이메일입니다. 로그인해주세요."
+        cert = None
+        if not err:
+            try:
+                cert = biz_cert.read_upload(request.files.get("biz_cert"))   # 선택 — 회원 생성 전에 검증
+            except biz_cert.CertError as e:
+                err = str(e)
         if err:
             flash(err)
             return render_template("auth/register.html", next_url=next_url, form=f), 400
         uid = user_model.create_local(email, generate_password_hash(password), nickname, _fmt_phone(phone),
                                       f.get("agree_marketing") == "1")
+        notify_service.notify_admins(f"신규 회원가입 · {nickname} ({email})", f"/admin/users?open={uid}")
+        if cert:
+            user_model.set_biz_cert(uid, biz_cert.save(uid, cert))
+            notify_service.notify_admins(f"사업자 인증 요청 · {nickname} — 사업자등록증 확인 필요", f"/admin/users?open={uid}")
         resp = _login(uid, next_url or "/")  # _login clears the session, so flash afterwards
         flash("가입을 환영합니다! 첫 캠페인을 만들어보세요.")
         return resp
@@ -224,6 +235,7 @@ def kakao_callback():
     user = user_model.get_by_kakao_id(kakao_id)
     if not user:
         uid = user_model.create(kakao_id, (nick or "회원")[:30])
+        notify_service.notify_admins(f"신규 회원가입 · {(nick or '회원')[:30]} (카카오)", f"/admin/users?open={uid}")
     else:
         if user["status"] != "active":
             flash("이용이 제한된 계정입니다.")

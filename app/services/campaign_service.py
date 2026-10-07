@@ -101,6 +101,9 @@ def create_with_credit(user, media, form):
         campaign_model.delete(cid)
         raise CampaignError("크레딧 잔액이 부족합니다. 충전 후 다시 시도해주세요.")
     campaign_model.add_log(cid, None, "review", user["id"], f"크레딧 결제 {cost:,}원 · 검수 대기")
+    from .notify_service import notify_admins
+    c = campaign_model.get(cid)
+    notify_admins(f"결제 완료 · {user['nickname']} {cost:,}원 [{c['order_no']}] 검수 대기", f"/admin/orders?q={c['order_no']}")
     # 추적 스레드는 자기 커넥션으로 이 캠페인을 다시 읽는다 — 커밋 전에는 그 행이 안 보인다.
     from ..db import commit as db_commit
     db_commit()

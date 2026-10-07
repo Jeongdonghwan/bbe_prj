@@ -2,7 +2,7 @@
 from ..db import execute, query, query_one
 
 TYPE_FIELD = {"comment": "notify_comment", "answer": "notify_comment", "proposal": None, "campaign": "notify_campaign",
-              "payment": "notify_campaign", "agency": None, "notice": "notify_event"}
+              "payment": "notify_campaign", "agency": None, "notice": "notify_event", "admin": None}
 
 
 def push(user_id, ntype, title, link=None):
@@ -14,6 +14,13 @@ def push(user_id, ntype, title, link=None):
         if u and not u["on_"]:
             return None
     return execute("INSERT INTO notifications (user_id, type, title, link) VALUES (%s,%s,%s,%s)", [user_id, ntype, title[:200], link])
+
+
+def notify_admins(title, link=None):
+    """운영자 전원에게 알림 (가입·사업자 인증·충전 요청·결제·환불). 헤더 종 배지로 보인다."""
+    for a in query("SELECT id FROM users WHERE role = 'admin' AND status = 'active'"):
+        execute("INSERT INTO notifications (user_id, type, title, link) VALUES (%s,'admin',%s,%s)",
+                [a["id"], title[:200], link])
 
 
 def unread_count(user_id):

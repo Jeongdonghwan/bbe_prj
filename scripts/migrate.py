@@ -296,6 +296,15 @@ def main():
         cur.execute("ALTER TABLE users ADD COLUMN last_login_at DATETIME NULL AFTER status")
         done.append("users.last_login_at")
 
+    # -- 사업자등록증 인증 (2026-10-07) -------------------------------------
+    if not col("users", "biz_cert_file"):
+        cur.execute("ALTER TABLE users ADD COLUMN biz_cert_file VARCHAR(80) NULL AFTER biz_email")
+        done.append("users.biz_cert_file")
+    if not col("users", "biz_cert_status"):
+        cur.execute("ALTER TABLE users ADD COLUMN biz_cert_status ENUM('none','pending','approved','rejected') "
+                    "NOT NULL DEFAULT 'none' AFTER biz_cert_file")
+        done.append("users.biz_cert_status")
+
     # -- 계정별 매체 단가 (2026-09-28) --------------------------------------
     if not table("user_media_prices"):
         cur.execute("""CREATE TABLE user_media_prices (

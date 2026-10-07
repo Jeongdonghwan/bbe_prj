@@ -81,6 +81,26 @@ def biz():
     return redirect(url_for("my.index"))
 
 
+@bp.route("/my/biz-cert", methods=["POST"])
+@login_required
+def biz_cert_upload():
+    """사업자등록증 제출 → 운영자 확인 대기. 다시 올리면 새 파일로 바뀌고 대기로 돌아간다."""
+    from ..services import biz_cert, notify_service
+    try:
+        up = biz_cert.read_upload(request.files.get("biz_cert"))
+    except biz_cert.CertError as e:
+        flash(str(e))
+        return redirect(url_for("my.index"))
+    if not up:
+        flash("사업자등록증 파일을 선택해주세요.")
+        return redirect(url_for("my.index"))
+    user_model.set_biz_cert(g.user["id"], biz_cert.save(g.user["id"], up))
+    notify_service.notify_admins(f"사업자 인증 요청 · {g.user['nickname']} — 사업자등록증 확인 필요",
+                                 f"/admin/users?open={g.user['id']}")
+    flash("사업자등록증을 제출했습니다. 운영팀 확인 후 인증됩니다.")
+    return redirect(url_for("my.index"))
+
+
 @bp.route("/my/notify", methods=["POST"])
 @login_required
 def notify():
