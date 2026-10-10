@@ -16,7 +16,6 @@ MENU = {
             "items": [
                 {"label": "공지사항", "icon": "megaphone", "href": "/notice"},
                 {"label": "이용가이드", "icon": "book-open", "href": "/guide"},
-                {"label": "블로그", "icon": "newspaper", "href": "/blog/"},
                 {"label": "크레딧 충전", "icon": "wallet", "href": "/credit/charge"},
                 {"label": "카카오 바로상담", "icon": "message-circle", "href": Config.KAKAO_CHAT_URL, "external": True},
             ],
