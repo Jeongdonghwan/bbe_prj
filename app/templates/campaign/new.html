@@ -83,7 +83,7 @@
                 {% if m.origin == 'ready' %}{# 기성 매체는 직접 발주 불가 — 카카오톡 문의 (2026-10-10) #}
                 <a class="w-card w-ask" href="{{ KAKAO_CHAT_URL }}" target="_blank" rel="noopener" title="기성 매체는 카카오톡으로 문의해주세요">
                   <div class="w-n">{{ m.name }}</div>
-                  <div class="w-p" style="color:var(--text-2)">발주 불가 · <b style="color:var(--accent)">카카오톡 문의</b></div>
+                  <div class="w-p"><b style="color:var(--accent)">카카오톡 문의</b></div>
                 </a>
                 {% else %}
                 <button type="button" class="w-card{% if pre.media_id == m.id %} w-on{% endif %}" data-id="{{ m.id }}">
