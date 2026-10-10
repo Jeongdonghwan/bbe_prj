@@ -140,7 +140,7 @@ ADMIN_SORTS = {"new": "p.created_at DESC, p.id DESC", "old": "p.created_at ASC, 
                "likes": "p.likes DESC, p.id DESC", "comments": "comment_cnt DESC, p.id DESC"}
 
 
-def list_admin(slug=None, q=None, blind=None, page=1, per_page=20, sort=None):
+def list_admin(slug=None, q=None, blind=None, page=1, per_page=20, sort=None, order=None):
     """게시글 관리 목록. slug 를 주면 그 게시판만, blind=True 면 블라인드 처리된 글만."""
     where, params = ["1=1"], []
     if slug:
@@ -154,7 +154,7 @@ def list_admin(slug=None, q=None, blind=None, page=1, per_page=20, sort=None):
         f"""SELECT p.*, b.slug, b.name AS board_name,
                    (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) AS comment_cnt
             FROM posts p JOIN boards b ON b.id = p.board_id
-            WHERE {w} ORDER BY {ADMIN_SORTS.get(sort) or ADMIN_SORTS["new"]} LIMIT %s OFFSET %s""",
+            WHERE {w} ORDER BY {order or ADMIN_SORTS.get(sort) or ADMIN_SORTS["new"]} LIMIT %s OFFSET %s""",
         params + [per_page, (page - 1) * per_page])
     total = query_one(f"SELECT COUNT(*) AS n FROM posts p JOIN boards b ON b.id = p.board_id WHERE {w}", params)["n"]
     return rows, total

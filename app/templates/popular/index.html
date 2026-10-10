@@ -16,19 +16,26 @@
   {% for key, label in channels %}
   {% set v = views[key] %}
   <div data-chview="{{ key }}"{% if key != channel %} hidden{% endif %}>
-    <div class="p-sec-h"><h2>이번 주 운영팀 추천</h2><small>{{ week_label }} 선정</small></div>
-    <div class="p-top3">{% for m in v.top3 %}{{ t.card(m, top=True) }}{% endfor %}</div>
+    <section class="p-pick">
+      <div class="p-sec-h"><span class="p-pick-badge">운영팀 PICK</span><h2>이번 주 운영팀 추천</h2><small>{{ week_label }} 선정</small></div>
+      <div class="p-top3">{% for m in v.top3 %}{{ t.card(m, top=True) }}{% endfor %}</div>
+    </section>
 
-    <div class="p-sec-h"><h2>전체 상품</h2><small>{{ v.total }}개</small><div class="p-sp"></div>
+    <div class="p-sec-h p-all-h"><h2>전체 상품</h2><small>{{ v.total }}개</small><div class="p-sp"></div>
       <div class="p-sort">
         {% for skey, slabel in [('rec', '추천순'), ('rev', '후기순'), ('price', '단가순')] %}
         <button type="button" data-sort="{{ skey }}"{% if skey == 'rec' %} class="p-on"{% endif %}>{{ slabel }}</button>
         {% endfor %}
       </div>
     </div>
-    {% for glabel, items in v.groups %}
-    <div class="p-gh">{{ glabel }}<small>{{ items | length }}개</small></div>
-    <div class="p-grid">{% for m in items %}{{ t.card(m) }}{% endfor %}</div>
+    {# 자체 개발(리워드·유입플)은 넓은 화면에서 한 줄에 나란히, 기성은 그 아래 전체 폭 #}
+    <div class="p-own-row">{% for glabel, items in v.groups if '기성' not in glabel %}
+      <div class="p-gsec"><div class="p-gh">{{ glabel }}<small>{{ items | length }}개</small></div>
+        <div class="p-grid">{% for m in items %}{{ t.card(m) }}{% endfor %}</div></div>
+    {% endfor %}</div>
+    {% for glabel, items in v.groups if '기성' in glabel %}
+    <div class="p-gsec"><div class="p-gh">{{ glabel }}<small>{{ items | length }}개</small></div>
+      <div class="p-grid">{% for m in items %}{{ t.card(m) }}{% endfor %}</div></div>
     {% endfor %}
   </div>
   {% endfor %}

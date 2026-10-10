@@ -1,5 +1,5 @@
 {% extends "layout/base.html" %}
-{% from "macros/pagination.html" import pager %}
+{% from "macros/pagination.html" import pager, th_sort, per_select %}
 {% block title %}크레딧 관리{% endblock %}
 {% block content %}
 <div class="ph"><div><h1>크레딧 관리</h1><p>무통장 충전 요청 승인·거절, 회원 크레딧 직접 충전·차감. 회원 이름을 누르면 그 회원의 충전 이력만 봅니다.</p></div></div>
@@ -39,7 +39,7 @@
       </div>
       {% if status == 'stale' %}<p class="thin" style="padding:6px 0 0">신청 후 {{ due_days }}일이 지나도록 입금이 확인되지 않은 요청입니다. 자동으로 거절하지는 않습니다 — 늦게 입금하는 회원이 있어서, 확인 후 직접 거절하세요.</p>{% endif %}
       <div style="overflow-x:auto;margin:0 -18px"><table class="ctable">
-        <thead><tr><th>신청일</th><th>회원</th><th style="text-align:right">충전액</th><th style="text-align:right">입금액</th><th>입금자명</th><th>세금계산서</th><th>상태</th><th>처리</th></tr></thead>
+        <thead><tr>{{ th_sort('신청일', 'created') }}{{ th_sort('회원', 'member') }}{{ th_sort('충전액', 'amount') }}{{ th_sort('입금액', 'total') }}{{ th_sort('입금자명', 'depositor') }}<th>세금계산서</th>{{ th_sort('상태', 'status') }}<th>처리</th></tr></thead>
         <tbody>
         {% for r in rows %}
         <tr{% if r.overdue %} style="background:var(--danger-soft)"{% endif %}>
@@ -60,7 +60,7 @@
         </tr>
         {% else %}<tr><td colspan="8"><div class="empty">충전 요청이 없습니다.</div></td></tr>{% endfor %}
         </tbody></table></div>
-      {{ pager(page, total_pages, 'admin.credits', status=status, user=member.id if member else None) }}
+      {{ pager(page, total_pages, 'admin.credits', status=status, user=member.id if member else None) }}{{ per_select() }}
     </div></div>
 
     <div class="card" style="margin-top:14px" id="ledger"><div class="ch"><h3>{% if member %}{{ member.nickname }} 크레딧 내역 <span class="thin">{{ '전체 ' ~ (recent | length) ~ '건' if ledger_all else '최근 20건' }}</span>{% else %}최근 크레딧 변동{% endif %}</h3>{% if member %}<a class="btn sec sm" style="margin-left:auto" href="/admin/credits?user={{ member.id }}{% if not ledger_all %}&ledger=all{% endif %}#ledger">{{ '최근 20건만' if ledger_all else '전체 보기' }}</a>{% endif %}</div><div class="cb">

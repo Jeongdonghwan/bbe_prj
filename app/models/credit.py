@@ -112,7 +112,7 @@ def list_user_requests(user_id, status=None, page=1, per_page=20):
     return rows, total
 
 
-def list_admin_requests(status=None, page=1, per_page=20, stale_days=None, user_id=None):
+def list_admin_requests(status=None, page=1, per_page=20, stale_days=None, user_id=None, order=None):
     """stale_days: 입금 기한이 지나도록 입금이 안 된 대기 건만 (운영자가 직접 거절하도록 모아 보여준다).
     user_id: 회원 한 명의 충전 이력만."""
     where, params = "1=1", []
@@ -126,7 +126,7 @@ def list_admin_requests(status=None, page=1, per_page=20, stale_days=None, user_
         params.append(int(user_id))
     rows = query(
         f"""SELECT r.*, u.nickname, u.email, u.credit_balance FROM charge_requests r JOIN users u ON u.id = r.user_id
-            WHERE {where} ORDER BY r.status = 'pending' DESC, r.id DESC LIMIT %s OFFSET %s""",
+            WHERE {where} ORDER BY {order + ', ' if order else ''}r.status = 'pending' DESC, r.id DESC LIMIT %s OFFSET %s""",
         params + [per_page, (page - 1) * per_page])
     total = query_one(f"SELECT COUNT(*) AS n FROM charge_requests r WHERE {where}", params)["n"]
     return rows, total

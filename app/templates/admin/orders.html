@@ -1,5 +1,5 @@
 {% extends "layout/base.html" %}
-{% from "macros/pagination.html" import pager %}
+{% from "macros/pagination.html" import pager, th_sort, per_select %}
 {% block title %}주문 관리{% endblock %}
 {% block content %}
 <div class="ph"><div><h1>주문 관리</h1><p>승인하면 바로 정상이 되고, 구동은 시작일부터 돕니다. 종료일이 지나면 자동으로 완료됩니다. 반려는 사유가 필수입니다.</p></div>
@@ -20,7 +20,7 @@
   <p class="thin" style="margin:2px 0 10px;font-size:12.5px">관리 버튼은 상태마다 다릅니다 — <b>검수</b>: 승인 · 반려 &nbsp;/&nbsp; <b>정상</b>: 중단(남은 일수 환불), 구동이 시작된 뒤에는 완료(종료일 전에 끝낼 때) &nbsp;/&nbsp; <b>완료 · 중단 · 반려</b>: 메모 · 삭제만. 순위 칸을 누르면 일자별 순위 그래프가 열립니다.</p>
   <form method="post" action="/admin/orders/bulk" id="bulkForm"><input type="hidden" name="back" value="{{ request.full_path }}">
   <div class="bulk" id="bulkBar" style="display:none"><span class="chk on"><i></i></span><span id="bulkCount">0</span>건 선택됨 <button class="btn pri sm" name="action" value="approve" type="submit" id="bulkApprove">선택 승인</button><button class="btn sec sm" type="button" id="bulkReject">선택 반려</button><button class="btn sec sm" type="submit" formaction="/admin/orders/export?{{ request.query_string.decode() }}" formmethod="post" formtarget="_blank">선택 엑셀 내보내기</button></div>
-  <div style="overflow-x:auto;margin:0 -18px"><table class="otable"><thead><tr><th><input type="checkbox" id="chkAll"></th><th>주문</th><th>회원(상호)</th><th>채널</th><th>스토어·업체 / 상품 · 키워드</th><th>매체</th><th>기간 · 수량</th><th>링크</th><th>상태</th><th>순위</th><th>관리</th></tr></thead><tbody>
+  <div style="overflow-x:auto;margin:0 -18px"><table class="otable"><thead><tr><th><input type="checkbox" id="chkAll"></th>{{ th_sort('주문', 'order') }}{{ th_sort('회원(상호)', 'member') }}{{ th_sort('채널', 'channel') }}{{ th_sort('스토어·업체 / 상품 · 키워드', 'store') }}{{ th_sort('매체', 'media') }}{{ th_sort('기간 · 수량', 'period') }}<th>링크</th>{{ th_sort('상태', 'status') }}{{ th_sort('순위', 'rank') }}<th>관리</th></tr></thead><tbody>
     {% for r in rows %}
     <tr{% if r.warn.block %} style="background:var(--danger-soft)"{% endif %}>
       <td><input type="checkbox" name="ids" value="{{ r.id }}" class="rowchk"></td>
@@ -54,7 +54,7 @@
     </tr>
     {% else %}<tr><td colspan="11"><div class="empty">조건에 맞는 주문이 없습니다.</div></td></tr>{% endfor %}
   </tbody></table></div></form>
-  {{ pager(page, total_pages, 'admin.orders', status=status, channel=channel, media=media_id, period=period, q=q, user=user_id, **{'from': date_from.isoformat() if date_from else None, 'to': date_to.isoformat() if date_to else None}) }}
+  {{ pager(page, total_pages, 'admin.orders', status=status, channel=channel, media=media_id, period=period, q=q, user=user_id, **{'from': date_from.isoformat() if date_from else None, 'to': date_to.isoformat() if date_to else None}) }}{{ per_select() }}
 </div></div>
 {% include "admin/_reject_modal.html" %}
 <div class="modal" id="deleteModal"><form class="modal-box" method="post" id="deleteForm" action="">

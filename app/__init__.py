@@ -3,7 +3,7 @@ from datetime import date, datetime
 
 from urllib.parse import urlparse
 
-from flask import Flask, g, render_template, request
+from flask import Flask, g, render_template, request, url_for
 
 from .config import Config
 
@@ -256,6 +256,38 @@ def create_app():
             return f"{int(v):,}원"
         except (TypeError, ValueError):
             return v
+
+    # ---- 표 공통 (2026-10-10): 페이지 크기(어드민) · 헤더 클릭 정렬 ------------------------------
+    # 정렬은 o(열)·d(asc|desc) 파라미터. 서버가 열 이름을 허용 목록(SQL 조각)으로만 바꾸므로 안전하다.
+    # 매크로를 'with context' 없이 import 해도 쓸 수 있게 전역 함수로 둔다.
+    PER_OPTIONS = (20, 30, 50, 100)
+
+    def _args():
+        return request.args.to_dict()
+
+    def sort_link(key):
+        a = _args()
+        nd = "asc" if (a.get("o") == key and a.get("d", "desc") == "desc") else "desc"
+        a.update(o=key, d=nd)
+        a.pop("page", None)
+        return url_for(request.endpoint, **{**(request.view_args or {}), **a})
+
+    def sort_arrow(key):
+        a = _args()
+        return ("▲" if a.get("d") == "asc" else "▼") if a.get("o") == key else ""
+
+    def per_link(n):
+        a = _args()
+        a.update(per=n)
+        a.pop("page", None)
+        return url_for(request.endpoint, **{**(request.view_args or {}), **a})
+
+    def per_now():
+        n = request.args.get("per", type=int)
+        return n if n in PER_OPTIONS else app.config["PER_PAGE"]
+
+    app.jinja_env.globals.update(sort_link=sort_link, sort_arrow=sort_arrow, per_link=per_link, per_now=per_now,
+                                 PER_OPTIONS=PER_OPTIONS)
 
     @app.template_filter("fmt_num")
     def fmt_num(v):

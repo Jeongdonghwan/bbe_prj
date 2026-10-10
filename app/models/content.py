@@ -102,7 +102,7 @@ ADMIN_SORTS = {"new": "COALESCE(publish_at, created_at) DESC, id DESC", "old": "
                "views": "views DESC, id DESC", "title": "title ASC, id DESC"}
 
 
-def admin_list(tab="all", page=1, per_page=20, q=None, sort=None):
+def admin_list(tab="all", page=1, per_page=20, q=None, sort=None, order=None):
     where, params = [], []
     if q:
         where.append("(title LIKE %s OR body LIKE %s)")
@@ -116,7 +116,7 @@ def admin_list(tab="all", page=1, per_page=20, q=None, sort=None):
     elif tab == "draft":
         where.append("status = 'draft'")
     w = (" WHERE " + " AND ".join(where)) if where else ""
-    order = ADMIN_SORTS.get(sort) or ("series_no ASC, id ASC" if tab == "series" else ADMIN_SORTS["new"])
+    order = order or ADMIN_SORTS.get(sort) or ("series_no ASC, id ASC" if tab == "series" else ADMIN_SORTS["new"])
     rows = query(f"SELECT * FROM contents{w} ORDER BY {order} LIMIT %s OFFSET %s", params + [per_page, (page - 1) * per_page])
     total = query_one(f"SELECT COUNT(*) AS n FROM contents{w}", params)["n"]
     return rows, total

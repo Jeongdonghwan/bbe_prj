@@ -50,7 +50,17 @@ def _csv_json(v):
 
 
 def _page():
-    return max(1, request.args.get("page", 1, type=int)), current_app.config["PER_PAGE"]
+    """(page, per_page). per 는 20/30/50/100 중에서만 (2026-10-10 공통 #2 — '모두 보기'는 두지 않는다)."""
+    per = request.args.get("per", type=int)
+    return max(1, request.args.get("page", 1, type=int)), (per if per in (20, 30, 50, 100) else current_app.config["PER_PAGE"])
+
+
+def _order(allowed):
+    """헤더 클릭 정렬 → SQL ORDER BY 조각. allowed = {열 키: 'SQL 식'} 허용 목록에 있을 때만."""
+    key = request.args.get("o")
+    if key not in allowed:
+        return None
+    return f"{allowed[key]} {'ASC' if request.args.get('d') == 'asc' else 'DESC'}"
 
 
 def bank_settings():
@@ -98,7 +108,9 @@ def orders():
     q = (request.args.get("q") or "").strip()[:60] or None
     flt = _export_filters()
     page, per_page = _page()
-    rows = campaign_model.admin_list(status, channel, media_id, period, q, page, per_page, **flt)
+    order = _order({"order": "c.id", "member": "COALESCE(u.biz_name, u.nickname)", "channel": "c.channel", "store": "COALESCE(c.store_name, c.biz_name)",
+                    "media": "m.name", "period": "c.start_date", "status": "c.status", "paid": "c.paid_amount", "rank": "c.rank_now"})
+    rows = campaign_model.admin_list(status, channel, media_id, period, q, page, per_page, order=order, **flt)
     for r in rows:
         r["login_id"] = user_model.login_id(r.get("user_email"), r.get("user_username"),
                                             r.get("user_kakao"), r["user_id"])
@@ -456,7 +468,9 @@ def credits():
     found = user_model.search_brief(q, 20) if q and not member else []
     if len(found) == 1:
         return redirect(url_for("admin.credits", user=found[0]["id"]))
-    rows, total = credit_model.list_admin_requests(None if stale else status, page, per_page,
+    order = _order({"created": "r.created_at", "member": "u.nickname", "amount": "r.amount", "total": "r.total",
+                    "depositor": "r.depositor", "status": "r.status"})
+    rows, total = credit_model.list_admin_requests(None if stale else status, page, per_page, order=order,
                                                    stale_days=due_days if stale else None,
                                                    user_id=member["id"] if member else None)
     now = datetime.now()
@@ -664,7 +678,8 @@ def content():
     page, per_page = _page()
     q = (request.args.get("q") or "").strip()[:60] or None
     sort = request.args.get("sort") if request.args.get("sort") in content_model.ADMIN_SORTS else None
-    rows, total = content_model.admin_list(tab, page, per_page, q, sort)
+    hdr = _order({"title": "title", "views": "views", "date": "COALESCE(publish_at, created_at)", "board": "board", "status": "status"})
+    rows, total = content_model.admin_list(tab, page, per_page, q, sort, hdr)
     counts = content_model.admin_counts()
     edit_id = request.args.get("edit", type=int)
     edit = content_model.get_any(edit_id) if edit_id else None
@@ -878,7 +893,9 @@ def users():
     q = (request.args.get("q") or "").strip()[:40] or None
     status = request.args.get("status") or None
     page, per_page = _page()
-    rows, total = user_model.list_admin(q, status if status in ("active", "suspended") else None, page, per_page)
+    order = _order({"login": "COALESCE(u.email, u.username, u.kakao_id)", "name": "COALESCE(u.biz_name, u.nickname)", "bizno": "u.biz_no",
+                    "created": "u.created_at", "paid": "paid_total", "campaigns": "campaign_cnt", "grade": "u.grade", "status": "u.status"})
+    rows, total = user_model.list_admin(q, status if status in ("active", "suspended") else None, page, per_page, order)
     from ..constants import GRADE_LABEL
     return render_template("admin/users.html", rows=rows, q=q, status=status, page=page, total_pages=max(1, -(-total // per_page)),
                            counts=user_model.count_by_status(), open_id=request.args.get("open", type=int), grade_label=GRADE_LABEL,
@@ -1264,7 +1281,8 @@ def posts():
     page, per_page = _page()
     slug = tab if tab in ("anon", "qna") else None
     sort = request.args.get("sort") if request.args.get("sort") in post_model.ADMIN_SORTS else None
-    rows, total = post_model.list_admin(slug, q, True if tab == "blind" else None, page, per_page, sort)
+    hdr = _order({"title": "p.title", "board": "b.name", "views": "p.views", "likes": "p.likes", "comments": "comment_cnt", "date": "p.created_at"})
+    rows, total = post_model.list_admin(slug, q, True if tab == "blind" else None, page, per_page, sort, hdr)
     return render_template("admin/posts.html", rows=rows, tab=tab, q=q, page=page, sort=sort,
                            total_pages=max(1, -(-total // per_page)), counts=post_model.admin_counts(),
                            channel_label=CHANNEL_LABEL)

@@ -117,7 +117,7 @@ def main():
         ok(campaign_service.day_index(c0) == 0, "아직 0일차", campaign_service.day_index(c0))
         ok(prog["cls"] == "wait" and "시작" in prog["label"], "진행률 대신 시작일 표시", prog)
     h = admin.get("/admin/orders").get_data(as_text=True)
-    row = h.split(a["order_no"])[1][:900]
+    row = h.split(a["order_no"])[1][:4000]   # 한 행 (열이 늘어 넉넉히)
     # 기간 칸에 시작~종료가 그대로 있다 (순위 칸은 이제 순위 상태만 보여준다)
     ok(f"{a['start_date']:%m.%d}~" in row, "어드민 표에 구동 기간", row[:200])
     ok("순위 조회중" in row, "순위 칸은 조회중", row[:200])

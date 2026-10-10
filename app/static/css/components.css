@@ -747,3 +747,15 @@ tr:hover .rowact button, tr.sel .rowact button{opacity:1}
   .card table td:has(> .rankcell){text-align:center}
   .card table td > .rowact{justify-content:center}
 }
+
+/* 헤더 정렬 링크 · 페이지 크기 · 맨 위로 (2026-10-10 공통 #1·#2·#4) */
+th .th-sort{color:inherit;display:inline-flex;align-items:center;gap:4px}
+th .th-sort i{font-style:normal;font-size:10px;color:var(--text-3)}
+th .th-sort:hover{color:var(--accent)}th .th-sort:hover i{color:var(--accent)}
+.per-sel{display:flex;align-items:center;gap:4px;justify-content:flex-end;margin-top:10px;font-size:12px;color:var(--text-3)}
+.per-sel a{padding:3px 8px;border:1px solid var(--border);border-radius:6px;color:var(--text-2);background:var(--surface)}
+.per-sel a.on{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);font-weight:700}
+.to-top{position:fixed;right:22px;bottom:140px;z-index:34;width:42px;height:42px;border-radius:50%;background:var(--surface);border:1px solid var(--border);
+  box-shadow:0 4px 14px rgba(0,0,0,.14);display:grid;place-items:center;color:var(--text-2);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;transform:translateY(8px)}
+.to-top.on{opacity:1;pointer-events:auto;transform:none}.to-top:hover{color:var(--accent)}
+@media(max-width:767px){.to-top{right:14px;bottom:184px}}

@@ -31,6 +31,7 @@
 </div>
 {% if needs_onboarding %}{% include "auth/_welcome_modal.html" %}{% endif %}
 {% include "layout/bottom_tab.html" %}
+<button class="to-top" type="button" id="toTop" aria-label="맨 위로"><i data-lucide="arrow-up" class="i"></i></button>
 {% if request.endpoint == 'main.dashboard' %}
 <button class="help-float" type="button" id="helpFloat"><i data-lucide="circle-help" class="i"></i><span>도움말</span></button>
 <div class="modal" id="helpModal"><div class="modal-box" style="max-width:460px">

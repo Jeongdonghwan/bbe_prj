@@ -4,11 +4,17 @@
 {% set start = [1, page - 4] | max %}
 {% set end = [total_pages, start + 8] | min %}
 <div class="pager">
-  {% if page > 1 %}<a href="{{ url_for(endpoint, page=page - 1, **kwargs) }}"><button type="button">‹</button></a>{% endif %}
+  {% if page > 1 %}<a href="{{ url_for(endpoint, page=page - 1, per=(per_now() if per_now() != 20 else None), **kwargs) }}"><button type="button">‹</button></a>{% endif %}
   {% for p in range(start, end + 1) %}
-    <a href="{{ url_for(endpoint, page=p, **kwargs) }}"><button type="button"{% if p == page %} class="on"{% endif %}>{{ p }}</button></a>
+    <a href="{{ url_for(endpoint, page=p, per=(per_now() if per_now() != 20 else None), **kwargs) }}"><button type="button"{% if p == page %} class="on"{% endif %}>{{ p }}</button></a>
   {% endfor %}
-  {% if page < total_pages %}<a href="{{ url_for(endpoint, page=page + 1, **kwargs) }}"><button type="button">›</button></a>{% endif %}
+  {% if page < total_pages %}<a href="{{ url_for(endpoint, page=page + 1, per=(per_now() if per_now() != 20 else None), **kwargs) }}"><button type="button">›</button></a>{% endif %}
 </div>
 {% endif %}
 {% endmacro %}
+
+{# 표 헤더 클릭 정렬 — th_sort('가입일', 'created'). 서버 라우트가 o/d 를 허용 목록으로 해석한다. #}
+{% macro th_sort(label, key, style='') %}<th{% if style %} style="{{ style }}"{% endif %}><a class="th-sort" href="{{ sort_link(key) }}">{{ label }}<i>{{ sort_arrow(key) or '↕' }}</i></a></th>{% endmacro %}
+
+{# 페이지 크기 — 어드민 표에서만. #}
+{% macro per_select() %}<div class="per-sel">{% for n in PER_OPTIONS %}<a href="{{ per_link(n) }}"{% if per_now() == n %} class="on"{% endif %}>{{ n }}</a>{% endfor %}<span>개씩</span></div>{% endmacro %}

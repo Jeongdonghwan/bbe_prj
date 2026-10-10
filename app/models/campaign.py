@@ -258,9 +258,11 @@ def _admin_filters(status, channel, media_id, period, q, user_id=None, ids=None,
     return " AND ".join(where), params
 
 
-def admin_list(status=None, channel=None, media_id=None, period=None, q=None, page=1, per_page=20, **flt):
+def admin_list(status=None, channel=None, media_id=None, period=None, q=None, page=1, per_page=20, order=None, **flt):
+    """order: 라우트가 허용 목록으로 만든 ORDER BY 조각(헤더 정렬). 없으면 최신순."""
     w, p = _admin_filters(status, channel, media_id, period, q, **flt)
-    rows = query(f"{ADMIN_SELECT} WHERE {w} ORDER BY c.created_at DESC, c.id DESC LIMIT %s OFFSET %s", p + [per_page, (page - 1) * per_page])
+    rows = query(f"{ADMIN_SELECT} WHERE {w} ORDER BY {order + ', ' if order else ''}c.created_at DESC, c.id DESC LIMIT %s OFFSET %s",
+                 p + [per_page, (page - 1) * per_page])
     return [_decode(r) for r in rows]
 
 

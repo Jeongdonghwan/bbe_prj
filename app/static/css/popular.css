@@ -190,3 +190,34 @@
   transform:translate(-50%,-46%) scale(.98); opacity:0; pointer-events:none; transition:transform .18s, opacity .18s; box-shadow:0 24px 60px rgba(0,0,0,.2)}
 .p-drawer.p-on{transform:translate(-50%,-50%); opacity:1; pointer-events:auto}
 .p-drawer .p-db{min-height:0}
+
+/* 2026-10-10 디자인 피드백 — 전체 크기 축소 · 띠 글자 대신 이름 옆 칩 · 자체 그룹 가로 배치 · 추천 구역 구분 */
+.poppage .p-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px}
+.poppage .p-card{padding:9px 9px 11px; border-radius:12px}
+.poppage .p-tile{aspect-ratio:5/4}
+.poppage .p-tile .p-nm{font-size:28px; inset:0 0 14px} .poppage .p-tile .p-nm.p-l4{font-size:23px} .poppage .p-tile .p-nm.p-l5{font-size:19px}
+.poppage .p-tile .p-body::before{height:92%}
+.poppage .p-tile .p-brand{font-size:9.5px; bottom:6px}
+.poppage .p-card .p-ttl{margin:9px 2px 0; padding:6px 0; font-size:13.5px; display:flex; align-items:center; justify-content:center; gap:6px}
+.poppage .p-card .p-pr{font-size:14.5px}
+.poppage .p-card .p-r{margin:7px 2px 0}
+.poppage .p-card .p-ds{font-size:12px; margin:5px 2px 0; min-height:34px}
+.poppage .p-kind{font-size:10.5px; font-weight:700; padding:2px 6px; border-radius:5px; background:var(--bb); color:var(--bi); white-space:nowrap}
+/* 추천: 조금 더 크게, 별도 패널로 */
+.poppage .p-pick{background:linear-gradient(180deg,#f6f4ff,#fff); border:1px solid #e6e1ff; border-radius:16px; padding:18px 18px 4px; margin-bottom:34px}
+.poppage .p-pick .p-top3{margin-bottom:14px; gap:14px}
+.poppage .p-pick-badge{font-size:11px; font-weight:800; color:#fff; background:#6C5CE7; border-radius:6px; padding:3px 8px; align-self:center}
+.poppage .p-top3 .p-tile{aspect-ratio:16/9}
+.poppage .p-top3 .p-tile .p-nm{font-size:40px} .poppage .p-top3 .p-tile .p-nm.p-l4{font-size:34px} .poppage .p-top3 .p-tile .p-nm.p-l5{font-size:28px}
+.poppage .p-top3 .p-card .p-ttl{font-size:15px}
+.poppage .p-all-h{padding-top:6px; border-top:2px solid var(--p-ink); margin-top:4px}
+/* 자체 개발 리워드 · 유입플은 넓은 화면에서 한 줄에 나란히, 기성은 그 아래 전체 폭 */
+.poppage .p-own-row{display:grid; grid-template-columns:repeat(auto-fit,minmax(430px,1fr)); gap:4px 28px}
+.poppage .p-gsec .p-gh{margin-top:20px}
+@media (max-width:960px){
+  .poppage .p-own-row{grid-template-columns:1fr}
+  .poppage .p-grid{grid-template-columns:repeat(2,1fr)}
+}
+.poppage{max-width:1440px}   /* 넓은 화면 오른쪽 여백 줄이기 (2026-10-10 디자인 #3) */
+.poppage .p-top3 .p-tile{aspect-ratio:auto;height:170px}   /* 추천 카드: 일반보다 크되 넓은 화면에서 과하게 커지지 않게 */
+@media (max-width:960px){.poppage .p-top3 .p-tile{height:150px}}

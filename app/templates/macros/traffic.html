@@ -57,7 +57,6 @@
 {% macro tile(m) %}
 {% set n = m.name %}
 <div class="p-tile {{ gc(m) }}">
-  <div class="p-band">{{ band_text(m) }}</div>
   <div class="p-body"><div class="p-nm{% if n | length >= 6 %} p-l5{% elif n | length >= 4 %} p-l4{% endif %}">{{ n }}</div><div class="p-brand">{{ APP_NAME }}</div></div>
 </div>
 {% endmacro %}
@@ -75,7 +74,7 @@
         data-rank="{{ m.rank or 99 }}" data-cnt="{{ m.review_cnt }}" data-price="{{ m.unit_price }}">
   {{ badge_pill(m) }}
   {{ tile(m) }}
-  <div class="p-ttl">{{ m.name }}<small>{{ '자체개발' if m.origin == 'own' else '기성' }}</small></div>
+  <div class="p-ttl"><span class="p-kind {{ gc(m) }}">{{ band_text(m) }}</span>{{ m.name }}</div>
   <div class="p-r"><span class="p-rt">{{ rate(m) }}</span><span class="p-pr p-num">{{ m.unit_price }}원<small> /회</small></span></div>
   <div class="p-tg">{{ refund_tag(m) }}</div>
   <div class="p-ds">{{ m.description or '설명이 아직 등록되지 않았습니다.' }}</div>

@@ -122,7 +122,7 @@ def search_term(q):
     return q[6:] if q[:6].lower() == "kakao:" else q
 
 
-def list_admin(q=None, status=None, page=1, per_page=20):
+def list_admin(q=None, status=None, page=1, per_page=20, order=None):
     from ..db import query, query_one  # local import keeps top clean
     where, params = ["1=1"], []
     if q:
@@ -136,7 +136,7 @@ def list_admin(q=None, status=None, page=1, per_page=20):
     rows = query(
         f"""SELECT u.*, (SELECT COUNT(*) FROM campaigns c WHERE c.user_id = u.id) AS campaign_cnt,
                    (SELECT COALESCE(SUM(paid_amount - refund_amount), 0) FROM campaigns c WHERE c.user_id = u.id AND paid_at IS NOT NULL) AS paid_total
-            FROM users u WHERE {w} ORDER BY u.created_at DESC, u.id DESC LIMIT %s OFFSET %s""",
+            FROM users u WHERE {w} ORDER BY {order + ', ' if order else ''}u.created_at DESC, u.id DESC LIMIT %s OFFSET %s""",
         params + [per_page, (page - 1) * per_page])
     for r in rows:
         r["login_id"] = login_id(r.get("email"), r.get("username"), r.get("kakao_id"), r["id"])
