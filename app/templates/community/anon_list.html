@@ -8,7 +8,7 @@
 
     {% if current_user %}
     <div class="card write" id="writeBox" style="margin:8px 0 4px"><div class="avatar"><i data-lucide="venetian-mask" class="i i16"></i></div><input class="in" placeholder="무엇이든 익명으로 물어보세요" readonly><span class="anonlbl"><i data-lucide="lock" class="i i14"></i>이 글에서 당신은 <b style="color:var(--text)">{{ nick }}</b></span><button class="btn pri sm" type="button">글쓰기</button></div>
-    <form class="card" method="post" action="/community/anon/write" enctype="multipart/form-data" id="writeForm" style="display:none;padding:14px;margin:8px 0 4px">
+    <form class="card" method="post" action="/community/anon/write" enctype="multipart/form-data" id="writeForm" data-fresh style="display:none;padding:14px;margin:8px 0 4px">
       <div class="f"><input class="in" name="title" placeholder="제목" maxlength="200" required></div>
       <div class="f"><textarea class="in" name="body" rows="5" placeholder="업체명·전화번호는 자동으로 가려집니다." required></textarea></div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><select class="in" name="channel_tag" style="width:auto;height:36px" required><option value="">태그 선택</option>{% for k, v in tag_label.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select><label class="btn sec sm" style="cursor:pointer"><i data-lucide="image" class="i i14"></i><span id="imgName">이미지</span><input type="file" name="image" accept="image/png,image/jpeg,image/gif,image/webp" hidden></label><span class="anonlbl"><i data-lucide="lock" class="i i14"></i>{{ nick }}</span><button class="btn pri sm" type="submit" style="margin-left:auto">등록</button></div>

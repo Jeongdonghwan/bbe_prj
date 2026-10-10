@@ -87,6 +87,7 @@ CREATE TABLE IF NOT EXISTS campaigns (
   target_url       VARCHAR(500) NOT NULL,
 
   nv_mid           VARCHAR(20) NULL,
+  store_name     VARCHAR(80) NULL,
   track_id         INT NULL,
   track_status     VARCHAR(20) NULL,
   main_keyword     VARCHAR(60) NOT NULL,

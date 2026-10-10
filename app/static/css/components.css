@@ -735,3 +735,15 @@ tr:hover .rowact button, tr.sel .rowact button{opacity:1}
 .pickgrid .pill-chk.on i{background:var(--accent);border-color:var(--accent)}
 .pickgrid .pill-chk.on i::after{content:"";position:absolute;left:4px;top:1px;width:5px;height:9px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
 .rowact.on button,.rowact.on button:not([data-drawer]){opacity:1}   /* 위의 hover 전용 규칙을 이긴다 — 항상 보이는 행 버튼 */
+/* 표 정렬 규칙 (2026-10-10 피드백 공통 #3 · 어드민 #7) — 헤더는 가운데, 열 사이 구분선,
+   형식이 같은 칸(숫자·날짜·금액·상태·채널·등급·체크·관리 버튼)은 가운데, 이름·아이디·메모 같은 긴 칸은 왼쪽.
+   모바일 카드형 표(.ctable, 768px 미만)는 건드리지 않는다. */
+@media (min-width:768px){
+  .card table th{text-align:center}
+  .card table th+th,.card table td+td{border-left:1px solid var(--border)}
+  .card table td.num{text-align:center!important}
+  .card table td:has(> .st),.card table td:has(> .pill),.card table td:has(> .tag:only-child),.card table td:has(> select),
+  .card table td:has(> form > select),.card table td:has(> input[type=checkbox]),.card table td:has(> .rowact),
+  .card table td:has(> .rankcell){text-align:center}
+  .card table td > .rowact{justify-content:center}
+}

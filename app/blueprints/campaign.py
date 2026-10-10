@@ -158,7 +158,7 @@ def new(channel):
                       "mind": m["min_days"] or 1,
                       "badge": m["badge"], "badge_label": m["badge_label"],
                       "desc": m["description"] or "", "fit": m["fit_for"], "flow": m["flow_steps"]}
-            for m in medias}, ensure_ascii=False),
+            for m in medias if m["origin"] != "ready"}, ensure_ascii=False),   # 기성은 직접 발주 불가
         today_picks=today_picks,
         # 미리보기는 쇼핑·스토어만. 쿠팡·플레이스는 순위 서버가 읽지 못한다 (2026-09-21 JDH).
         preview_on=channel == "store",
@@ -202,6 +202,7 @@ def _parse_form(channel, media, form):
         return None, str(e)
     nv = (form.get("nv_mid") or "").strip()
     f["nv_mid"] = nv if nv.isdigit() and len(nv) <= 20 else None   # 위저드 미리보기(순위 서버)가 준 값만
+    f["store_name"] = (form.get("store_name") or "").strip()[:80] or None   # 미리보기가 준 스토어명 (없으면 크론이 채운다)
     f["main_keyword"] = " ".join((form.get("main_keyword") or "").split())[:60]
     if not f["main_keyword"]:
         return None, "희망 키워드를 입력해주세요."
@@ -238,6 +239,9 @@ def _create(channel):
     if media:
         # 총액 재계산은 반드시 이 회원에게 적용되는 단가로 한다 (client_total 대조도 같은 값 기준).
         media["unit_price"] = media_model.price_for(g.user["id"], media)
+    if media and media.get("origin") == "ready":
+        flash("기성 매체는 직접 발주할 수 없습니다. 카카오톡으로 문의해주세요.")
+        return redirect(url_for("campaign.new", channel=channel))
     if not media or media["channel"] != channel or not media["is_active"]:
         flash("광고 유형을 선택해주세요.")
         return redirect(url_for("campaign.new", channel=channel))

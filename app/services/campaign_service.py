@@ -51,7 +51,7 @@ def create(user, media, form, method, depositor=None):
         "order_no": new_order_no(), "user_id": user["id"], "channel": media["channel"], "media_id": media["id"],
         "status": "pay_wait",
         "biz_name": form["biz_name"], "product_name": form.get("product_name"), "target_url": form["target_url"],
-        "nv_mid": form.get("nv_mid"),
+        "nv_mid": form.get("nv_mid"), "store_name": form.get("store_name"),
         "main_keyword": form["main_keyword"], "sub_keywords": form.get("sub_keywords") or [],
         "setting_keywords": form.get("setting_keywords") or [], "keyword_mode": form.get("keyword_mode", "ai"),
         "extra": form.get("extra") or {},
@@ -86,7 +86,7 @@ def create_with_credit(user, media, form):
         "order_no": new_order_no(), "user_id": user["id"], "channel": media["channel"], "media_id": media["id"],
         "status": "review",
         "biz_name": form["biz_name"], "product_name": form.get("product_name"), "target_url": form["target_url"],
-        "nv_mid": form.get("nv_mid"),
+        "nv_mid": form.get("nv_mid"), "store_name": form.get("store_name"),
         "main_keyword": form["main_keyword"], "sub_keywords": form.get("sub_keywords") or [],
         "setting_keywords": form.get("setting_keywords") or [], "keyword_mode": form.get("keyword_mode", "manual"),
         "extra": form.get("extra") or {},
@@ -354,14 +354,20 @@ def backfill_nv_mid(limit=100):
     if not rank_client.configured():
         return 0
     filled = 0
-    for c in campaign_model.store_without_nv_mid(limit):
+    for c in campaign_model.store_without_nv_mid(limit):     # nvMid 나 스토어명이 빈 쇼핑 캠페인
         r = rank_client.product_preview(c["target_url"])
+        if not r.get("ok"):
+            continue
+        fields = {}
         nv = str(r.get("nvMid") or "")
         # 경로에서 주워온 스토어 상품번호는 nvMid 가 아니다 — 그건 이미 별도 열로 뽑고 있다.
-        if not r.get("ok") or not nv.isdigit() or r.get("nvMidSource") == "path":
-            continue
-        campaign_model.update(c["id"], {"nv_mid": nv[:20]})
-        filled += 1
+        if not c.get("nv_mid") and nv.isdigit() and r.get("nvMidSource") != "path":
+            fields["nv_mid"] = nv[:20]
+        if not c.get("store_name") and r.get("mallName"):
+            fields["store_name"] = str(r["mallName"]).strip()[:80]      # 스토어명 (2026-10-10 어드민 피드백 #1)
+        if fields:
+            campaign_model.update(c["id"], fields)
+            filled += 1
     return filled
 
 

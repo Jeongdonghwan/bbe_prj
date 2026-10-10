@@ -71,5 +71,11 @@
     if (v !== t.value) { t.value = v; t.dispatchEvent(new Event('input', { bubbles: false })); }
   });
 
+  // 뒤로가기(bfcache)로 돌아왔을 때 '처리 중' 버튼이나 이미 등록한 글이 그대로 남아 있지 않게 새로 읽는다
+  // (2026-10-10 피드백: 익명게시판 등록 후 뒤로가기). 제출 중이던 화면이거나 data-fresh 폼이 있는 화면만.
+  window.addEventListener('pageshow', function (e) {
+    if (e.persisted && document.querySelector('.is-busy, form[data-fresh]')) location.reload();
+  });
+
   if (window.lucide) window.lucide.createIcons();
 })();

@@ -72,6 +72,7 @@
     }
     var nameIn = $('f-name');
     if ($('nvMid')) $('nvMid').value = /^\d{1,20}$/.test(String(d.nvMid || '')) ? String(d.nvMid) : '';
+    if ($('storeName')) $('storeName').value = (d.mallName || '').slice(0, 80);
     if (d.prodNm) {
       ok.textContent = (d.mallName ? d.mallName + ' · ' : '') + '상품을 확인했습니다';
       if (!nameIn.value.trim()) {                  // never overwrite what the user typed
@@ -113,11 +114,11 @@
   });
   function pick(id) {
     mediaId.value = id;
-    document.querySelectorAll('#typegrid .w-card').forEach(function (c) { c.classList.toggle('w-on', c.dataset.id === String(id)); });
+    document.querySelectorAll('#typegrid .w-card[data-id]').forEach(function (c) { c.classList.toggle('w-on', c.dataset.id === String(id)); });
     err('e-media', '');
     renderDetail(); sync(); save();
   }
-  document.querySelectorAll('#typegrid .w-card').forEach(function (c) {
+  document.querySelectorAll('#typegrid .w-card[data-id]').forEach(function (c) {
     c.addEventListener('click', function () { pick(c.dataset.id); });
   });
   function renderDetail() {
@@ -356,6 +357,7 @@
       $('pvImg').hidden = true;
       $('pvIcon').hidden = false;
       if ($('nvMid')) $('nvMid').value = '';            // 주소가 바뀌면 이전 상품의 nvMid 를 버린다
+      if ($('storeName')) $('storeName').value = '';
       $('f-name').value = '';                           // 상품명도 같이 (직접 입력받지 않으므로 항상 새로 채운다)
       clearTimeout(lookupTimer);
       lookupTimer = setTimeout(lookup, 600);
@@ -402,7 +404,7 @@
   /* ── init ── */
   restore();
   if (mediaId.value) {
-    document.querySelectorAll('#typegrid .w-card').forEach(function (c) { c.classList.toggle('w-on', c.dataset.id === mediaId.value); });
+    document.querySelectorAll('#typegrid .w-card[data-id]').forEach(function (c) { c.classList.toggle('w-on', c.dataset.id === mediaId.value); });
   }
   preview();
   renderDetail();

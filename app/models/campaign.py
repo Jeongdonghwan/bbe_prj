@@ -396,7 +396,7 @@ def tracked_without_name(limit=100):
 def store_without_nv_mid(limit=100):
     """nvMid 가 비어 있는 쇼핑 캠페인 — 등록 때 미리보기가 못 채운 건을 나중에 메운다."""
     return [_decode(r) for r in query(
-        """SELECT * FROM campaigns WHERE channel = 'store' AND nv_mid IS NULL
+        """SELECT * FROM campaigns WHERE channel = 'store' AND (nv_mid IS NULL OR store_name IS NULL)
              AND status IN ('review','approved','running','done')
            ORDER BY id DESC LIMIT %s""", [limit])]
 

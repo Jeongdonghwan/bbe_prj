@@ -3,7 +3,6 @@
 {% block title %}크레딧 관리{% endblock %}
 {% block content %}
 <div class="ph"><div><h1>크레딧 관리</h1><p>무통장 충전 요청 승인·거절, 회원 크레딧 직접 충전·차감. 회원 이름을 누르면 그 회원의 충전 이력만 봅니다.</p></div></div>
-<form class="tbar" method="get" action="/admin/credits" style="margin:-4px 0 14px"><div class="search"><i data-lucide="search" class="i"></i><input class="in" name="q" value="{{ q or '' }}" placeholder="회원 찾기 · 아이디·닉네임·상호·전화"></div></form>
 
 {% if found %}
 <div class="card" style="margin-bottom:14px"><div class="ch"><h3>'{{ q }}' 검색 결과 {{ found | length }}명</h3></div><div class="cb"><div class="lr-links" style="display:flex;flex-wrap:wrap;gap:6px">
@@ -16,8 +15,8 @@
   <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
     <h3 style="margin:0;font-size:16px">{{ member.nickname }}{% if member.biz_name %} <span class="mut" style="font-weight:500">· {{ member.biz_name }}</span>{% endif %}</h3>
     <span class="mut">{{ member.email or member.username or '-' }}</span>
-    <a class="btn sec sm" href="/admin/users?open={{ member.id }}" style="margin-left:auto">회원 상세</a>
-    <a class="btn ghost sm" href="/admin/credits">전체 보기</a>
+    <button class="btn sec sm" type="button" id="memberDetail" data-id="{{ member.id }}" style="margin-left:auto">회원 상세</button>
+    <a class="btn ghost sm" href="/admin/credits">다른 회원</a>
   </div>
   {% set lg = summary.ledger %}
   <div class="dgrid" style="grid-template-columns:repeat(5,1fr)">
@@ -64,8 +63,8 @@
       {{ pager(page, total_pages, 'admin.credits', status=status, user=member.id if member else None) }}
     </div></div>
 
-    <div class="card" style="margin-top:14px"><div class="ch"><h3>{% if member %}{{ member.nickname }} 크레딧 내역 <span class="thin">최근 100건</span>{% else %}최근 크레딧 변동{% endif %}</h3></div><div class="cb">
-      <div style="overflow-x:auto;margin:0 -18px"><table class="ctable">
+    <div class="card" style="margin-top:14px" id="ledger"><div class="ch"><h3>{% if member %}{{ member.nickname }} 크레딧 내역 <span class="thin">{{ '전체 ' ~ (recent | length) ~ '건' if ledger_all else '최근 20건' }}</span>{% else %}최근 크레딧 변동{% endif %}</h3>{% if member %}<a class="btn sec sm" style="margin-left:auto" href="/admin/credits?user={{ member.id }}{% if not ledger_all %}&ledger=all{% endif %}#ledger">{{ '최근 20건만' if ledger_all else '전체 보기' }}</a>{% endif %}</div><div class="cb">
+      <div style="overflow-x:auto;margin:0 -18px{% if ledger_all %};max-height:520px;overflow-y:auto{% endif %}"><table class="ctable">
         <thead><tr><th>일시</th><th>회원</th><th>구분</th><th style="text-align:right">금액</th><th style="text-align:right">잔액</th><th>내용</th></tr></thead>
         <tbody>
         {% set lg_t = {'charge': '충전', 'spend': '광고비', 'refund': '환불', 'adjust': '조정'} %}
@@ -106,5 +105,23 @@
   </div></div>
 </div>
 <form id="memberSearch" method="get" action="/admin/credits"></form>
+<div class="drawer pop" id="drawer"></div>
 {% endblock %}
-{% block scripts %}<script src="{{ url_for('static', filename='js/admin.js') }}"></script>{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+<script>
+(function () {   // 회원 상세를 이 화면 안 팝업으로 (회원 목록으로 옮겨가지 않게)
+  var b = document.getElementById('memberDetail'), d = document.getElementById('drawer');
+  if (!b || !d) return;
+  function close() { d.classList.remove('on'); }
+  b.addEventListener('click', function (e) {
+    e.stopPropagation();
+    fetch('/admin/users/' + b.dataset.id + '/drawer').then(function (r) { return r.text(); }).then(function (html) {
+      d.innerHTML = html; d.classList.add('on');
+      var x = d.querySelector('#dclose'); if (x) x.addEventListener('click', close);
+      if (window.lucide) window.lucide.createIcons();
+    });
+  });
+  document.addEventListener('click', function (e) { if (d.classList.contains('on') && !d.contains(e.target)) close(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+})();
+</script>{% endblock %}

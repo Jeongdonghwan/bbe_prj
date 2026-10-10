@@ -220,3 +220,7 @@
 .wzpage .w-stepper .w-v input{width:82px;height:44px;border:0;background:transparent;text-align:center;font-size:19px;font-weight:700;color:var(--brand-ink);font-variant-numeric:tabular-nums;outline:none}
 .wzpage .w-calc .w-msg a{color:var(--brand)}
 @media(max-width:920px){.wzpage{padding-left:16px;padding-right:16px;padding-block:16px 40px;margin:-16px -16px -90px}}
+
+/* 기성 매체 — 발주 불가, 카카오톡 문의 카드 (2026-10-10) */
+.wzpage .w-card.w-ask{text-decoration:none;color:inherit;opacity:.85;border-style:dashed}
+.wzpage .w-card.w-ask:hover{opacity:1}

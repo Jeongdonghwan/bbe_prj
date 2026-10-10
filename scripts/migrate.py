@@ -296,6 +296,11 @@ def main():
         cur.execute("ALTER TABLE users ADD COLUMN last_login_at DATETIME NULL AFTER status")
         done.append("users.last_login_at")
 
+    # -- 스토어명 (2026-10-10) ---------------------------------------------
+    if not col("campaigns", "store_name"):
+        cur.execute("ALTER TABLE campaigns ADD COLUMN store_name VARCHAR(80) NULL AFTER nv_mid")
+        done.append("campaigns.store_name")
+
     # -- 최고 관리자 (2026-10-07) -----------------------------------------
     if not col("users", "is_super"):
         cur.execute("ALTER TABLE users ADD COLUMN is_super TINYINT(1) NOT NULL DEFAULT 0 AFTER role")

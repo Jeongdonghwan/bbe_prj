@@ -171,7 +171,8 @@
 </div>
 <div class="p-df">
   <button type="button" class="p-btn" data-close>닫기</button>
-  <a class="p-btn p-go" href="/campaign/{{ m.channel }}/new?type={{ m.id }}">이 상품으로 캠페인 만들기</a>
+  {% if m.origin == 'ready' %}<a class="p-btn p-go" href="{{ KAKAO_CHAT_URL }}" target="_blank" rel="noopener">카카오톡으로 문의하기</a>{# 기성 매체는 직접 발주 불가 #}
+  {% else %}<a class="p-btn p-go" href="/campaign/{{ m.channel }}/new?type={{ m.id }}">이 상품으로 캠페인 만들기</a>{% endif %}
 </div>
 {% endmacro %}
 

@@ -65,8 +65,9 @@
       </p>
       <form method="post" action="/admin/user-prices/{{ user.id }}/save" id="upForm">
         <input type="hidden" name="back_channel" value="{{ channel }}">
-        <div style="overflow-x:auto;margin:0 -18px"><table>
-          <thead><tr><th>매체</th><th style="text-align:right">기본 단가</th>
+        {# 매체가 많아도 6줄 정도만 보이고 표 안에서 스크롤 — 저장 버튼이 바로 아래에 보이게 (QA #9) #}
+        <div style="overflow:auto;margin:0 -18px;max-height:360px;border-bottom:1px solid var(--border)"><table>
+          <thead style="position:sticky;top:0;z-index:1"><tr><th>매체</th><th style="text-align:right">기본 단가</th>
             <th style="width:130px">이 회원 단가</th><th>메모</th></tr></thead>
           <tbody>
           {% for m in rows %}
@@ -86,6 +87,7 @@
         </table></div>
         <div style="display:flex;gap:8px;margin-top:12px">
           <button class="btn pri" type="submit">{{ channel_label[channel] }} 단가 저장</button>
+          <a class="btn sec" href="/admin/user-prices" onclick="return !document.getElementById('upForm').dataset.dirty || confirm('저장하지 않은 변경이 있습니다. 취소할까요?')">취소</a>
           <button class="btn sec" type="submit" name="reset" value="1" style="color:var(--danger)"
                   onclick="this.form.dataset.reset='1';return confirm('이 회원의 단가 설정을 모든 채널에서 지우고 기본 단가로 되돌릴까요?')">전체 해제</button>
         </div>
@@ -102,6 +104,7 @@
   if (q && document.activeElement === q) { var n = q.value.length; q.setSelectionRange(n, n); }
   // 저장 전 확인 (QA #11)
   var f = document.getElementById('upForm');
+  if (f) f.addEventListener('input', function () { f.dataset.dirty = '1'; });   // 취소 시 '저장 안 한 변경' 확인용
   if (f) f.addEventListener('submit', function (e) {
     if (f.dataset.reset) return;
     if (!confirm('{{ (user.biz_name or user.nickname) if user else '' }} 회원의 {{ channel_label[channel] if user else '' }} 단가를 저장할까요?')) e.preventDefault();

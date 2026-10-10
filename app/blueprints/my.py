@@ -1,7 +1,7 @@
 """/my — mypage; /guide placeholder; /settings → /my."""
 import re
 
-from flask import Blueprint, current_app, flash, g, jsonify, redirect, render_template, request, session, url_for
+from flask import abort, Blueprint, current_app, flash, g, jsonify, redirect, render_template, request, session, url_for
 
 from ..constants import CHANNEL_LABEL, GRADE_LABEL, STATUS_CLASS, STATUS_LABEL
 from ..models import agency as agency_model
@@ -85,6 +85,9 @@ def biz():
 def biz_cert_upload():
     """사업자등록증 올리기 — 보관·열람용(승인 단계 없음). 다시 올리면 새 파일로 바뀐다."""
     from ..services import biz_cert, notify_service
+    if g.user.get("biz_cert_file"):
+        flash("사업자등록증 변경은 카카오톡 문의로 보내주세요.")
+        return redirect(url_for("my.index"))
     try:
         up = biz_cert.read_upload(request.files.get("biz_cert"))
     except biz_cert.CertError as e:
@@ -97,6 +100,19 @@ def biz_cert_upload():
     notify_service.notify_admins(f"사업자등록증 제출 · {g.user['nickname']}", f"/admin/users?open={g.user['id']}")
     flash("사업자등록증을 올렸습니다.")
     return redirect(url_for("my.index"))
+
+
+@bp.route("/my/biz-cert")
+@login_required
+def biz_cert_view():
+    """내가 올린 사업자등록증 보기 — 본인 파일만."""
+    import os
+    from flask import send_file
+    from ..services import biz_cert
+    f = g.user.get("biz_cert_file")
+    if not f or not os.path.exists(biz_cert.path(f)):
+        abort(404)
+    return send_file(biz_cert.path(f), max_age=0)
 
 
 @bp.route("/my/notify", methods=["POST"])

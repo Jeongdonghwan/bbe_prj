@@ -467,7 +467,8 @@ def credits():
                            total_pages=max(1, -(-total // per_page)),
                            pending_n=credit_model.pending_count(), due_days=due_days,
                            stale_n=credit_model.stale_pending_count(due_days),
-                           recent=credit_model.ledger(member["id"], 1, 100)[0] if member else credit_model.ledger_recent(20),
+                           recent=credit_model.ledger(member["id"], 1, 1000 if request.args.get("ledger") == "all" else 20)[0] if member else credit_model.ledger_recent(20),
+                           ledger_all=request.args.get("ledger") == "all",
                            member=member, summary=credit_model.user_summary(member["id"]) if member else None,
                            q=q, found=found)
 
@@ -513,15 +514,15 @@ def credits_adjust():
     target = user_model.get_by_id(user_id) if user_id else None
     if not target:
         flash("회원을 선택해주세요.")
-        return redirect(url_for("admin.credits"))
+        return redirect(url_for("admin.credits", user=user_id) if user_id else url_for("admin.credits"))
     try:
         bal = credit_service.adjust(user_id, amount, g.user["id"], memo)
     except credit_service.CreditError as e:
         flash(str(e))
-        return redirect(url_for("admin.credits"))
+        return redirect(url_for("admin.credits", user=user_id) if user_id else url_for("admin.credits"))
     _log("credit_adjust", "user", user_id, f"{target['nickname']} 크레딧 {'충전' if amount > 0 else '차감'} {abs(amount):,}원 → 잔액 {bal:,}원")
     flash(f"{target['nickname']}님 크레딧을 {'충전' if amount > 0 else '차감'}했습니다. (잔액 {bal:,}원)")
-    return redirect(url_for("admin.credits"))
+    return redirect(url_for("admin.credits", user=user_id) if user_id else url_for("admin.credits"))
 
 
 # =============================================================== media
