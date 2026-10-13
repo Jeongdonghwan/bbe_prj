@@ -64,7 +64,7 @@
     </div></div>
 
     <div class="card" style="margin-top:14px" id="ledger"><div class="ch"><h3>{% if member %}{{ member.nickname }} 크레딧 내역 <span class="thin">{{ '전체 ' ~ (recent | length) ~ '건' if ledger_all else '최근 20건' }}</span>{% else %}최근 크레딧 변동{% endif %}</h3>{% if member %}<a class="btn sec sm" style="margin-left:auto" href="/admin/credits?user={{ member.id }}{% if not ledger_all %}&ledger=all{% endif %}#ledger">{{ '최근 20건만' if ledger_all else '전체 보기' }}</a>{% endif %}</div><div class="cb">
-      <div style="overflow-x:auto;margin:0 -18px{% if ledger_all %};max-height:520px;overflow-y:auto{% endif %}"><table class="ctable">
+      <div class="ledscroll" style="overflow:auto;margin:0 -18px;max-height:{{ 560 if ledger_all else 380 }}px"><table class="ctable">
         <thead><tr><th>일시</th><th>회원</th><th>구분</th><th style="text-align:right">금액</th><th style="text-align:right">잔액</th><th>내용</th></tr></thead>
         <tbody>
         {% set lg_t = {'charge': '충전', 'spend': '광고비', 'refund': '환불', 'adjust': '조정'} %}

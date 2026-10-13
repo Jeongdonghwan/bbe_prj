@@ -32,10 +32,9 @@
       </div>
 
       <div class="wpane" data-p="2" hidden>
-        <h4 class="wt"><i data-lucide="building-2" class="i i16"></i>사업자 정보 선택</h4>
-        <p class="thin">세금계산서가 필요한 경우 사업자 정보를 선택하세요</p>
-        <label class="wsel"><input type="radio" name="tax_invoice" value="0" checked hidden><span>선택안함</span><i data-lucide="check" class="i i16"></i></label>
-        <label class="wsel"><input type="radio" name="tax_invoice" value="1" hidden><span>세금계산서 발행{% if current_user.biz_name %} <small class="mut">· {{ current_user.biz_name }} ({{ current_user.biz_no or '사업자번호 미등록' }})</small>{% endif %}</span><i data-lucide="check" class="i i16"></i></label>
+        <h4 class="wt"><i data-lucide="building-2" class="i i16"></i>세금계산서 사업자 정보</h4>
+        <p class="thin">충전 금액에 대한 세금계산서는 모두 발행됩니다. 아래 사업자 정보로 발행해 드려요</p>
+        <label class="wsel"><input type="radio" name="tax_invoice" value="1" checked hidden><span>세금계산서 발행{% if current_user.biz_name %} <small class="mut">· {{ current_user.biz_name }} ({{ current_user.biz_no or '사업자번호 미등록' }})</small>{% endif %}</span><i data-lucide="check" class="i i16"></i></label>
         <div id="bizForm" hidden style="margin-top:14px;max-width:420px">
           <div class="f"><label>상호</label><input class="in" name="biz_name" value="{{ current_user.biz_name or '' }}" maxlength="60"></div>
           <div class="row2">

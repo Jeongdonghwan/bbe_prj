@@ -1,22 +1,36 @@
 {% extends "layout/base.html" %}
 {% block title %}운영 현황{% endblock %}
 {% block content %}
-<div class="ph"><div><h1>운영 현황</h1><p>지금 처리해야 할 것부터.</p></div><div class="act"><span class="thin">13:30 접수 마감까지 <b id="cd2" class="num" style="color:var(--text)">—</b></span></div></div>
+<div class="ph"><div><h1>운영 현황</h1><p>지금 처리해야 할 것부터. <span class="thin" title="입력 중이거나 창이 열려 있으면 잠시 멈춥니다">· 10초마다 자동 새로고침</span></p></div><div class="act"><span class="thin">다음 접수 마감({{ cutoff.strftime('%m.%d %H:%M') }})까지 <b id="cd2" class="num" data-at="{{ cutoff.isoformat() }}" style="color:var(--text)">—</b></span></div></div>
+<div id="dash">
 <div class="queue">
   <a class="card" href="/admin/orders?status=review"><span class="k">검수 대기</span><span class="v num{% if q_review %} alert{% endif %}">{{ q_review }}</span><span class="d">{% if oldest is not none %}가장 오래된 건 {% if oldest >= 60 %}{{ oldest // 60 }}시간 {% endif %}{{ oldest % 60 }}분{% else %}대기 없음{% endif %}</span></a>
-  <a class="card" href="/admin/payments"><span class="k">무통장 입금 대기</span><span class="v num{% if q_bank %} alert{% endif %}">{{ q_bank }}</span><span class="d">합계 {{ bank_total | won }}</span></a>
-  <a class="card" href="/admin/orders?status=running"><span class="k">오늘 순위 미입력</span><span class="v num">{{ no_rank }}</span><span class="d">진행 중 {{ running }}건</span></a>
+  <a class="card" href="/admin/credits?status=pending"><span class="k">크레딧 충전 요청</span><span class="v num{% if n_charge %} alert{% endif %}">{{ n_charge }}</span><span class="d">입금 확인 후 승인</span></a>
+  <a class="card" href="/admin/orders?status=running"><span class="k" title="정상(구동 중) 캠페인 중 오늘 순위가 아직 순위 서버에서 들어오지 않은 건. 매시 자동으로 다시 조회합니다.">오늘 순위 미수집</span><span class="v num">{{ no_rank }}</span><span class="d">구동 중 {{ running }}건 · 매시 자동 재조회</span></a>
   <a class="card" href="/admin/reports"><span class="k">신고 누적</span><span class="v num">{{ reports }}</span><span class="d">3회 이상 → 자동 블라인드</span></a>
   <a class="card" href="/admin/orders?period=today"><span class="k">오늘 접수 · 매출</span><span class="v num">{{ today_n }}</span><span class="d">{{ today_amount | won }}</span></a>
 </div>
 <div class="grid2">
-  <div class="card"><div class="ch"><h3>검수 대기 큐</h3><a class="more" href="/admin/orders?status=review">주문 관리<i data-lucide="chevron-right" class="i i14"></i></a></div><div class="cb"><div style="margin:0 -18px;overflow-x:auto"><table><thead><tr><th>주문</th><th>업체 · 키워드</th><th>매체</th><th>접수</th><th></th></tr></thead><tbody>
+  <div class="card"><div class="ch"><div class="tabs qtabs" role="tablist">
+      <button type="button" class="{% if tab != 'charge' %} on{% endif %}" data-qtab="review">검수 대기 <em class="num">{{ q_review }}</em></button>
+      <button type="button" class="{% if tab == 'charge' %} on{% endif %}" data-qtab="charge">크레딧 충전 요청 <em class="num">{{ n_charge }}</em></button></div>
+    <a class="more" href="/admin/orders?status=review" data-qmore="review"{% if tab == 'charge' %} hidden{% endif %}>주문 관리<i data-lucide="chevron-right" class="i i14"></i></a>
+    <a class="more" href="/admin/credits?status=pending" data-qmore="charge"{% if tab != 'charge' %} hidden{% endif %}>크레딧 관리<i data-lucide="chevron-right" class="i i14"></i></a></div>
+    <div class="cb" data-qpane="review"{% if tab == 'charge' %} hidden{% endif %}><div style="margin:0 -18px;overflow-x:auto"><table><thead><tr><th>주문</th><th>업체 · 키워드</th><th>매체</th><th>접수</th><th>처리</th></tr></thead><tbody>
     {% for c in queue %}
     <tr{% if c.warn.block %} style="background:var(--danger-soft)"{% endif %}><td class="ord">{{ c.order_no }}</td>
-      <td><b>{{ c.biz_name }}</b> <span class="mut">{{ c.main_keyword }}</span>{% if c.warn.block %}<br><span style="color:var(--danger);font-size:12px">⚠ 금지 문구 "{{ c.warn.block | join(', ') }}" 감지</span>{% elif c.warn.warn %}<br><span style="color:var(--warn);font-size:12px">주의 문구 "{{ c.warn.warn | join(', ') }}"</span>{% endif %}</td>
+      <td><b>{{ c.biz_name }}</b> <span class="mut">{{ c.main_keyword }}</span>{% if c.warn.block %}<br><span style="color:var(--danger);font-size:12px">⚠ 금지 문구 "{{ c.warn.block | join(', ') }}" 감지</span>{% elif c.warn.warn %}<br><span style="color:var(--warn);font-size:12px">주의 문구 "{{ c.warn.warn | join(', ') }}"</span>{% endif %}{% if c.extra and c.extra.request_note %}<div class="reqnote" title="{{ c.extra.request_note }}"><b>고객 요청</b>{{ c.extra.request_note }}</div>{% endif %}</td>
       <td>{{ c.media_name }}</td><td><span class="mut">{% set m = c.age_min %}{% if m >= 1440 %}{{ m // 1440 }}일 전{% elif m >= 60 %}{{ m // 60 }}시간 전{% else %}{{ m }}분 전{% endif %}</span></td>
-      <td><div class="rowact" style="opacity:1"><form method="post" action="/admin/orders/{{ c.id }}/action"><input type="hidden" name="action" value="approve"><input type="hidden" name="back" value="/admin"><button style="color:var(--success)" type="submit">승인</button></form><button type="button" style="color:var(--danger)" data-reject="{{ c.id }}" data-order="{{ c.order_no }}" data-back="/admin">반려</button></div></td></tr>
+      <td><div class="rowact on"><form method="post" action="/admin/orders/{{ c.id }}/action" onsubmit="return confirm('{{ c.order_no }} 주문을 승인할까요?')"><input type="hidden" name="action" value="approve"><input type="hidden" name="back" value="/admin"><button style="color:var(--success)" type="submit">승인</button></form><button type="button" style="color:var(--danger)" data-reject="{{ c.id }}" data-order="{{ c.order_no }}" data-back="/admin">반려</button></div></td></tr>
     {% else %}<tr><td colspan="5"><div class="empty">검수 대기 건이 없습니다.</div></td></tr>{% endfor %}
+  </tbody></table></div></div>
+    <div class="cb" data-qpane="charge"{% if tab != 'charge' %} hidden{% endif %}><div style="margin:0 -18px;overflow-x:auto"><table><thead><tr><th>회원</th><th>충전액</th><th>입금액 · 입금자</th><th>신청</th><th>처리</th></tr></thead><tbody>
+    {% for r in charges %}
+    <tr><td><a href="/admin/credits?user={{ r.user_id }}"><b>{{ r.nickname }}</b></a><br><span class="mut" style="font-size:12px">{{ r.email or '' }}</span></td>
+      <td class="num">{{ r.amount | fmt_num }}원</td><td class="num">{{ r.total | fmt_num }}원<br><span class="mut" style="font-size:12px">{{ r.depositor }}</span></td>
+      <td><span class="mut">{% set m = r.age_min %}{% if m >= 1440 %}{{ m // 1440 }}일 전{% elif m >= 60 %}{{ m // 60 }}시간 전{% else %}{{ m }}분 전{% endif %}</span></td>
+      <td><div class="rowact on"><form method="post" action="/admin/credits/{{ r.id }}/approve" onsubmit="return confirm('{{ r.nickname }}님에게 {{ r.amount | fmt_num }}원을 충전할까요? (입금 {{ r.total | fmt_num }}원 · {{ r.depositor }} 확인)')"><input type="hidden" name="back" value="/admin?tab=charge"><button style="color:var(--success)" type="submit">승인</button></form><form method="post" action="/admin/credits/{{ r.id }}/reject" onsubmit="var v = prompt('거절 사유를 입력하세요'); if (!v) return false; this.reason.value = v;"><input type="hidden" name="reason"><input type="hidden" name="back" value="/admin?tab=charge"><button style="color:var(--danger)" type="submit">거절</button></form></div></td></tr>
+    {% else %}<tr><td colspan="5"><div class="empty">대기 중인 충전 요청이 없습니다.</div></td></tr>{% endfor %}
   </tbody></table></div></div></div>
   <div>
     <div class="card" style="margin-bottom:16px"><div class="ch"><h3>매체사별 오늘 접수</h3></div><div class="cb">
@@ -27,6 +41,28 @@
     </ul></div></div>
   </div>
 </div>
+</div>
 {% include "admin/_reject_modal.html" %}
 {% endblock %}
-{% block scripts %}<script src="{{ url_for('static', filename='js/admin.js') }}"></script>{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+<script>
+// Auto refresh: swap #dash every 10s; pause while typing, a modal is open or the tab is hidden.
+(function () {
+  var tab = '{{ tab }}';
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-qtab]'); if (!b) return;
+    tab = b.dataset.qtab;
+    document.querySelectorAll('[data-qtab]').forEach(function (x) { x.classList.toggle('on', x.dataset.qtab === tab); });
+    document.querySelectorAll('[data-qpane],[data-qmore]').forEach(function (x) { x.hidden = (x.dataset.qpane || x.dataset.qmore) !== tab; });
+    try { history.replaceState(null, '', tab === 'charge' ? '/admin?tab=charge' : '/admin'); } catch (_) {}
+  });
+  setInterval(function () {
+    if (document.hidden || document.querySelector('.modal.on') || /INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || '')) return;
+    fetch('/admin?tab=' + tab, { credentials: 'same-origin', headers: { 'X-Auto-Refresh': '1' } }).then(function (r) { if (r.redirected) { location.reload(); return null; } return r.ok ? r.text() : null; }).then(function (h) {
+      if (!h) return;
+      var d = new DOMParser().parseFromString(h, 'text/html').getElementById('dash');
+      if (d && !document.querySelector('.modal.on')) { document.getElementById('dash').innerHTML = d.innerHTML; if (window.lucide) lucide.createIcons(); }
+    }).catch(function () {});
+  }, 10000);
+})();
+</script>{% endblock %}

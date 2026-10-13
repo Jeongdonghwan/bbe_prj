@@ -27,6 +27,7 @@ class Config:
     PUBLIC_URL = os.getenv("PUBLIC_URL", "").rstrip("/")
     SESSION_COOKIE_SECURE = PUBLIC_URL.startswith("https://")
     SESSION_COOKIE_HTTPONLY = True
+    PERMANENT_SESSION_LIFETIME = 30 * 24 * 3600   # 로그인 상태 유지 (회원 로그인 화면 체크박스)
     SESSION_COOKIE_SAMESITE = "Lax"
     # Search console ownership tags (네이버 서치어드바이저 / Google Search Console). Empty -> tag omitted.
     NAVER_SITE_VERIFICATION = os.getenv("NAVER_SITE_VERIFICATION", "")

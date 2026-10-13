@@ -265,9 +265,15 @@ def create_app():
 
     def sort_link(key):
         a = _args()
-        nd = "asc" if (a.get("o") == key and a.get("d", "desc") == "desc") else "desc"
-        a.update(o=key, d=nd)
         a.pop("page", None)
+        # desc -> asc -> off (back to the page's default order)
+        if a.get("o") != key:
+            a.update(o=key, d="desc")
+        elif a.get("d", "desc") == "desc":
+            a["d"] = "asc"
+        else:
+            a.pop("o", None)
+            a.pop("d", None)
         return url_for(request.endpoint, **{**(request.view_args or {}), **a})
 
     def sort_arrow(key):

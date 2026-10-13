@@ -75,20 +75,30 @@ def bank_settings():
 @admin_required
 def index():
     counts = campaign_model.admin_status_counts()
-    bank = payment_model.pending_bank_summary()
     intake = campaign_model.today_intake()
     queue = campaign_model.review_queue(8)
     for c in queue:
         c["warn"] = forbidden_service.check([c["biz_name"], c["product_name"], c["main_keyword"]], c["channel"])
         ref = c["paid_at"] or c["created_at"]
         c["age_min"] = int((datetime.now() - ref).total_seconds() // 60)
+    from ..models import credit as credit_model
+    charges, n_charge = credit_model.list_admin_requests(status="pending", per_page=8)
+    for r in charges:
+        r["age_min"] = int((datetime.now() - r["created_at"]).total_seconds() // 60)
+    # next intake cutoff (weekday 16:00 / weekend 10:00) for the header countdown
+    from ..constants import order_cutoff_for
+    now = datetime.now()
+    cut = datetime.combine(now.date(), datetime.strptime(order_cutoff_for(now.date()), "%H:%M").time())
+    if cut <= now:
+        nxt = (now + timedelta(days=1)).date()
+        cut = datetime.combine(nxt, datetime.strptime(order_cutoff_for(nxt), "%H:%M").time())
     return render_template(
         "admin/dashboard.html",
         q_review=counts.get("review", 0), oldest=campaign_model.oldest_review_minutes(),
-        q_bank=bank["n"], bank_total=int(bank["total"]),
         no_rank=campaign_model.running_without_today_rank(), running=counts.get("running", 0),
         reports=report_model.count_reported(), today_n=intake["n"], today_amount=int(intake["amount"]),
-        queue=queue, by_media=campaign_model.today_intake_by_media(5), logs=admin_log.recent(10),
+        queue=queue, charges=charges, n_charge=n_charge, cutoff=cut, tab=request.args.get("tab") or "review",
+        by_media=campaign_model.today_intake_by_media(5), logs=admin_log.recent(10),
         channel_label=CHANNEL_LABEL,
     )
 
@@ -109,7 +119,7 @@ def orders():
     flt = _export_filters()
     page, per_page = _page()
     order = _order({"order": "c.id", "member": "COALESCE(u.biz_name, u.nickname)", "channel": "c.channel", "store": "COALESCE(c.store_name, c.biz_name)",
-                    "media": "m.name", "period": "c.start_date", "status": "c.status", "paid": "c.paid_amount", "rank": "c.rank_now"})
+                    "media": "m.name", "created": "c.created_at", "period": "c.start_date", "status": "c.status", "paid": "c.paid_amount", "rank": "c.rank_now"})
     rows = campaign_model.admin_list(status, channel, media_id, period, q, page, per_page, order=order, **flt)
     for r in rows:
         r["login_id"] = user_model.login_id(r.get("user_email"), r.get("user_username"),
@@ -496,11 +506,11 @@ def credits_approve(req_id):
         credit_service.approve_request(req_id, g.user["id"])
     except credit_service.CreditError as e:
         flash(str(e))
-        return redirect(url_for("admin.credits"))
+        return _back(url_for("admin.credits"))
     r = credit_model.get_request(req_id)
     _log("credit_approve", "charge_request", req_id, f"충전 승인 · #{req_id} {r['amount']:,}원 (입금 {r['total']:,}원)")
     flash("충전을 승인했습니다.")
-    return redirect(url_for("admin.credits"))
+    return _back(url_for("admin.credits"))
 
 
 @bp.route("/credits/<int:req_id>/reject", methods=["POST"])
@@ -512,10 +522,10 @@ def credits_reject(req_id):
         credit_service.reject_request(req_id, g.user["id"], reason)
     except credit_service.CreditError as e:
         flash(str(e))
-        return redirect(url_for("admin.credits"))
+        return _back(url_for("admin.credits"))
     _log("credit_reject", "charge_request", req_id, f"충전 거절 · #{req_id} · {reason}")
     flash("충전 요청을 거절했습니다.")
-    return redirect(url_for("admin.credits"))
+    return _back(url_for("admin.credits"))
 
 
 @bp.route("/credits/adjust", methods=["POST"])

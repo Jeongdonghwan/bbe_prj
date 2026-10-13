@@ -9,7 +9,7 @@
 
   // ---- 13:30 countdown
   var cd = $('cd2');
-  if (cd) { (function t() { var n = new Date(), d = new Date(); d.setHours(13, 30, 0, 0); if (d < n) d.setDate(d.getDate() + 1); var s = Math.floor((d - n) / 1000); cd.textContent = String(Math.floor(s / 3600)).padStart(2, '0') + ':' + String(Math.floor(s % 3600 / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); setTimeout(t, 1000); })(); }
+  if (cd) { (function t() { var n = new Date(), d = new Date(cd.dataset.at); if (d < n) { cd.textContent = '마감'; return; } var s = Math.floor((d - n) / 1000); cd.textContent = String(Math.floor(s / 3600)).padStart(2, '0') + ':' + String(Math.floor(s % 3600 / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); setTimeout(t, 1000); })(); }
 
   // ---- reject modal (single + bulk)
   var rm = $('rejectModal');
@@ -21,7 +21,8 @@
     $('rejectOrder').textContent = order; $('rejectBack').value = back || location.pathname + location.search;
     rm.classList.add('on'); rm.querySelector('textarea').focus();
   }
-  document.querySelectorAll('[data-reject]').forEach(function (b) { b.addEventListener('click', function () { openReject([b.dataset.reject], b.dataset.order, b.dataset.back); }); });
+  // delegated: the dashboard swaps its rows on auto refresh
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-reject]'); if (b) openReject([b.dataset.reject], b.dataset.order, b.dataset.back); });
 
   // ---- quick row actions (approve/start/stop/done/paid)
   document.querySelectorAll('[data-act]').forEach(function (b) {

@@ -11,6 +11,7 @@
     <form method="post" action="/auth/login{% if next_url %}?next={{ next_url | urlencode }}{% endif %}" style="text-align:left">
       <div class="f"><input class="in" type="email" name="email" placeholder="이메일" required autocomplete="email"></div>
       <div class="f"><input class="in" type="password" name="password" placeholder="비밀번호" required autocomplete="current-password"></div>
+      <label class="remember"><input type="checkbox" name="remember" value="1"> 로그인 상태 유지 <small>(30일 · 공용 PC에서는 끄세요)</small></label>
       <button class="btn pri lg" type="submit">이메일로 로그인</button>
     </form>
     <p class="thin" style="font-size:12.5px;margin-top:12px">아직 계정이 없으신가요? <a class="lnk" href="/auth/register{% if next_url %}?next={{ next_url | urlencode }}{% endif %}"><b>이메일로 회원가입</b></a></p>

@@ -33,6 +33,9 @@ EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
 # ---- helpers used app-wide -------------------------------------------------
+ADMIN_IDLE_SEC = 2 * 3600
+
+
 def load_current_user():
     """before_request: g.user = users row or None."""
     g.user = None
@@ -43,6 +46,18 @@ def load_current_user():
             g.user = u
         else:
             session.pop("uid", None)
+            return
+        if u["role"] == "admin":
+            # operators: log out after ADMIN_IDLE_SEC without activity. The dashboard's
+            # auto refresh sends X-Auto-Refresh and must not count as activity.
+            now = int(time.time())
+            if now - session.get("seen", now) > ADMIN_IDLE_SEC:
+                session.clear()
+                g.user = None
+                flash("2시간 동안 사용하지 않아 로그아웃되었습니다. 다시 로그인해주세요.")
+                return
+            if not request.headers.get("X-Auto-Refresh"):
+                session["seen"] = now
 
 
 def login_required(view):
@@ -71,9 +86,11 @@ def needs_onboarding(user):
     return bool(user) and user.get("role") != "admin" and not user.get("phone")
 
 
-def _login(user_id, next_url=None):
+def _login(user_id, next_url=None, remember=False):
     session.clear()
     session["uid"] = user_id
+    session["seen"] = int(time.time())
+    session.permanent = remember     # 로그인 상태 유지 — PERMANENT_SESSION_LIFETIME(30일)
     user_model.touch_login(user_id)
     return redirect(next_url if next_url and next_url.startswith("/") else "/")
 
@@ -99,7 +116,7 @@ def login():
         if user["status"] != "active":
             flash("이용이 제한된 계정입니다.")
             return redirect(url_for("auth.login"))
-        return _login(user["id"], next_url or "/")
+        return _login(user["id"], next_url or "/", remember=bool(request.form.get("remember")))
     key = current_app.config["KAKAO_REST_KEY"]
     return render_template("auth/login.html",
                            kakao_url=url_for("auth.kakao", next=next_url or None),
@@ -206,9 +223,11 @@ def register():
         cert = None
         if not err:
             try:
-                cert = biz_cert.read_upload(request.files.get("biz_cert"))   # 선택 — 회원 생성 전에 검증
+                cert = biz_cert.read_upload(request.files.get("biz_cert"))   # 필수 (2026-10-13 JDH) — 회원 생성 전에 검증
             except biz_cert.CertError as e:
                 err = str(e)
+            if not err and not cert:
+                err = "사업자등록증 파일을 첨부해주세요."
         if err:
             flash(err)
             return render_template("auth/register.html", next_url=next_url, form=f), 400
@@ -218,7 +237,7 @@ def register():
         if cert:
             user_model.set_biz_cert(uid, biz_cert.save(uid, cert))
         notify_service.notify_admins(f"신규 회원가입 · {nickname} / {biz_name} {biz_no} ({email})"
-                                     f"{' · 등록증 첨부' if cert else ''}", f"/admin/users?open={uid}", sms=True)
+                                     " · 등록증 첨부", f"/admin/users?open={uid}", sms=True)
         resp = _login(uid, next_url or "/")  # _login clears the session, so flash afterwards
         flash("가입을 환영합니다! 첫 캠페인을 만들어보세요.")
         return resp

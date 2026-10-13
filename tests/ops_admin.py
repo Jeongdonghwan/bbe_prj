@@ -120,7 +120,7 @@ def main():
         st = query_one("SELECT status FROM charge_requests WHERE id=%s", [req["id"]])["status"]
         bal1 = query_one("SELECT credit_balance FROM users WHERE id=%s", [uid])["credit_balance"]
     check(st == "approved" and bal1 - bal0 == 200000, "충전 승인 → 잔액 반영", f"{st} {bal0}→{bal1}")
-    r = admin.post("/admin/credits/adjust", data={"user_id": uid, "amount": "-50000", "memo": "점검 차감"}, follow_redirects=True)
+    r = admin.post("/admin/credits/adjust", data={"user_id": uid, "amount": "50,000", "sign": "-1", "memo": "점검 차감"}, follow_redirects=True)
     with app.app_context():
         bal2 = query_one("SELECT credit_balance FROM users WHERE id=%s", [uid])["credit_balance"]
     check(bal1 - bal2 == 50000, "직접 차감", f"{bal1}→{bal2}")

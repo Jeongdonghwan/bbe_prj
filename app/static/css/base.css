@@ -216,3 +216,8 @@ body:not(.admin) .nav a:hover,body:not(.admin) .nav button:hover,body:not(.admin
 .sidebar .kakao-btn.signup-btn{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.28)}
 .sidebar .kakao-btn.signup-btn:hover{background:rgba(255,255,255,.22)}
 .sidebar .kakao-btn.signup-btn svg{fill:none;stroke:#fff;width:18px;height:18px}
+
+/* 2026-10-13 JDH: 로고 왼쪽 정렬(메뉴 아이콘 줄에 맞춤) · 심볼 크게 · 글자 작고 덜 굵게 (서체는 Pretendard 유지) */
+.logo{justify-content:flex-start;padding:6px 12px 22px;gap:9px}
+.logo .lsym{height:40px}
+.logo .ltxt{font-size:21px;font-weight:700;letter-spacing:-.03em;padding-top:1px}

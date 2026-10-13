@@ -18,7 +18,7 @@ def charge():
             return redirect(url_for("credit.charge"))
         amount = request.form.get("amount", type=int) or 0
         depositor = request.form.get("depositor", "")
-        tax = request.form.get("tax_invoice") == "1"
+        tax = True   # 세금계산서는 항상 발행 (2026-10-13 JDH — '선택 안 함' 폐기)
         biz_snapshot = None
         if tax:
             name = (request.form.get("biz_name") or g.user["biz_name"] or "").strip()

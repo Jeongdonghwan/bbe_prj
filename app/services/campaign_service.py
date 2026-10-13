@@ -292,7 +292,9 @@ def rank_sheet(campaign):
     """
     if campaign["channel"] == "coupang":
         return {"days": [], "today_rank": None, "delta": None}
-    backfill_ranks(campaign)        # 콜백을 놓쳤으면 순위 서버에서 보정 (5분 스로틀)
+    # 콜백을 놓쳤으면 순위 서버에서 보정 (5분 스로틀). 순위 서버가 몇 초씩 걸려서 팝업이
+    # 늦게 열렸다 (2026-10-13 JDH) → 요청 밖에서 돌리고, 결과는 다음에 열 때 보인다.
+    backfill_async([campaign["id"]])
     c = campaign_model.get(campaign["id"])
     # 행이 있으면 그날 수집이 된 것이다 — rank NULL 이면 300위 밖, 행이 없으면 아직 수집 전.
     rankmap = {d["date"]: d["rank"] for d in campaign_model.list_daily(c["id"])}
@@ -378,13 +380,24 @@ def refresh_ranks_async(campaigns, limit=5):
     응답을 막지 않으려고 스레드로 돌리고, backfill_ranks 의 5분 스로틀이 걸려 있어
     새로고침을 연타해도 순위 서버를 계속 때리지 않는다.
     """
-    from flask import current_app, has_request_context
+    from flask import has_request_context
     if not has_request_context():
         return
     targets = [c["id"] for c in campaigns
                if c.get("track_id") and not c.get("rank_now")
                and c.get("status") in PENDING_STATUSES][:limit]
-    if not targets:
+    if targets:
+        backfill_async(targets)
+
+
+def backfill_async(targets):
+    """backfill_ranks 를 데몬 스레드로. 요청 밖(크론·테스트)에서는 그냥 동기로 돈다."""
+    from flask import current_app, has_request_context
+    if not has_request_context():
+        for cid in targets:
+            c = campaign_model.get(cid)
+            if c:
+                backfill_ranks(c)
         return
     app = current_app._get_current_object()
 
