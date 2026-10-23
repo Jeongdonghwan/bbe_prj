@@ -15,7 +15,7 @@
 
   {% if tab == 'charge' %}
   <div style="overflow-x:auto;margin:0 -18px"><table>
-    <thead><tr><th>처리일</th><th>회원</th><th>입금자명</th><th style="text-align:right">충전액</th><th style="text-align:right">입금액</th><th>계산서</th><th>상태</th><th>처리자</th><th></th></tr></thead><tbody>
+    <thead><tr><th>처리일</th><th>회원</th><th>입금자명</th><th>충전액</th><th>입금액</th><th>계산서</th><th>상태</th><th>처리자</th><th></th></tr></thead><tbody>
     {% for r in rows %}
     <tr>
       <td class="num mut">{{ r.processed_at | fmt_date('%Y.%m.%d %H:%M') if r.processed_at else '-' }}</td>
@@ -39,7 +39,7 @@
     {% endfor %}
   </div>
   <div style="overflow-x:auto;margin:0 -18px"><table>
-    <thead><tr><th>일시</th><th>회원</th><th>구분</th><th style="text-align:right">금액</th><th style="text-align:right">잔액</th><th>내용</th></tr></thead><tbody>
+    <thead><tr><th>일시</th><th>회원</th><th>구분</th><th>금액</th><th>잔액</th><th>내용</th></tr></thead><tbody>
     {% for r in rows %}
     <tr>
       <td class="num mut">{{ r.created_at | fmt_date('%Y.%m.%d %H:%M') }}</td>
@@ -55,7 +55,7 @@
 
   {% else %}
   <p class="thin" style="padding:4px 0 10px">건별 결제(무통장·카드)는 2026-09-16 크레딧 전환으로 폐기된 방식입니다. 그 전 주문 조회용으로만 남겨둡니다.</p>
-  <div style="overflow-x:auto;margin:0 -18px"><table><thead><tr><th>주문</th><th>회원</th><th>입금자명</th><th>채널 · 업체</th><th style="text-align:right">금액</th><th>상태</th><th>요청 · 기한</th><th></th></tr></thead><tbody>
+  <div style="overflow-x:auto;margin:0 -18px"><table><thead><tr><th>주문</th><th>회원</th><th>입금자명</th><th>채널 · 업체</th><th>금액</th><th>상태</th><th>요청 · 기한</th><th></th></tr></thead><tbody>
     {% for r in rows %}
     <tr{% if r.overdue %} style="background:var(--danger-soft)"{% endif %}><td class="ord">{{ r.order_no }}</td><td>{{ r.nickname }}</td>
       <td><b>{{ r.depositor or '-' }}</b>{% if r.pg_tid %}<br><span class="mono mut" style="font-size:11px">{{ r.pg_tid }}</span>{% endif %}</td>
@@ -72,9 +72,9 @@
 
 <div class="card" style="margin-top:16px"><div class="ch"><h3>입금 계좌 · 기한 설정</h3><span class="thin">충전 요청 화면의 안내 문구에 바로 반영됩니다</span></div><div class="cb">
   <form method="post" action="/admin/payments/settings" style="display:grid;grid-template-columns:1fr 1.4fr 1fr 120px auto;gap:8px;align-items:end">
-    <div class="f" style="margin:0"><label>은행</label><input class="in" name="bank_name" value="{{ bank.bank }}"></div>
-    <div class="f" style="margin:0"><label>계좌번호</label><input class="in" name="bank_account" value="{{ bank.account }}"></div>
-    <div class="f" style="margin:0"><label>예금주</label><input class="in" name="bank_holder" value="{{ bank.holder }}"></div>
+    <div class="f" style="margin:0"><label>은행</label><input class="in" name="bank_name" value="{{ bank.bank }}" maxlength="30"></div>
+    <div class="f" style="margin:0"><label>계좌번호</label><input class="in" name="bank_account" value="{{ bank.account }}" maxlength="40"></div>
+    <div class="f" style="margin:0"><label>예금주</label><input class="in" name="bank_holder" value="{{ bank.holder }}" maxlength="30"></div>
     <div class="f" style="margin:0"><label>기한<small>영업일</small></label><input class="in" name="bank_due_days" type="number" min="1" max="10" value="{{ bank.due_days }}"></div>
     <button class="btn pri" type="submit">저장</button>
   </form>

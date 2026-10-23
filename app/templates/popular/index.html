@@ -1,5 +1,5 @@
 {% extends "layout/base.html" %}
-{% import "macros/traffic.html" as t %}
+{% import "macros/traffic.html" as t with context %}
 {% block title %}인기 트래픽{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/popular.css') }}">{% endblock %}
 {% block content %}

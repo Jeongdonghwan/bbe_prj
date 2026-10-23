@@ -21,6 +21,12 @@ MENU = {
             ],
         },
         {
+            "title": "캠페인",
+            "items": [
+                {"label": "전체 캠페인 관리", "icon": "layout-list", "href": "/campaign/all"},
+            ],
+        },
+        {
             "title": "유입관리",
             "items": [
                 {
@@ -34,7 +40,7 @@ MENU = {
                 {
                     "label": "쿠팡", "icon": "package", "key": "coupang",
                     "children": [
-                        {"label": "캠페인 생성", "href": "/campaign/coupang/new"},
+                        {"label": "카카오톡 문의", "href": Config.KAKAO_CHAT_URL, "external": True},   # 쿠팡은 직접 발주 매체가 없다
                         {"label": "캠페인 관리", "href": "/campaign/coupang"},
                     ],
                 },
@@ -70,8 +76,8 @@ MENU = {
             "items": [
                 {"label": "운영 현황", "icon": "trending-up", "href": "/admin"},
                 {"label": "주문 관리", "icon": "map-pin", "href": "/admin/orders"},
-                {"label": "결제 내역", "icon": "credit-card", "href": "/admin/payments"},
                 {"label": "크레딧 관리", "icon": "wallet", "href": "/admin/credits"},
+                {"label": "결제 내역", "icon": "credit-card", "href": "/admin/payments"},
             ],
         },
         {

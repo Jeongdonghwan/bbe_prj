@@ -1,9 +1,15 @@
 // Community detail: like toggle (JSON), reply-to targeting.
 (function () {
   var lb = document.getElementById('likeBtn');
-  if (lb && window.LIKE_URL) lb.addEventListener('click', function () {
-    fetch(window.LIKE_URL, { method: 'POST' }).then(function (r) { if (r.status === 302 || r.redirected) { location.href = '/auth/kakao?next=' + encodeURIComponent(location.pathname); return null; } return r.json(); })
-      .then(function (j) { if (!j) return; document.getElementById('likeCnt').textContent = j.likes; lb.classList.toggle('on', j.liked); lb.style.color = j.liked ? 'var(--accent)' : ''; });
+  if (lb) lb.addEventListener('click', function () {
+    fetch(lb.dataset.url, { method: 'POST', credentials: 'same-origin' }).then(function (r) {
+      if (r.redirected || !r.ok) { location.href = '/auth/login?next=' + encodeURIComponent(location.pathname); return null; }
+      return r.json();
+    }).then(function (j) {
+      if (!j) return;
+      document.getElementById('likeCnt').textContent = j.likes;
+      lb.classList.toggle('on', j.liked); lb.setAttribute('aria-pressed', j.liked ? 'true' : 'false');
+    });
   });
   document.querySelectorAll('[data-reply]').forEach(function (b) {
     b.addEventListener('click', function () {

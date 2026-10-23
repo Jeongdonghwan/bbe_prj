@@ -23,7 +23,15 @@ READ_CHARS_PER_MIN = 500
 SESSION_KEY = "series_reads"
 TAG_LABEL = {"place": "플레이스", "store": "N스토어", "coupang": "쿠팡", "tool": "기타"}
 IMG_EXT = {"png", "jpg", "jpeg", "gif", "webp"}
-ANON_TAGS = ["#순위안오름", "#매체추천", "#첫캠페인", "#병원", "#맛집", "#환불", "#키워드"]
+ANON_TAGS = ["#순위안오름", "#매체추천", "#첫캠페인", "#병원", "#맛집", "#환불", "#키워드"]   # 글이 적을 때 채움용
+
+
+def _tag_side():
+    """'자주 쓰는 태그' — 글에 실제로 붙은 채널 태그(필터) + 본문에 쓴 #해시태그(검색).
+    예전에는 고정 단어를 제목에서만 찾아서, 태그를 달고 올려도 여기서 안 걸렸다 (2026-10-24)."""
+    tags = post_model.top_hashtags("anon")
+    tags += [t[1:] for t in ANON_TAGS if t[1:] not in tags]
+    return {"tag_counts": post_model.tag_counts("anon"), "hashtags": tags[:10]}
 
 
 def _page():
@@ -135,7 +143,7 @@ def _board_list(slug, template, sorts, default_sort, side):
 @bp.route("/anon")
 def anon():
     hot = post_model.hot_24h("anon", 5)
-    return _board_list("anon", "community/anon_list.html", ("new", "hot", "answers"), "new", {"hot": hot, "tags": ANON_TAGS})
+    return _board_list("anon", "community/anon_list.html", ("new", "hot", "answers"), "new", {"hot": hot, **_tag_side()})
 
 
 @bp.route("/anon/write", methods=["POST"])
@@ -161,11 +169,24 @@ def _write_post(slug, list_endpoint, detail_endpoint):
     except ValueError as e:
         flash(str(e)); return redirect(url_for(list_endpoint))
     title, body = mask_service.mask(title), mask_service.mask(body)
+    secret = slug == "qna" and request.form.get("secret") == "1"
     nick = nick_service.consume(slug)
-    pid = post_model.create(slug, g.user["id"], nick, title, body, tag, image_url)
+    pid = post_model.create(slug, g.user["id"], nick, title, body, tag, image_url, secret)
     nick_service.register_post(pid, g.user["id"], nick)
+    if slug == "qna":   # 운영 현황 '문의' 큐에도 뜨고, 헤더 종으로도 알린다 (문자는 안 보냄)
+        notify_service.notify_admins(f"새 {'비밀 ' if secret else ''}문의 · {title[:40]}", url_for(detail_endpoint, post_id=pid))
     flash(f"등록되었습니다. 이 글에서 당신은 '{nick}'입니다.")
     return redirect(url_for(detail_endpoint, post_id=pid))
+
+
+def _can_see_private(p):
+    """Blind/secret posts: only the author and operators."""
+    return bool(g.get("user")) and (g.user["role"] == "admin" or g.user["id"] == p["user_id"])
+
+
+def _can_answer(p):
+    """질문답변 답글 권한 (2026-10-24 JDH A안): 일반 질문은 누구나, 비밀문의는 운영팀(+작성자 본인 추가 질문)만."""
+    return bool(g.get("user")) and (not p.get("is_secret") or _can_see_private(p))
 
 
 def _detail(slug, template, side):
@@ -173,8 +194,10 @@ def _detail(slug, template, side):
     p = post_model.get(post_id)
     if not p or p["board_slug"] != slug:
         abort(404)
-    if p["is_blind"] and not (g.get("user") and (g.user["role"] == "admin" or g.user["id"] == p["user_id"])):
+    if p["is_blind"] and not _can_see_private(p):
         return render_template("community/blind.html", slug=slug), 404
+    if p["is_secret"] and not _can_see_private(p):
+        return render_template("community/blind.html", slug=slug, secret=True), 403
     post_model.add_view(post_id)
     p["rel"] = _rel(p["created_at"])
     comments = post_model.list_comments(post_id)
@@ -188,13 +211,13 @@ def _detail(slug, template, side):
         else:
             tree.append(c)
     my_nick = nick_service.pick(post_id, g.user["id"]) if g.get("user") else None
-    return render_template(template, p=p, comments=tree, my_nick=my_nick, tag_label=TAG_LABEL,
+    return render_template(template, p=p, comments=tree, my_nick=my_nick, tag_label=TAG_LABEL, can_answer=_can_answer(p),
                            liked=post_model.liked_by(post_id, g.user["id"] if g.get("user") else None), is_owner=bool(g.get("user")) and g.user["id"] == p["user_id"], **side)
 
 
 @bp.route("/anon/<int:post_id>")
 def anon_detail(post_id):
-    return _detail("anon", "community/anon_detail.html", {"hot": post_model.hot_24h("anon", 5), "tags": ANON_TAGS})
+    return _detail("anon", "community/anon_detail.html", {"hot": post_model.hot_24h("anon", 5), **_tag_side()})
 
 
 @bp.route("/<slug>/<int:post_id>/comment", methods=["POST"])
@@ -205,7 +228,9 @@ def comment(slug, post_id):
     p = post_model.get(post_id)
     if not p or p["board_slug"] != slug or p["is_blind"]:
         abort(404)
-    body = (request.form.get("body") or "").strip()
+    if not _can_answer(p):
+        abort(403)
+    body = (request.form.get("body") or "").strip()[:2000]
     if len(body) < 2:
         flash("댓글 내용을 입력해주세요.")
         return redirect(url_for(f"community.{slug}_detail", post_id=post_id))

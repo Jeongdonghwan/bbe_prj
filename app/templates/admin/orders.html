@@ -16,7 +16,7 @@
     {% if account %}<input type="hidden" name="user" value="{{ account.id }}"><span class="pill" style="display:inline-flex;align-items:center;gap:6px;padding:6px 10px">계정: {{ account.biz_name or account.nickname }} <a href="{{ request.full_path | replace('user=' ~ account.id, '') }}" title="계정 필터 해제" style="font-weight:700">×</a></span>{% endif %}
     <input class="in" type="date" name="from" value="{{ date_from.isoformat() if date_from else '' }}" onchange="this.form.submit()" title="등록일 시작" style="width:150px"><span class="mut">~</span><input class="in" type="date" name="to" value="{{ date_to.isoformat() if date_to else '' }}" onchange="this.form.submit()" title="등록일 끝" style="width:150px">
     <select class="in" name="period" onchange="this.form.submit()"><option value="">전체 기간</option><option value="today"{% if period == 'today' %} selected{% endif %}>오늘 접수</option><option value="week"{% if period == 'week' %} selected{% endif %}>이번 주</option><option value="month"{% if period == 'month' %} selected{% endif %}>이번 달</option></select>
-    <div class="search"><i data-lucide="search" class="i"></i><input class="in" name="q" value="{{ q or '' }}" placeholder="주문번호 · 아이디 · 회원 · 업체명"></div></form>
+    <div class="search"><i data-lucide="search" class="i"></i><input class="in" name="q" value="{{ q or '' }}" placeholder="주문번호 · 아이디 · 회원 · 업체명" maxlength="60"></div></form>
   <p class="thin" style="margin:2px 0 10px;font-size:12.5px">관리 버튼은 상태마다 다릅니다 — <b>검수</b>: 승인 · 반려 &nbsp;/&nbsp; <b>정상</b>: 중단(남은 일수 환불), 구동이 시작된 뒤에는 완료(종료일 전에 끝낼 때) &nbsp;/&nbsp; <b>완료 · 중단 · 반려</b>: 메모 · 삭제만. 순위 칸을 누르면 일자별 순위 그래프가 열립니다.</p>
   <form method="post" action="/admin/orders/bulk" id="bulkForm"><input type="hidden" name="back" value="{{ request.full_path }}">
   <div class="bulk" id="bulkBar" style="display:none"><span class="chk on"><i></i></span><span id="bulkCount">0</span>건 선택됨 <button class="btn pri sm" name="action" value="approve" type="submit" id="bulkApprove">선택 승인</button><button class="btn sec sm" type="button" id="bulkReject">선택 반려</button><button class="btn sec sm" type="submit" formaction="/admin/orders/export?{{ request.query_string.decode() }}" formmethod="post" formtarget="_blank">선택 엑셀 내보내기</button></div>
@@ -66,7 +66,7 @@
 </form></div>
 <div class="modal" id="memoModal"><form class="modal-box" method="post" id="memoForm" action=""><input type="hidden" name="action" value="memo"><input type="hidden" name="back" value="{{ request.full_path }}">
   <h3>운영팀 메모 <span class="thin" id="memoOrder"></span></h3><p class="thin" style="margin:4px 0 12px">회원의 캠페인 상세 드로어에 표시됩니다.</p>
-  <div class="f"><textarea class="in" name="memo" id="memoText" rows="4"></textarea></div>
+  <div class="f"><textarea class="in" name="memo" id="memoText" rows="4" maxlength="1000" data-count></textarea></div>
   <div style="display:flex;gap:8px"><button class="btn sec" type="button" data-close style="flex:1">취소</button><button class="btn pri" type="submit" style="flex:1">저장</button></div></form></div>
 <div class="modal" id="rankUploadModal"><form class="modal-box" method="post" action="/admin/orders/rank-upload" enctype="multipart/form-data">
   <h3>순위 일괄 업로드</h3><p class="thin" style="margin:4px 0 12px">CSV 컬럼: <code>order_no,date,rank,done_qty</code> (헤더 행 선택). 예) N581520800,2026-08-30,12,200</p>

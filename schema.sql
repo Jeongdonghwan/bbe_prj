@@ -358,6 +358,7 @@ CREATE TABLE IF NOT EXISTS posts (
   likes               INT NOT NULL DEFAULT 0,
   report_cnt          INT NOT NULL DEFAULT 0,
   is_blind            TINYINT(1) NOT NULL DEFAULT 0,
+  is_secret           TINYINT(1) NOT NULL DEFAULT 0,   -- 질문답변 비밀문의: 작성자·운영팀만
   created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_posts_board (board_id, is_blind, created_at),
@@ -438,6 +439,7 @@ CREATE TABLE IF NOT EXISTS reports (
 CREATE TABLE IF NOT EXISTS banners (
   id        INT AUTO_INCREMENT PRIMARY KEY,
   image_url VARCHAR(300) NULL,
+  image_mobile VARCHAR(300) NULL,   -- 모바일 전용 그림 (없으면 image_url)
   link      VARCHAR(300) NULL,
   title     VARCHAR(120) NOT NULL,
   subtitle  VARCHAR(80) NULL,

@@ -6,7 +6,7 @@
   <div>
     <div class="card" style="margin-bottom:12px"><div class="qna" style="cursor:default">
       <div class="qh"></div>
-      <h4 style="font-size:18px">{{ p.title }}</h4>
+      <h4 style="font-size:18px">{% if p.is_secret %}<span class="tag t-must" style="vertical-align:middle;margin-right:6px">비밀 문의</span>{% endif %}{{ p.title }}</h4>
       <p style="display:block;-webkit-line-clamp:unset;color:var(--text);font-size:14.5px;line-height:1.8;white-space:pre-wrap;margin-top:10px">{{ p.body }}</p>
       <div class="qf"><span>{{ p.anon_nick }}</span><span>·</span><span>{{ p.rel }}</span><span>조회 {{ p.views | fmt_num }}</span>
         {% if current_user and not is_owner %}<form method="post" action="/community/qna/report" style="margin-left:auto"><input type="hidden" name="target_type" value="post"><input type="hidden" name="target_id" value="{{ p.id }}"><input type="hidden" name="reason" value="질문 신고"><input type="hidden" name="back" value="/community/qna"><button type="submit" class="thin" style="text-decoration:underline">신고</button></form>{% endif %}</div>

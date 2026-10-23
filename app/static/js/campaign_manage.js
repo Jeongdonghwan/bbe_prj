@@ -1,11 +1,16 @@
 // Campaign manage: row click -> fetch drawer partial; close; deep link via ?open=.
 (function () {
   var drawer = document.getElementById('drawer');
+  // 전체 캠페인 관리는 여러 채널이 섞여 있어 행마다 채널(data-ch)로 주소를 만든다
+  function base(id) {
+    var tr = document.querySelector('tr[data-open="' + id + '"]');
+    return tr && tr.dataset.ch ? '/campaign/' + tr.dataset.ch + '/' : window.DRAWER_BASE;
+  }
   function close() { drawer.classList.remove('on'); document.querySelectorAll('tr[data-open]').forEach(function (o) { o.classList.remove('sel'); }); }
   function open(id, tr) {
     document.querySelectorAll('tr[data-open]').forEach(function (o) { o.classList.remove('sel'); });
     if (tr) tr.classList.add('sel');
-    fetch(window.DRAWER_BASE + id + '/drawer').then(function (r) { return r.text(); }).then(function (html) {
+    fetch(base(id) + id + '/drawer').then(function (r) { return r.text(); }).then(function (html) {
       drawer.innerHTML = html; drawer.classList.add('on');
       drawer.querySelector('#dclose').addEventListener('click', close);
       if (window.lucide) window.lucide.createIcons();
@@ -20,7 +25,7 @@
     var b = e.target.closest('[data-ranks]');
     if (!b || !rm) { return; }
     e.stopPropagation();
-    fetch(window.DRAWER_BASE + b.dataset.ranks + '/ranks').then(function (r) { return r.text(); }).then(function (html) {
+    fetch(base(b.dataset.ranks) + b.dataset.ranks + '/ranks').then(function (r) { return r.text(); }).then(function (html) {
       rb.innerHTML = html;
       rm.classList.add('on');
       var x = document.getElementById('rkclose');

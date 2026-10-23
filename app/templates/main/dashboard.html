@@ -2,20 +2,20 @@
 {% block title %}대시보드{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/popular.css') }}">{% endblock %}
 {% block content %}
-{% import "macros/traffic.html" as t %}
+{% import "macros/traffic.html" as t with context %}
 {# Prototype #p-dash, violet redesign 2026-09-03: ad grid + slide banner + campaign cards, FAQ left / tall community right. #}
 
 {% if not current_user %}<div style="display:flex;justify-content:flex-end;gap:6px;margin:-6px 0 12px"><a class="btn sec sm" href="/auth/login">로그인</a><a class="btn pri sm" href="/auth/register">회원가입</a></div>{% endif %}
 {% if grid_banners %}
 <div class="adgrid">
-  {% for b in grid_banners %}<a href="{{ b.link or '#' }}"{% if b.link and b.link.startswith('http') %} target="_blank" rel="noopener"{% endif %}><img src="{{ b.image_url }}" alt="{{ b.title }}" loading="lazy"></a>{% endfor %}
+  {% for b in grid_banners %}<a href="{{ b.link or '#' }}"{% if b.link and b.link.startswith('http') %} target="_blank" rel="noopener"{% endif %}><picture>{% if b.image_mobile %}<source media="(max-width:767px)" srcset="{{ b.image_mobile }}">{% endif %}<img src="{{ b.image_url }}" alt="{{ b.title }}" loading="lazy"></picture></a>{% endfor %}
 </div>
 {% endif %}
 
 {% if slide_banners %}
 <div class="slidebn" id="slidebn">
   <div class="sb-track">
-    {% for b in slide_banners %}<a href="{{ b.link or '#' }}"{% if b.link and b.link.startswith('http') %} target="_blank" rel="noopener"{% endif %}><img src="{{ b.image_url }}" alt="{{ b.title }}"{% if not loop.first %} loading="lazy"{% endif %}></a>{% endfor %}
+    {% for b in slide_banners %}<a href="{{ b.link or '#' }}"{% if b.link and b.link.startswith('http') %} target="_blank" rel="noopener"{% endif %}><picture>{% if b.image_mobile %}<source media="(max-width:767px)" srcset="{{ b.image_mobile }}">{% endif %}<img src="{{ b.image_url }}" alt="{{ b.title }}"{% if not loop.first %} loading="lazy"{% endif %}></picture></a>{% endfor %}
   </div>
   <button type="button" class="sb-nav sb-prev" aria-label="이전"><i data-lucide="chevron-left" class="i"></i></button>
   <button type="button" class="sb-nav sb-next" aria-label="다음"><i data-lucide="chevron-right" class="i"></i></button>
@@ -25,10 +25,19 @@
 
 <div class="lowgrid">
   <div>
+    {% if my_counts is not none %}
+    <a class="mycamp card" href="/campaign/all">
+      <span class="mc-t"><i data-lucide="layout-list" class="i i16"></i>내 캠페인</span>
+      <span class="mc-n"><small>검수</small><b class="num">{{ my_counts.get('review', 0) }}</b></span>
+      <span class="mc-n"><small>정상</small><b class="num">{{ my_counts.get('running', 0) + my_counts.get('approved', 0) }}</b></span>
+      <span class="mc-n"><small>완료</small><b class="num">{{ my_counts.get('done', 0) }}</b></span>
+      <span class="mc-go">전체 캠페인 관리<i data-lucide="chevron-right" class="i i14"></i></span>
+    </a>
+    {% endif %}
     <div class="pcards">
       <a class="pcard" href="/campaign/place/new"><span class="pic"><i data-lucide="map-pin" class="i"></i></span><b>플레이스 캠페인</b><small>네이버 지도 상위노출</small><span class="prow"><em>익일 구동</em><i class="pill-go">캠페인 만들기</i></span></a>
       <a class="pcard" href="/campaign/store/new"><span class="pic"><i data-lucide="shopping-bag" class="i"></i></span><b>쇼핑·스토어 캠페인</b><small>스마트스토어 · 쇼핑검색</small><span class="prow"><em>익일 구동</em><i class="pill-go">캠페인 만들기</i></span></a>
-      <a class="pcard" href="/campaign/coupang/new"><span class="pic"><i data-lucide="package" class="i"></i></span><b>쿠팡 캠페인</b><small>쿠팡 검색 상위노출</small><span class="prow"><em>익일 구동</em><i class="pill-go">캠페인 만들기</i></span></a>
+      <a class="pcard" href="{{ KAKAO_CHAT_URL }}" target="_blank" rel="noopener"><span class="pic"><i data-lucide="package" class="i"></i></span><b>쿠팡 캠페인</b><small>쿠팡 검색 상위노출</small><span class="prow"><em>상담 후 진행</em><i class="pill-go">카카오톡 문의</i></span></a>
     </div>
     <div class="card"><div class="ch"><h3>자주 묻는 질문</h3><a class="more" href="/community/qna">더보기<i data-lucide="chevron-right" class="i i14"></i></a></div><div class="cb">
       <ul class="homefaq">
@@ -62,17 +71,28 @@
   if (!sb) return;
   var tr = sb.querySelector('.sb-track'), dots = sb.querySelectorAll('.sb-dots button'), n = dots.length, i = 0, t;
   if (n < 2) return;
-  function go(k) {
-    i = (k + n) % n;
-    tr.style.transform = 'translateX(-' + (i * 100) + '%)';
-    dots.forEach(function (d, j) { d.classList.toggle('on', j === i); });
+  // Endless loop (2026-10-24 JDH "한 방향으로만"): a clone of the first slide sits after the last,
+  // so last -> first keeps moving right instead of rewinding through every slide.
+  tr.appendChild(tr.firstElementChild.cloneNode(true));
+  function place(k, anim) {
+    tr.style.transition = anim ? '' : 'none';
+    tr.style.transform = 'translateX(-' + (k * 100) + '%)';
+    if (!anim) { void tr.offsetWidth; }   // flush so the next move animates again
   }
-  function auto() { t = setInterval(function () { go(i + 1); }, 4000); }
+  function go(k) {
+    if (k < 0) { place(n, false); k = n - 1; }   // left from the first: jump to the clone, then slide left
+    i = k;
+    place(i, true);
+    dots.forEach(function (d, j) { d.classList.toggle('on', j === i % n); });
+  }
+  tr.addEventListener('transitionend', function () { if (i === n) { i = 0; place(0, false); } });
+  function auto() { clearInterval(t); t = setInterval(function () { go(i + 1); }, 4000); }
   dots.forEach(function (d) {
-    d.addEventListener('click', function (e) { e.preventDefault(); clearInterval(t); go(+d.dataset.i); auto(); });
+    d.addEventListener('click', function (e) { e.preventDefault(); go(+d.dataset.i); auto(); });
   });
-  sb.querySelector('.sb-prev').addEventListener('click', function () { clearInterval(t); go(i - 1); auto(); });
-  sb.querySelector('.sb-next').addEventListener('click', function () { clearInterval(t); go(i + 1); auto(); });
+  sb.querySelector('.sb-prev').addEventListener('click', function () { if (i === n) { i = 0; place(0, false); } go(i - 1); auto(); });
+  sb.querySelector('.sb-next').addEventListener('click', function () { if (i === n) { i = 0; place(0, false); } go(i + 1); auto(); });
+  document.addEventListener('visibilitychange', function () { if (document.hidden) clearInterval(t); else auto(); });
   auto();
 })();
 </script>{% endblock %}

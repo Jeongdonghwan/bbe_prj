@@ -5,8 +5,8 @@
 <div class="grid2" style="grid-template-columns:1.35fr 1fr">
   <div class="card"><div class="ch"><h3>쇼핑 추적 슬롯</h3><span class="thin">무료 · 최대 {{ store.slot_max }}개 · 검색량은 매일 새벽 갱신</span><span class="more" style="cursor:default">{{ store.slot_used }} / {{ store.slot_max }} 사용 중</span></div><div class="cb">
     <form method="post" action="/campaign/store/slots" class="slot-add" id="slotForm">
-      <div class="f"><label>상품 키워드</label><input class="in" id="skw" name="keyword" placeholder="예) 아우라 방향제" required></div>
-      <div class="f"><label>상품 URL<small>선택</small></label><input class="in" name="product_url" placeholder="smartstore.naver.com/..."></div>
+      <div class="f"><label>상품 키워드</label><input class="in" id="skw" name="keyword" placeholder="예) 아우라 방향제" required maxlength="40"></div>
+      <div class="f"><label>상품 URL<small>선택</small></label><input class="in" name="product_url" placeholder="smartstore.naver.com/..." maxlength="500"></div>
       <div class="f"><label>월 검색량<small>자동 조회</small></label><input class="in num" id="svol" placeholder="—" readonly style="background:var(--surface)"></div>
       <button class="btn pri" type="submit">슬롯 등록</button>
     </form>

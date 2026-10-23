@@ -32,9 +32,9 @@
       {% elif r.status != 'open' %}<div class="thin">모집이 종료된 의뢰입니다.</div>
       {% else %}
       <form method="post" action="/community/agency/{{ r.id }}/propose">
-        <div class="f"><label>예산안</label><textarea class="in" name="budget_plan" rows="2" placeholder="예) 월 120만원 — 오로라 200건/일 × 10일 + 유지 50건/일"></textarea></div>
-        <div class="f"><label>계획</label><textarea class="in" name="plan" rows="4" placeholder="세팅 키워드, 매체, 단계별 계획" required></textarea></div>
-        <div class="row2"><div class="f"><label>예상 기간</label><input class="in" name="duration" placeholder="예) 4주"></div><div class="f"><label>&nbsp;</label><button class="btn pri" style="width:100%" type="submit">제안 보내기</button></div></div>
+        <div class="f"><label>예산안</label><textarea class="in" name="budget_plan" rows="2" placeholder="예) 월 120만원 — 오로라 200건/일 × 10일 + 유지 50건/일" maxlength="300"></textarea></div>
+        <div class="f"><label>계획</label><textarea class="in" name="plan" rows="4" placeholder="세팅 키워드, 매체, 단계별 계획" required maxlength="2000"></textarea></div>
+        <div class="row2"><div class="f"><label>예상 기간</label><input class="in" name="duration" placeholder="예) 4주" maxlength="40"></div><div class="f"><label>&nbsp;</label><button class="btn pri" style="width:100%" type="submit">제안 보내기</button></div></div>
       </form>{% endif %}
     </div></div>
     {% endif %}

@@ -221,3 +221,16 @@
 .poppage{max-width:1440px}   /* 넓은 화면 오른쪽 여백 줄이기 (2026-10-10 디자인 #3) */
 .poppage .p-top3 .p-tile{aspect-ratio:auto;height:170px}   /* 추천 카드: 일반보다 크되 넓은 화면에서 과하게 커지지 않게 */
 @media (max-width:960px){.poppage .p-top3 .p-tile{height:150px}}
+/* 2026-10-24 JDH: 사이드바가 펼쳐질 때 왼쪽 상품을 덮지 않게 본문을 가운데로 */
+.poppage{margin-left:auto;margin-right:auto;max-width:1240px}
+/* 이번 주 운영팀 추천 카드 — 타일 없이 배지 + 버튼형 이름 (2026-10-24) */
+.poppage .p-top3 .p-card.p-pc{display:flex;flex-direction:column;gap:10px;padding:16px 16px 18px;text-align:left}
+.poppage .p-pc .p-pc-top{display:flex;align-items:center;gap:6px;min-height:22px}
+.poppage .p-pc .p-pc-top .p-pill{position:static}
+.poppage .p-pc .p-pc-rank{margin-left:auto;font-size:11.5px;font-weight:700;color:var(--p-ink-2)}
+.poppage .p-pc .p-pc-name{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:12px 16px;border-radius:12px;background:#6C5CE7;color:#fff;font-size:19px;font-weight:800;letter-spacing:-.02em;transition:transform .15s}
+.poppage .p-pc:hover .p-pc-name{transform:translateY(-1px)}
+.poppage .p-pc .p-r{margin:0}
+.poppage .p-pc .p-ds{margin:0;min-height:0;font-size:12.5px}
+.poppage .p-pc .p-tg{margin:0}
+.poppage .p-top3 .p-pc .p-op{margin:2px 0 0}

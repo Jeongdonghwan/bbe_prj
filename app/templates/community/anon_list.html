@@ -10,7 +10,7 @@
     <div class="card write" id="writeBox" style="margin:8px 0 4px"><div class="avatar"><i data-lucide="venetian-mask" class="i i16"></i></div><input class="in" placeholder="무엇이든 익명으로 물어보세요" readonly><span class="anonlbl"><i data-lucide="lock" class="i i14"></i>이 글에서 당신은 <b style="color:var(--text)">{{ nick }}</b></span><button class="btn pri sm" type="button">글쓰기</button></div>
     <form class="card" method="post" action="/community/anon/write" enctype="multipart/form-data" id="writeForm" data-fresh style="display:none;padding:14px;margin:8px 0 4px">
       <div class="f"><input class="in" name="title" placeholder="제목" maxlength="200" required></div>
-      <div class="f"><textarea class="in" name="body" rows="5" placeholder="업체명·전화번호는 자동으로 가려집니다." required></textarea></div>
+      <div class="f"><textarea class="in" name="body" rows="5" placeholder="업체명·전화번호는 자동으로 가려집니다." required maxlength="5000"></textarea></div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><select class="in" name="channel_tag" style="width:auto;height:36px" required><option value="">태그 선택</option>{% for k, v in tag_label.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select><label class="btn sec sm" style="cursor:pointer"><i data-lucide="image" class="i i14"></i><span id="imgName">이미지</span><input type="file" name="image" accept="image/png,image/jpeg,image/gif,image/webp" hidden></label><span class="anonlbl"><i data-lucide="lock" class="i i14"></i>{{ nick }}</span><button class="btn pri sm" type="submit" style="margin-left:auto">등록</button></div>
     </form>
     {% else %}
@@ -23,7 +23,7 @@
       <select class="in" name="sort" onchange="this.form.submit()" style="width:auto;height:34px;font-size:13px;padding:0 10px">
         {% for key, label in [('', '전체'), ('new', '최신순'), ('hot', '인기순'), ('answers', '댓글순')] %}<option value="{{ key }}"{% if (sort_param or '') == key %} selected{% endif %}>{{ label }}</option>{% endfor %}
       </select>
-      <input class="search-input" type="text" name="q" value="{{ q or '' }}" placeholder="검색어 입력" style="flex:0 1 200px;min-width:120px;height:34px;border:1px solid var(--border);border-radius:8px;padding:0 12px;background:var(--surface);outline:none;font-size:13px">
+      <input class="search-input" type="text" name="q" value="{{ q or '' }}" placeholder="검색어 입력" style="flex:0 1 200px;min-width:120px;height:34px;border:1px solid var(--border);border-radius:8px;padding:0 12px;background:var(--surface);outline:none;font-size:13px" maxlength="60">
       <span style="margin-left:auto;display:flex;gap:4px;flex-wrap:wrap">
         <a href="/community/anon?sort={{ sort_param or '' }}{% if q %}&q={{ q | urlencode }}{% endif %}"{% if not tag %} class="on"{% endif %}>전체</a>
         {% for k, v in tag_label.items() %}<a href="/community/anon?sort={{ sort_param or '' }}&tag={{ k }}{% if q %}&q={{ q | urlencode }}{% endif %}"{% if tag == k %} class="on"{% endif %}>{{ v }}</a>{% endfor %}

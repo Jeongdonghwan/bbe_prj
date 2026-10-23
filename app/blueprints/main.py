@@ -1,5 +1,5 @@
 """Dashboard (/) · 홍보 랜딩 (/intro) · robots/sitemap + shared placeholder renderer."""
-from flask import Blueprint, Response, render_template, request
+from flask import Blueprint, Response, g, render_template, request
 
 from ..models import banner as banner_model
 from ..models import content as content_model
@@ -25,7 +25,9 @@ def dashboard():
     from ..blueprints.campaign import traffic_list
     from ..constants import TRAFFIC_CHANNELS
     traffic_top = {ch: traffic_list(ch)[:5] for ch, _ in TRAFFIC_CHANNELS}
-    return render_template("main/dashboard.html", grid_banners=grid_banners, slide_banners=slide_banners,
+    from ..models import campaign as campaign_model
+    my_counts = campaign_model.status_counts(g.user["id"], None) if g.get("user") else None
+    return render_template("main/dashboard.html", grid_banners=grid_banners, slide_banners=slide_banners, my_counts=my_counts,
                            notices=notices, anon_posts=anon_posts, channels=TRAFFIC_CHANNELS, traffic_top=traffic_top)
 
 

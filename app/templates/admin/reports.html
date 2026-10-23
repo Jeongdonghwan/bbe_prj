@@ -5,7 +5,7 @@
 <div class="ph"><div><h1>신고 · 블라인드</h1><p>신고 3회 이상은 자동 블라인드됩니다. 작성자는 3회 이상 누적 건에서만 표시됩니다.</p></div></div>
 <div class="card"><div class="cb" style="padding-top:6px">
   <div class="tabs"><a href="/admin/reports"><button type="button"{% if not tt %} class="on"{% endif %}>전체</button></a><a href="/admin/reports?type=post"><button type="button"{% if tt == 'post' %} class="on"{% endif %}>글</button></a><a href="/admin/reports?type=comment"><button type="button"{% if tt == 'comment' %} class="on"{% endif %}>댓글</button></a></div>
-  <div style="overflow-x:auto;margin:0 -18px"><table><thead><tr><th>유형</th><th>게시판</th><th>내용</th><th style="text-align:right">누적</th><th>사유</th><th>작성자</th><th>상태</th><th></th></tr></thead><tbody>
+  <div style="overflow-x:auto;margin:0 -18px"><table><thead><tr><th>유형</th><th>게시판</th><th>내용</th><th>누적</th><th>사유</th><th>작성자</th><th>상태</th><th></th></tr></thead><tbody>
     {% for r in rows %}
     <tr{% if r.cnt >= 3 and not r.is_blind %} style="background:var(--danger-soft)"{% endif %}><td>{{ '글' if r.target_type == 'post' else '댓글' }}</td><td>{{ r.board_name }}</td>
       <td style="white-space:normal">{% if r.target_type == 'post' %}<a class="lnk" href="/community/anon/{{ r.target_id }}" target="_blank">{{ r.text }}</a>{% else %}{{ r.text }}{% endif %}</td>

@@ -120,11 +120,14 @@ def new(channel):
     if picked:
         # 인기 트래픽에서 상품을 고르고 넘어온 경우. Step 2 자동 선택은 다음 작업.
         current_app.logger.info("wizard %s opened with type=%s", channel, picked)
+    medias, sections = _media_ctx(channel)
+    if not any(m.get("origin") != "ready" for m in medias):
+        # 직접 발주할 수 있는 매체가 없는 채널(현재 쿠팡) — 주소 입력부터 시키지 말고 바로 상담으로 (2026-10-24 JDH)
+        return redirect(current_app.config["KAKAO_CHAT_URL"])
     pre = _prefill(channel)
     if not isinstance(pre, tuple):
         return pre
     pre, editing = pre
-    medias, sections = _media_ctx(channel)
     media_model.apply_user_prices(g.user["id"], medias)   # 계정별 단가가 있으면 그 값으로 보여준다
     from ..models import daily_pick as pick_model
     picks = pick_model.get(channel, date.today())
@@ -335,7 +338,8 @@ def bank(channel, campaign_id):
 @bp.route("/<channel>")
 @login_required
 def manage(channel):
-    _channel(channel)
+    # /campaign/all = 전체 캠페인 관리 (세 채널 한 표, 2026-10-24 JDH)
+    channel = None if channel == "all" else _channel(channel)
     uid = g.user["id"]
     status = request.args.get("status") or None
     if status and status not in STATUS_LABEL:

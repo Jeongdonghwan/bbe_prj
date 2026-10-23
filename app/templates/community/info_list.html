@@ -9,7 +9,7 @@
       {% if cat %}<input type="hidden" name="cat" value="{{ cat }}">{% endif %}
       <a href="/community/info{% if q %}?q={{ q | urlencode }}{% endif %}"{% if not cat %} class="on"{% endif %}>전체</a>
       {% for key, label in categories.items() %}<a href="/community/info?cat={{ key }}{% if q %}&q={{ q | urlencode }}{% endif %}"{% if cat == key %} class="on"{% endif %}>{{ label }}</a>{% endfor %}
-      <input class="search-input" type="text" name="q" value="{{ q or '' }}" placeholder="검색어 입력" style="flex:0 1 200px;min-width:120px;margin-left:auto;height:34px;border:1px solid var(--border);border-radius:8px;padding:0 12px;background:var(--surface);outline:none;font-size:13px">
+      <input class="search-input" type="text" name="q" value="{{ q or '' }}" placeholder="검색어 입력" style="flex:0 1 200px;min-width:120px;margin-left:auto;height:34px;border:1px solid var(--border);border-radius:8px;padding:0 12px;background:var(--surface);outline:none;font-size:13px" maxlength="60">
     </form>
     {% if q %}<div class="thin" style="margin:6px 0 0">'{{ q }}' 검색 결과 <a class="lnk" href="/community/info{% if cat %}?cat={{ cat }}{% endif %}">검색닫기</a></div>{% endif %}
 

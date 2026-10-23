@@ -6,17 +6,19 @@
 <div class="queue">
   <a class="card" href="/admin/orders?status=review"><span class="k">검수 대기</span><span class="v num{% if q_review %} alert{% endif %}">{{ q_review }}</span><span class="d">{% if oldest is not none %}가장 오래된 건 {% if oldest >= 60 %}{{ oldest // 60 }}시간 {% endif %}{{ oldest % 60 }}분{% else %}대기 없음{% endif %}</span></a>
   <a class="card" href="/admin/credits?status=pending"><span class="k">크레딧 충전 요청</span><span class="v num{% if n_charge %} alert{% endif %}">{{ n_charge }}</span><span class="d">입금 확인 후 승인</span></a>
-  <a class="card" href="/admin/orders?status=running"><span class="k" title="정상(구동 중) 캠페인 중 오늘 순위가 아직 순위 서버에서 들어오지 않은 건. 매시 자동으로 다시 조회합니다.">오늘 순위 미수집</span><span class="v num">{{ no_rank }}</span><span class="d">구동 중 {{ running }}건 · 매시 자동 재조회</span></a>
+  <a class="card" href="/admin?tab=ask" data-qjump="ask"><span class="k">답변 대기 문의</span><span class="v num{% if n_ask %} alert{% endif %}">{{ n_ask }}</span><span class="d">질문답변 · 운영팀 답변 전</span></a>
   <a class="card" href="/admin/reports"><span class="k">신고 누적</span><span class="v num">{{ reports }}</span><span class="d">3회 이상 → 자동 블라인드</span></a>
   <a class="card" href="/admin/orders?period=today"><span class="k">오늘 접수 · 매출</span><span class="v num">{{ today_n }}</span><span class="d">{{ today_amount | won }}</span></a>
 </div>
 <div class="grid2">
   <div class="card"><div class="ch"><div class="tabs qtabs" role="tablist">
-      <button type="button" class="{% if tab != 'charge' %} on{% endif %}" data-qtab="review">검수 대기 <em class="num">{{ q_review }}</em></button>
-      <button type="button" class="{% if tab == 'charge' %} on{% endif %}" data-qtab="charge">크레딧 충전 요청 <em class="num">{{ n_charge }}</em></button></div>
-    <a class="more" href="/admin/orders?status=review" data-qmore="review"{% if tab == 'charge' %} hidden{% endif %}>주문 관리<i data-lucide="chevron-right" class="i i14"></i></a>
-    <a class="more" href="/admin/credits?status=pending" data-qmore="charge"{% if tab != 'charge' %} hidden{% endif %}>크레딧 관리<i data-lucide="chevron-right" class="i i14"></i></a></div>
-    <div class="cb" data-qpane="review"{% if tab == 'charge' %} hidden{% endif %}><div style="margin:0 -18px;overflow-x:auto"><table><thead><tr><th>주문</th><th>업체 · 키워드</th><th>매체</th><th>접수</th><th>처리</th></tr></thead><tbody>
+      <button type="button" class="{% if tab not in ('charge', 'ask') %} on{% endif %}" data-qtab="review">검수 대기 <em class="num">{{ q_review }}</em></button>
+      <button type="button" class="{% if tab == 'charge' %} on{% endif %}" data-qtab="charge">크레딧 충전 요청 <em class="num">{{ n_charge }}</em></button>
+      <button type="button" class="{% if tab == 'ask' %} on{% endif %}" data-qtab="ask">문의 <em class="num">{{ n_ask }}</em></button></div>
+    <a class="more" href="/admin/orders?status=review" data-qmore="review"{% if tab in ('charge', 'ask') %} hidden{% endif %}>주문 관리<i data-lucide="chevron-right" class="i i14"></i></a>
+    <a class="more" href="/admin/credits?status=pending" data-qmore="charge"{% if tab != 'charge' %} hidden{% endif %}>크레딧 관리<i data-lucide="chevron-right" class="i i14"></i></a>
+    <a class="more" href="/admin/posts?tab=qna" data-qmore="ask"{% if tab != 'ask' %} hidden{% endif %}>게시글 관리<i data-lucide="chevron-right" class="i i14"></i></a></div>
+    <div class="cb" data-qpane="review"{% if tab in ('charge', 'ask') %} hidden{% endif %}><div style="margin:0 -18px;overflow-x:auto"><table><thead><tr><th>주문</th><th>업체 · 키워드</th><th>매체</th><th>접수</th><th>처리</th></tr></thead><tbody>
     {% for c in queue %}
     <tr{% if c.warn.block %} style="background:var(--danger-soft)"{% endif %}><td class="ord">{{ c.order_no }}</td>
       <td><b>{{ c.biz_name }}</b> <span class="mut">{{ c.main_keyword }}</span>{% if c.warn.block %}<br><span style="color:var(--danger);font-size:12px">⚠ 금지 문구 "{{ c.warn.block | join(', ') }}" 감지</span>{% elif c.warn.warn %}<br><span style="color:var(--warn);font-size:12px">주의 문구 "{{ c.warn.warn | join(', ') }}"</span>{% endif %}{% if c.extra and c.extra.request_note %}<div class="reqnote" title="{{ c.extra.request_note }}"><b>고객 요청</b>{{ c.extra.request_note }}</div>{% endif %}</td>
@@ -31,6 +33,14 @@
       <td><span class="mut">{% set m = r.age_min %}{% if m >= 1440 %}{{ m // 1440 }}일 전{% elif m >= 60 %}{{ m // 60 }}시간 전{% else %}{{ m }}분 전{% endif %}</span></td>
       <td><div class="rowact on"><form method="post" action="/admin/credits/{{ r.id }}/approve" onsubmit="return confirm('{{ r.nickname }}님에게 {{ r.amount | fmt_num }}원을 충전할까요? (입금 {{ r.total | fmt_num }}원 · {{ r.depositor }} 확인)')"><input type="hidden" name="back" value="/admin?tab=charge"><button style="color:var(--success)" type="submit">승인</button></form><form method="post" action="/admin/credits/{{ r.id }}/reject" onsubmit="var v = prompt('거절 사유를 입력하세요'); if (!v) return false; this.reason.value = v;"><input type="hidden" name="reason"><input type="hidden" name="back" value="/admin?tab=charge"><button style="color:var(--danger)" type="submit">거절</button></form></div></td></tr>
     {% else %}<tr><td colspan="5"><div class="empty">대기 중인 충전 요청이 없습니다.</div></td></tr>{% endfor %}
+  </tbody></table></div></div>
+    <div class="cb" data-qpane="ask"{% if tab != 'ask' %} hidden{% endif %}><div style="margin:0 -18px;overflow-x:auto"><table><thead><tr><th>분류</th><th>질문</th><th>작성</th><th>처리</th></tr></thead><tbody>
+    {% for r in asks %}
+    <tr><td>{% if r.is_secret %}<span class="tag t-must">비밀</span>{% else %}<span class="mut">일반</span>{% endif %}</td>
+      <td style="white-space:normal"><a class="lnk" href="/community/qna/{{ r.id }}" target="_blank" rel="noopener"><b>{{ r.title }}</b></a><br><span class="mut" style="font-size:12px">{{ r.anon_nick }}{% if r.comment_cnt %} · 회원 답변 {{ r.comment_cnt }}{% endif %}</span></td>
+      <td><span class="mut">{% set m = r.age_min %}{% if m >= 1440 %}{{ m // 1440 }}일 전{% elif m >= 60 %}{{ m // 60 }}시간 전{% else %}{{ m }}분 전{% endif %}</span></td>
+      <td><div class="rowact on"><a class="btn sec sm" href="/community/qna/{{ r.id }}#commentForm" target="_blank" rel="noopener">답변하기</a></div></td></tr>
+    {% else %}<tr><td colspan="4"><div class="empty">운영팀 답변을 기다리는 문의가 없습니다.</div></td></tr>{% endfor %}
   </tbody></table></div></div></div>
   <div>
     <div class="card" style="margin-bottom:16px"><div class="ch"><h3>매체사별 오늘 접수</h3></div><div class="cb">
@@ -50,11 +60,12 @@
 (function () {
   var tab = '{{ tab }}';
   document.addEventListener('click', function (e) {
+    var j = e.target.closest('[data-qjump]'); if (j) { e.preventDefault(); var t = document.querySelector('[data-qtab="' + j.dataset.qjump + '"]'); if (t) { t.click(); t.scrollIntoView({ block: 'center', behavior: 'smooth' }); } return; }
     var b = e.target.closest('[data-qtab]'); if (!b) return;
     tab = b.dataset.qtab;
     document.querySelectorAll('[data-qtab]').forEach(function (x) { x.classList.toggle('on', x.dataset.qtab === tab); });
     document.querySelectorAll('[data-qpane],[data-qmore]').forEach(function (x) { x.hidden = (x.dataset.qpane || x.dataset.qmore) !== tab; });
-    try { history.replaceState(null, '', tab === 'charge' ? '/admin?tab=charge' : '/admin'); } catch (_) {}
+    try { history.replaceState(null, '', tab === 'review' ? '/admin' : '/admin?tab=' + tab); } catch (_) {}
   });
   setInterval(function () {
     if (document.hidden || document.querySelector('.modal.on') || /INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || '')) return;

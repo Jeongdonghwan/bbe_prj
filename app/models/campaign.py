@@ -59,7 +59,7 @@ def set_status(campaign_id, status):
 
 # ---- lists ---------------------------------------------------------------
 def _filters(user_id, channel, status, period, media_id, q):
-    where, params = ["c.user_id = %s", "c.channel = %s"], [user_id, channel]
+    where, params = ["c.user_id = %s", "(%s IS NULL OR c.channel = %s)"], [user_id, channel, channel]
     if status:
         where.append("c.status = %s"); params.append(status)
     if period == "month":
@@ -87,15 +87,15 @@ def count_user(user_id, channel, status=None, period=None, media_id=None, q=None
 
 
 def status_counts(user_id, channel):
-    rows = query("SELECT status, COUNT(*) AS n FROM campaigns WHERE user_id = %s AND channel = %s GROUP BY status",
-                 [user_id, channel])
+    rows = query("SELECT status, COUNT(*) AS n FROM campaigns WHERE user_id = %s AND (%s IS NULL OR channel = %s) GROUP BY status",
+                 [user_id, channel, channel])
     return {r["status"]: r["n"] for r in rows}
 
 
 def media_used(user_id, channel):
     return query(
         """SELECT DISTINCT m.id, m.name FROM campaigns c JOIN media m ON m.id = c.media_id
-           WHERE c.user_id = %s AND c.channel = %s ORDER BY m.name""", [user_id, channel])
+           WHERE c.user_id = %s AND (%s IS NULL OR c.channel = %s) ORDER BY m.name""", [user_id, channel, channel])
 
 
 def list_recent_channel(user_id, channel, limit=5):
@@ -146,16 +146,16 @@ def last_month_paid(user_id, channel=None):
 def running_today_spend(user_id, channel):
     row = query_one(
         """SELECT COALESCE(SUM(unit_price * daily_qty), 0) AS n FROM campaigns
-           WHERE user_id = %s AND channel = %s AND status = 'running'
-             AND start_date <= CURDATE()""", [user_id, channel])
+           WHERE user_id = %s AND (%s IS NULL OR channel = %s) AND status = 'running'
+             AND start_date <= CURDATE()""", [user_id, channel, channel])
     return int(row["n"])
 
 
 def avg_rank_change(user_id, channel):
     row = query_one(
         """SELECT AVG(rank_start - rank_now) AS avg_up, COUNT(*) AS n FROM campaigns
-           WHERE user_id = %s AND channel = %s AND status = 'done' AND rank_start IS NOT NULL AND rank_now IS NOT NULL""",
-        [user_id, channel])
+           WHERE user_id = %s AND (%s IS NULL OR channel = %s) AND status = 'done' AND rank_start IS NOT NULL AND rank_now IS NOT NULL""",
+        [user_id, channel, channel])
     return (float(row["avg_up"]) if row["avg_up"] is not None else None), row["n"]
 
 

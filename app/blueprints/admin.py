@@ -85,6 +85,10 @@ def index():
     charges, n_charge = credit_model.list_admin_requests(status="pending", per_page=8)
     for r in charges:
         r["age_min"] = int((datetime.now() - r["created_at"]).total_seconds() // 60)
+    from ..models import post as post_model
+    asks, n_ask = post_model.qna_waiting(8)   # 질문답변 중 운영팀 답변 대기
+    for r in asks:
+        r["age_min"] = int((datetime.now() - r["created_at"]).total_seconds() // 60)
     # next intake cutoff (weekday 16:00 / weekend 10:00) for the header countdown
     from ..constants import order_cutoff_for
     now = datetime.now()
@@ -95,9 +99,8 @@ def index():
     return render_template(
         "admin/dashboard.html",
         q_review=counts.get("review", 0), oldest=campaign_model.oldest_review_minutes(),
-        no_rank=campaign_model.running_without_today_rank(), running=counts.get("running", 0),
         reports=report_model.count_reported(), today_n=intake["n"], today_amount=int(intake["amount"]),
-        queue=queue, charges=charges, n_charge=n_charge, cutoff=cut, tab=request.args.get("tab") or "review",
+        queue=queue, charges=charges, n_charge=n_charge, asks=asks, n_ask=n_ask, cutoff=cut, tab=request.args.get("tab") or "review",
         by_media=campaign_model.today_intake_by_media(5), logs=admin_log.recent(10),
         channel_label=CHANNEL_LABEL,
     )
@@ -443,7 +446,7 @@ def media_weekly():
             seen.add(tid)
             note = request.form.get(f"note{r}")
             if note is not None and (note.strip() or None) != m.get("op_note"):
-                media_model.update_fields(tid, {"op_note": note.strip()[:200] or None})   # 추천 카드의 운영팀 한줄평
+                media_model.update_fields(tid, {"op_note": note.strip()[:60] or None})   # 추천 카드의 운영팀 한줄평
     weekly_rank.save(channel, ranks, week)
     _log("media_weekly", "media", None, f"{CHANNEL_LABEL[channel]} {week:%m.%d} 주간 추천 {len(ranks)}개")
     flash(f"{week:%Y.%m.%d} 주 추천 순위를 저장했습니다." if ranks else "주간 추천 순위를 비웠습니다.")
@@ -455,7 +458,10 @@ def media_weekly():
 def media_picks():
     """오늘의 인기 — types shown in the wizard's highlight band for this channel today."""
     channel = request.form.get("channel") if request.form.get("channel") in CHANNEL_LABEL else "place"
-    ids = [int(i) for i in request.form.getlist("type_ids") if str(i).isdigit()][:6]
+    ids = [int(i) for i in request.form.getlist("type_ids") if str(i).isdigit()]
+    if len(ids) > 6:
+        flash("오늘의 인기는 최대 6개까지 저장할 수 있습니다. 6개 이하로 골라주세요.")
+        return redirect(url_for("admin.media", channel=request.form.get("channel")))
     pick_model.save(channel, date.today(), ids)
     _log("media_picks", "media", None, f"{CHANNEL_LABEL[channel]} 오늘의 인기 {len(ids)}개")
     flash("오늘의 인기를 저장했습니다.")
@@ -606,7 +612,7 @@ def media_save():
             "fit_for": _csv_json(f.get("fit_for")),
             "flow_steps": _csv_json(f.get("flow_steps")),
             "description": f.get("description", "").strip() or None,
-            "op_note": f.get("op_note", "").strip()[:200] or None,
+            "op_note": f.get("op_note", "").strip()[:60] or None,
             "no_refund_days": int(f["no_refund_days"]) if f.get("no_refund_days", "").strip() else None,
             "rank_lead_days": f.get("rank_lead_days", "").strip()[:20] or None,
             # media.same_day 는 쓰지 않는다 — 구동 시작일은 campaign_service.earliest_start()
@@ -831,7 +837,7 @@ def banners():
 BANNER_IMG_EXT = {"png", "jpg", "jpeg", "gif", "webp"}
 
 
-def _save_banner_image(banner_id, file):
+def _save_banner_image(banner_id, file, suffix=""):
     import os as _os
     ext = file.filename.rsplit(".", 1)[-1].lower()
     if ext not in BANNER_IMG_EXT:
@@ -842,10 +848,10 @@ def _save_banner_image(banner_id, file):
     d = _os.path.join(current_app.root_path, "static", "uploads", "banners")
     _os.makedirs(d, exist_ok=True)
     for old in _os.listdir(d):
-        if old.startswith(f"{banner_id}."):
+        if old.startswith(f"{banner_id}{suffix}."):
             _os.remove(_os.path.join(d, old))
     import uuid as _uuid
-    name = f"{banner_id}.{ext}"
+    name = f"{banner_id}{suffix}.{ext}"
     with open(_os.path.join(d, name), "wb") as fh:
         fh.write(data)
     return f"/static/uploads/banners/{name}?v={_uuid.uuid4().hex[:6]}"
@@ -873,6 +879,15 @@ def banners_save():
             flash(str(e))
             return redirect(url_for("admin.banners", edit=bid))
         banner_model.save(bid, {"image_url": url})
+    mfile = request.files.get("image_mobile")   # 모바일 전용 그림 (선택)
+    if mfile and mfile.filename:
+        try:
+            banner_model.save(bid, {"image_mobile": _save_banner_image(bid, mfile, "m")})
+        except ValueError as e:
+            flash(str(e))
+            return redirect(url_for("admin.banners", edit=bid))
+    elif f.get("drop_mobile") == "1":
+        banner_model.save(bid, {"image_mobile": None})
     _log("banner_save", "banner", bid, fields["title"])
     flash("배너를 저장했습니다.")
     return redirect(url_for("admin.banners"))

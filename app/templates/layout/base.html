@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}{{ crumb_label }}{% endblock %} — {{ APP_NAME }}</title>
 {% include "layout/_seo.html" %}
+<script>try { if (matchMedia('(hover: none)').matches) document.documentElement.classList.add('touch'); } catch (e) {}</script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/innks/NanumSquareRound@master/nanumsquareround.min.css">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
@@ -31,6 +33,7 @@
 </div>
 {% if needs_onboarding %}{% include "auth/_welcome_modal.html" %}{% endif %}
 {% include "layout/bottom_tab.html" %}
+<button class="side-fab" type="button" data-side-toggle aria-label="메뉴 열기"><i data-lucide="menu" class="i"></i></button>
 <button class="to-top" type="button" id="toTop" aria-label="맨 위로"><i data-lucide="arrow-up" class="i"></i></button>
 {% if request.endpoint == 'main.dashboard' %}
 <button class="help-float" type="button" id="helpFloat"><i data-lucide="circle-help" class="i"></i><span>도움말</span></button>

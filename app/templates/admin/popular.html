@@ -29,7 +29,7 @@
 
 <div class="card"><div class="ch"><h3>회원 화면에 보이는 순서</h3><span class="thin" style="margin-left:auto">추천 순위 → 후기 수 순. 상품 설명·후기·노출 여부는 매체사 관리에서 바꿉니다.</span></div>
   <div class="cb"><div style="overflow-x:auto;margin:0 -18px"><table>
-    <thead><tr><th style="width:56px">순서</th><th>상품</th><th>분류</th><th style="text-align:right">단가</th><th style="text-align:right">평점 · 후기</th><th>운영팀 한줄평</th><th></th></tr></thead><tbody>
+    <thead><tr><th style="width:56px">순서</th><th>상품</th><th>분류</th><th>단가</th><th>평점 · 후기</th><th>운영팀 한줄평</th><th></th></tr></thead><tbody>
     {% for m in shown %}
     <tr><td class="num"><b>{{ loop.index }}</b>{% if m.rank %} <span class="tag t-must">추천 {{ m.rank }}</span>{% endif %}</td>
       <td><b>{{ m.name }}</b></td>
@@ -52,7 +52,7 @@
       <select class="in" name="rank{{ r }}" data-rank="{{ r }}"><option value="">— 비우기 —</option>
         {% for m in medias %}{% if m.is_active %}<option value="{{ m.id }}" data-note="{{ m.op_note or '' }}"{% if cur and cur.id == m.id %} selected{% endif %}>{{ m.name }} · {{ m.unit_price | fmt_num }}원</option>{% endif %}{% endfor %}
       </select>
-      <input class="in" name="note{{ r }}" value="{{ (cur.op_note or '') if cur else '' }}" maxlength="200" placeholder="운영팀 한줄평 (선택)" style="margin-top:6px">
+      <input class="in" name="note{{ r }}" value="{{ (cur.op_note or '') if cur else '' }}" maxlength="60" data-count placeholder="운영팀 한줄평 (선택)" style="margin-top:6px">
     </div>
   </div>
   {% endfor %}

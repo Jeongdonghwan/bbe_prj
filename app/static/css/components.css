@@ -547,15 +547,15 @@ tr:hover .rowact button, tr.sel .rowact button{opacity:1}
 /* 목업 그대로 높이 고정 112px (모바일 84px). 화면 폭에 따라 칸 비율이 2.4:1~5:1 로 변하므로
    비율이 안 맞는 이미지는 scripts/import_banners.py 가 여백을 넉넉히 채워 넣는다 — 어느 폭에서도
    잘리는 건 흐린 여백뿐이고 본 그림은 남는다 (2026-09-29 JDH: 목업 크기에서 벗어나지 말 것). */
-.adgrid img{width:100%;min-width:0;height:112px;object-fit:cover;display:block}
+.adgrid img{width:100%;min-width:0;height:96px;object-fit:cover;display:block}
 /* 칸은 언제나 4개로 둔다. 배너가 3장이면 3칸만 채우고 넷째 칸은 비워 둔다 —
    칸 수를 배너 수에 맞추면 배너가 옆으로 늘어나 원래보다 커진다 (2026-09-29 JDH). */
-@media(max-width:768px){.adgrid{grid-template-columns:1fr 1fr}.adgrid img{height:84px}}
+@media(max-width:768px){.adgrid{grid-template-columns:1fr 1fr}.adgrid img{height:72px}}
 .slidebn{position:relative;border-radius:16px;overflow:hidden;margin-bottom:6px;box-shadow:var(--shadow)}
 .sb-track{display:flex;transition:transform .5s ease}
 .sb-track a{flex:0 0 100%;min-width:0;display:block}
-.sb-track img{width:100%;min-width:0;height:200px;object-fit:cover;display:block}
-@media(max-width:768px){.sb-track img{height:130px}}
+.sb-track img{width:100%;min-width:0;height:160px;object-fit:cover;display:block}
+@media(max-width:768px){.sb-track img{height:110px}}
 .sb-dots{position:absolute;left:0;right:0;bottom:10px;display:flex;justify-content:center;gap:6px}
 .sb-dots button{width:8px;height:8px;border-radius:99px;background:rgba(255,255,255,.55);transition:width .2s,background .2s}
 .sb-dots button.on{width:22px;background:#fff}
@@ -776,3 +776,52 @@ th .th-sort:hover{color:var(--accent)}th .th-sort:hover i{color:var(--accent)}
 .agree .agree-line{border-top:1px solid var(--border);margin:6px 0}
 .remember{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--text);margin:2px 0 12px;cursor:pointer}
 .remember input{width:16px;height:16px;accent-color:var(--accent);margin:0}.remember small{color:var(--text-3)}
+.charcount{font-size:11.5px;color:var(--text-3);text-align:right;margin-top:3px}
+/* 익명 게시판 좋아요 (2026-10-24 — 9월 정리 때 빠졌던 버튼 복구) */
+.likebtn{display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 12px;border:1px solid var(--border);border-radius:99px;font-size:12.5px;font-weight:600;color:var(--text-2);background:var(--surface)}
+.likebtn:hover{border-color:var(--danger);color:var(--danger)}
+.likebtn.on{border-color:var(--danger);color:var(--danger);background:var(--danger-soft)}
+.likebtn.on svg{fill:currentColor}
+.secret-chk{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:var(--text);cursor:pointer}
+.secret-chk input{width:15px;height:15px;margin:0;accent-color:var(--accent)}.secret-chk small{font-weight:400;color:var(--text-3)}
+
+/* 공지·정보글 글쓰기 팝업 (2026-10-24) — 본문이 주인공, 발행 설정은 오른쪽 */
+.cmodal .modal-box{max-width:1080px;width:calc(100vw - 48px);max-height:calc(100vh - 48px);padding:0;display:flex;flex-direction:column;overflow:hidden}
+.cmodal .cm-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)}
+.cmodal .cm-body{display:grid;grid-template-columns:1fr 300px;min-height:0;flex:1;overflow:hidden}
+.cmodal .cm-main{padding:18px 20px;overflow:auto}
+.cmodal .cm-side{padding:18px 20px;overflow:auto;border-left:1px solid var(--border);background:var(--bg)}
+.cmodal #editorArea{min-height:420px!important}
+@media (max-width:900px){.cmodal .cm-body{grid-template-columns:1fr;overflow:auto}.cmodal .cm-main,.cmodal .cm-side{overflow:visible}.cmodal .cm-side{border-left:0;border-top:1px solid var(--border)}}
+/* 띠배너 설정 (2026-10-24 — "띠배너 하는 곳이 없다") */
+.stripcard .ch h3{display:flex;align-items:center;gap:6px}
+.swl{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:8px}
+.swl input{display:none}.swl .toggle{margin:0}.swl input:checked+.toggle i{background:var(--accent)}.swl input:checked+.toggle i::after{transform:translateX(14px)}
+.sec-h{font-size:15px;font-weight:700;margin:6px 0 10px}.sec-h .thin{font-weight:400;margin-left:6px}
+.adgrid picture,.sb-track picture{display:block;width:100%}
+/* 회원 캠페인 목록 — 운영팀 메모가 있는 행 (누르면 드로어에서 전문) */
+.memo-flag{display:inline-flex;align-items:center;gap:3px;margin-top:4px;font-size:11px;font-weight:700;color:var(--warn);background:var(--warn-soft);border-radius:5px;padding:2px 6px;font-family:var(--font)}
+/* 대시보드 — 내 캠페인 현황 + 전체 캠페인 관리 바로가기 (2026-10-24) */
+.mycamp{display:flex;align-items:center;gap:22px;padding:14px 18px;margin-top:16px;color:var(--text)}
+.mycamp:hover{border-color:var(--accent)}
+.mycamp .mc-t{display:flex;align-items:center;gap:6px;font-weight:700;font-size:14.5px}
+.mycamp .mc-n{display:flex;align-items:baseline;gap:6px}.mycamp .mc-n small{font-size:12px;color:var(--text-2)}.mycamp .mc-n b{font-size:18px;font-weight:800}
+.mycamp .mc-go{margin-left:auto;display:flex;align-items:center;gap:2px;font-size:13px;font-weight:600;color:var(--accent)}
+@media(max-width:767px){.mycamp{flex-wrap:wrap;gap:10px 16px}.mycamp .mc-t{width:100%}.mycamp .mc-go{width:100%;margin-left:0}}
+.tagcloud a em{font-style:normal;font-size:11px;color:var(--text-3);margin-left:2px}.tagcloud a.on{border-color:var(--accent);color:var(--accent)}
+/* 어드민 본문 가운데 정렬 + 오른쪽 편집 칸이 없을 때는 목록이 전체 폭 (2026-10-24 "우측 공간이 많이 비어 있음") */
+body.admin .page{max-width:1560px;margin-left:auto;margin-right:auto;width:100%}
+.form2:has(> :only-child){grid-template-columns:minmax(0,1fr)}
+/* 모바일 정리 (2026-10-24 "어떤 화면은 꽉 차고 어떤 화면은 안 찬다") — base.css 의 1180px 규칙을
+   components.css 의 기본값이 뒤에서 덮어써서 커뮤니티 옆 패널이 안 내려왔다. 여기서 다시 건다. */
+.cgrid>*,.grid2>*,.mstat>*{min-width:0}
+@media (max-width:1180px){.cgrid{grid-template-columns:minmax(0,1fr)}.grid2{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:767px){
+  .mstat{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .tabs{overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap}.tabs::-webkit-scrollbar{display:none}
+  .tabs button{flex:none}
+  .tbar{flex-wrap:wrap}.tbar .search{flex:1 1 100%;min-width:0}.tbar .search .in{width:100%}
+  .ph{flex-wrap:wrap;gap:10px}.ph .act{flex-wrap:wrap;max-width:100%}
+  .chan-tabs{overflow-x:auto;max-width:100%;scrollbar-width:none}
+}
+.mp>*{min-width:0}@media (max-width:1180px){.mp{grid-template-columns:minmax(0,1fr)}}

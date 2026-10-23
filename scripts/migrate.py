@@ -314,6 +314,14 @@ def main():
         if cur.rowcount:
             done.append("최고 관리자 지정(가장 오래된 운영자)")
 
+    # -- 질문답변 비밀문의 · 모바일 배너 이미지 (2026-10-24) ---------------
+    if not col("posts", "is_secret"):
+        cur.execute("ALTER TABLE posts ADD COLUMN is_secret TINYINT(1) NOT NULL DEFAULT 0 AFTER is_blind")
+        done.append("posts.is_secret")
+    if not col("banners", "image_mobile"):
+        cur.execute("ALTER TABLE banners ADD COLUMN image_mobile VARCHAR(300) NULL AFTER image_url")
+        done.append("banners.image_mobile")
+
     # -- 회원 운영 메모 (2026-10-07) ----------------------------------------
     if not col("users", "admin_memo"):
         cur.execute("ALTER TABLE users ADD COLUMN admin_memo VARCHAR(500) NULL AFTER biz_cert_file")

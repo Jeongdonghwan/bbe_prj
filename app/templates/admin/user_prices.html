@@ -11,7 +11,7 @@
   <div class="card"><div class="ch"><h3>단가를 따로 쓰는 회원 <span class="thin">{{ custom_users | length }}명</span></h3></div><div class="cb">
     {% if custom_users %}
     <div style="overflow-x:auto;margin:0 -18px"><table>
-      <thead><tr><th>회원</th><th>아이디</th><th style="text-align:right">지정 매체</th><th></th></tr></thead><tbody>
+      <thead><tr><th>회원</th><th>아이디</th><th>지정 매체</th><th></th></tr></thead><tbody>
       {% for a in custom_users %}
       <tr{% if (user and user.id == a.id) or saved == a.id %} class="sel"{% endif %}{% if saved == a.id %} style="background:var(--success-soft)"{% endif %}>
         <td><b>{{ a.biz_name or a.nickname }}</b>{% if a.biz_name %}<br><span class="mut" style="font-size:11.5px">{{ a.nickname }}</span>{% endif %}{% if saved == a.id %} <span class="tag t-evt">방금 저장</span>{% endif %}</td>
@@ -28,12 +28,12 @@
       <form class="tbar" method="get" style="margin-bottom:0">
         {% if channel %}<input type="hidden" name="channel" value="{{ channel }}">{% endif %}
         <div class="search" style="flex:1"><i data-lucide="search" class="i"></i>
-          <input class="in" name="q" id="upQ" value="{{ q or '' }}" placeholder="아이디 · 이름 · 회사명으로 회원 찾기"{% if not user %} autofocus{% endif %}></div>
+          <input class="in" name="q" id="upQ" value="{{ q or '' }}" placeholder="아이디 · 이름 · 회사명으로 회원 찾기"{% if not user %} autofocus{% endif %} maxlength="60"></div>
         <button class="btn sec" type="submit">검색</button>
       </form>
       {% if q %}
       <div style="overflow-x:auto;margin:10px -18px 0"><table>
-        <thead><tr><th>아이디</th><th>회원</th><th style="text-align:right">지정 단가</th><th></th></tr></thead><tbody>
+        <thead><tr><th>아이디</th><th>회원</th><th>지정 단가</th><th></th></tr></thead><tbody>
         {% for a in found %}
         <tr{% if user and user.id == a.id %} class="sel"{% endif %}>
           <td><span class="mono">{{ a.login_id }}</span></td>
@@ -67,7 +67,7 @@
         <input type="hidden" name="back_channel" value="{{ channel }}">
         {# 매체가 많아도 6줄 정도만 보이고 표 안에서 스크롤 — 저장 버튼이 바로 아래에 보이게 (QA #9) #}
         <div style="overflow:auto;margin:0 -18px;max-height:360px;border-bottom:1px solid var(--border)"><table>
-          <thead style="position:sticky;top:0;z-index:1"><tr><th>매체</th><th style="text-align:right">기본 단가</th>
+          <thead style="position:sticky;top:0;z-index:1"><tr><th>매체</th><th>기본 단가</th>
             <th style="width:130px">이 회원 단가</th><th>메모</th></tr></thead>
           <tbody>
           {% for m in rows %}

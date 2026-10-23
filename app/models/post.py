@@ -4,7 +4,7 @@ from ..db import execute, query, query_one
 BLIND_THRESHOLD = 3
 
 LIST_COLS = """p.id, p.board_id, p.user_id, p.anon_nick, p.channel_tag, p.title, LEFT(p.body, 300) AS body, p.image_url, p.is_solved, p.views, p.likes,
-               p.report_cnt, p.is_blind, p.created_at,
+               p.report_cnt, p.is_blind, p.is_secret, p.created_at,
                (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id AND c.is_blind = 0) AS comment_cnt,
                (SELECT COUNT(*) FROM comments c JOIN users u ON u.id = c.user_id WHERE c.post_id = p.id AND u.role = 'admin' AND c.is_blind = 0) AS admin_cnt"""
 
@@ -25,8 +25,8 @@ def _filters(slug, tag, q, extra=None):
     where, params = ["b.slug = %s", "p.is_blind = 0"], [slug]
     if tag:
         where.append("p.channel_tag = %s"); params.append(tag)
-    if q:
-        where.append("p.title LIKE %s"); params.append(f"%{q}%")
+    if q:   # 제목 + 본문 (본문에 적은 #해시태그도 찾게)
+        where.append("(p.title LIKE %s OR p.body LIKE %s)"); params += [f"%{q}%"] * 2
     if extra:
         where.append(extra)
     return " AND ".join(where), params
@@ -50,6 +50,27 @@ def list_board(slug, sort="new", tag=None, q=None, page=1, per_page=20):
     return rows, total
 
 
+def tag_counts(slug):
+    """채널 태그별 글 수 — '자주 쓰는 태그' 카드."""
+    rows = query("""SELECT p.channel_tag AS tag, COUNT(*) AS n FROM posts p JOIN boards b ON b.id = p.board_id
+                    WHERE b.slug = %s AND p.is_blind = 0 AND p.channel_tag IS NOT NULL
+                    GROUP BY p.channel_tag ORDER BY n DESC""", [slug])
+    return {r["tag"]: r["n"] for r in rows}
+
+
+def top_hashtags(slug, limit=8, days=90):
+    """최근 글의 제목·본문에 회원이 직접 적은 #해시태그를 많이 쓴 순으로."""
+    import re
+    from collections import Counter
+    rows = query("""SELECT p.title, LEFT(p.body, 2000) AS body FROM posts p JOIN boards b ON b.id = p.board_id
+                    WHERE b.slug = %s AND p.is_blind = 0 AND p.created_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
+                    ORDER BY p.id DESC LIMIT 500""", [slug, days])
+    seen = Counter()
+    for r in rows:
+        seen.update(set(re.findall(r"#([0-9A-Za-z가-힣_]{2,15})", f"{r['title']} {r['body']}")))
+    return [t for t, _ in seen.most_common(limit)]
+
+
 def hot_24h(slug, limit=5):
     return query(
         f"""SELECT {LIST_COLS} FROM posts p JOIN boards b ON b.id = p.board_id
@@ -63,11 +84,25 @@ def get(post_id):
             FROM posts p JOIN boards b ON b.id = p.board_id WHERE p.id = %s""", [post_id])
 
 
-def create(slug, user_id, anon_nick, title, body, channel_tag=None, image_url=None):
+def create(slug, user_id, anon_nick, title, body, channel_tag=None, image_url=None, is_secret=False):
     bid = board_id(slug)
     return execute(
-        "INSERT INTO posts (board_id, user_id, anon_nick, channel_tag, title, body, image_url) VALUES (%s,%s,%s,%s,%s,%s,%s)",
-        [bid, user_id, anon_nick, channel_tag, title, body, image_url])
+        """INSERT INTO posts (board_id, user_id, anon_nick, channel_tag, title, body, image_url, is_secret)
+           VALUES (%s,%s,%s,%s,%s,%s,%s,%s)""",
+        [bid, user_id, anon_nick, channel_tag, title, body, image_url, 1 if is_secret else 0])
+
+
+ADMIN_UNANSWERED = """b.slug = 'qna' AND p.is_blind = 0 AND NOT EXISTS (
+    SELECT 1 FROM comments c JOIN users u ON u.id = c.user_id
+    WHERE c.post_id = p.id AND u.role = 'admin' AND c.is_blind = 0)"""
+
+
+def qna_waiting(limit=8):
+    """질문답변 중 운영팀 답변이 아직 없는 글 — 운영 현황 '문의' 큐 (오래된 것부터)."""
+    rows = query(f"""SELECT {LIST_COLS} FROM posts p JOIN boards b ON b.id = p.board_id
+                     WHERE {ADMIN_UNANSWERED} ORDER BY p.created_at ASC LIMIT %s""", [limit])
+    n = query_one(f"SELECT COUNT(*) AS n FROM posts p JOIN boards b ON b.id = p.board_id WHERE {ADMIN_UNANSWERED}")["n"]
+    return rows, n
 
 
 def add_view(post_id):

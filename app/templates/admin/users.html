@@ -16,7 +16,7 @@
 {% endif %}
 <div class="card"><div class="cb" style="padding-top:6px">
   <div class="tabs"><a href="/admin/users"><button type="button"{% if not status %} class="on"{% endif %}>전체<em>{{ counts.values() | sum }}</em></button></a><a href="/admin/users?status=active"><button type="button"{% if status == 'active' %} class="on"{% endif %}>정상<em>{{ counts.get('active', 0) }}</em></button></a><a href="/admin/users?status=suspended"><button type="button"{% if status == 'suspended' %} class="on"{% endif %}>정지<em>{{ counts.get('suspended', 0) }}</em></button></a></div>
-  <form class="tbar" method="get">{% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}<div class="search"><i data-lucide="search" class="i"></i><input class="in" name="q" value="{{ q or '' }}" placeholder="아이디 · 닉네임 · 전화 · 상호"></div></form>
+  <form class="tbar" method="get">{% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}<div class="search"><i data-lucide="search" class="i"></i><input class="in" name="q" value="{{ q or '' }}" placeholder="아이디 · 닉네임 · 전화 · 상호" maxlength="60"></div></form>
   <div style="overflow-x:auto;margin:0 -18px"><table class="otable"><thead><tr>{{ th_sort('아이디', 'login') }}{{ th_sort('닉네임 · 상호', 'name') }}{{ th_sort('사업자번호', 'bizno') }}<th>연락처</th>{{ th_sort('가입일', 'created') }}{{ th_sort('누적 결제', 'paid') }}{{ th_sort('캠페인', 'campaigns') }}<th>메모</th>{{ th_sort('등급', 'grade') }}{{ th_sort('상태', 'status') }}<th>관리</th></tr></thead><tbody>
     {% for u in rows %}
     <tr data-open="{{ u.id }}"{% if u.id == open_id %} class="sel"{% endif %}><td><span class="mono">{{ u.login_id }}</span><br><span class="mut" style="font-size:11px">{{ u.signup_via }}</span></td>
@@ -40,7 +40,7 @@
 <div class="modal" id="pwModal"><form class="modal-box" method="post" id="pwForm" action="">
   <h3>비밀번호 설정 <span class="thin" id="pwWho"></span></h3>
   <p class="thin" style="margin:4px 0 12px">회원은 <b>이메일 + 비밀번호</b>로 로그인합니다. 설정한 값은 저장 직후 한 번만 보여집니다.</p>
-  <div class="f"><label>이메일<small id="pwMailHint">로그인 아이디로 씁니다</small></label><input class="in" type="email" name="email" id="pwMail" placeholder="user@example.com"></div>
+  <div class="f"><label>이메일<small id="pwMailHint">로그인 아이디로 씁니다</small></label><input class="in" type="email" name="email" id="pwMail" placeholder="user@example.com" maxlength="120"></div>
   <div class="f"><label>비밀번호<small>비우면 안전한 값을 자동으로 만듭니다</small></label><input class="in" type="text" name="password" maxlength="72" placeholder="비우면 자동 생성"></div>
   <div style="display:flex;gap:8px"><button class="btn sec" type="button" data-close style="flex:1">취소</button><button class="btn pri" type="submit" style="flex:1">설정</button></div>
 </form></div>

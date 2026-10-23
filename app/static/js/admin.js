@@ -4,7 +4,7 @@
 
   // ---- generic modals / checkboxes
   document.querySelectorAll('[data-modal]').forEach(function (el) { el.addEventListener('click', function (e) { e.preventDefault(); $(el.dataset.modal).classList.add('on'); }); });
-  document.querySelectorAll('.modal').forEach(function (m) { m.addEventListener('click', function (e) { if (e.target === m || e.target.closest('[data-close]')) m.classList.remove('on'); }); });
+  document.querySelectorAll('.modal:not(.cmodal)').forEach(function (m) { m.addEventListener('click', function (e) { if (e.target === m || e.target.closest('[data-close]')) m.classList.remove('on'); }); });
   document.querySelectorAll('label.chk').forEach(function (c) { c.addEventListener('click', function () { setTimeout(function () { c.classList.toggle('on', c.querySelector('input').checked); }, 0); }); });
 
   // ---- 13:30 countdown

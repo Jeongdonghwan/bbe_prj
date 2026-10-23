@@ -2,5 +2,5 @@
 {% block title %}블라인드된 글{% endblock %}
 {% block content %}
 <div class="ph"><div><h1>{{ '익명 게시판' if slug == 'anon' else '질문답변' }}</h1></div></div>
-<div class="card"><div class="cb" style="padding-top:16px"><div class="empty"><i data-lucide="eye-off"></i>신고 누적으로 블라인드된 글입니다.<br><a class="lnk" href="/community/{{ slug }}">목록으로</a></div></div></div>
+<div class="card"><div class="cb" style="padding-top:16px"><div class="empty">{% if secret %}<i data-lucide="lock"></i>비밀 문의입니다. 작성자와 운영팀만 볼 수 있습니다.{% else %}<i data-lucide="eye-off"></i>신고 누적으로 블라인드된 글입니다.{% endif %}<br><a class="lnk" href="/community/{{ slug }}">목록으로</a></div></div></div>
 {% endblock %}

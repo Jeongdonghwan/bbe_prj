@@ -119,7 +119,7 @@
               <p class="w-hint">100회 단위로 조절하거나 직접 입력하세요. 경쟁도 블록을 누르면 권장값이 들어갑니다.</p>
               <div class="w-stepper" role="group" aria-labelledby="lb-cnt">
                 <button type="button" id="qMinus" aria-label="100회 줄이기">−</button>
-                <div class="w-v"><input id="qty" name="daily_qty" type="text" inputmode="numeric" value="{{ pre.daily_qty or 100 }}" aria-label="일일 목표 유입수"><small>회</small></div>
+                <div class="w-v"><input id="qty" name="daily_qty" type="text" inputmode="numeric" value="{{ pre.daily_qty or 100 }}" aria-label="일일 목표 유입수" maxlength="7"><small>회</small></div>
                 <button type="button" id="qPlus" aria-label="100회 늘리기">＋</button>
               </div>
               <div class="w-bands">

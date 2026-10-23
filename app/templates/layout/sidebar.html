@@ -4,7 +4,7 @@
     {% set ns = namespace(open=false) %}
     {% for ch in item.children %}{% if ch.href == active_href %}{% set ns.open = true %}{% endif %}{% endfor %}
     <button class="acc{% if ns.open %} open{% endif %}" type="button"><i data-lucide="{{ item.icon }}" class="i"></i><span class="lbl">{{ item.label }}</span><i data-lucide="chevron-down" class="chev"></i></button>
-    <div class="sub">{% for ch in item.children %}<a href="{{ ch.href }}"{% if ch.href == active_href %} class="on"{% endif %}>{{ ch.label }}</a>{% endfor %}</div>
+    <div class="sub">{% for ch in item.children %}<a href="{{ ch.href }}"{% if ch.external %} target="_blank" rel="noopener"{% elif ch.href == active_href %} class="on"{% endif %}>{{ ch.label }}</a>{% endfor %}</div>
   {% elif item.external %}
     <a href="{{ item.href }}" target="_blank" rel="noopener"><i data-lucide="{{ item.icon }}" class="i"></i><span class="lbl">{{ item.label }}</span><i data-lucide="external-link" class="ext"></i></a>
   {% else %}

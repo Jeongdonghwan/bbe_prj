@@ -56,18 +56,18 @@ body.admin .sidebar{background:#0B1220}body.admin .logo small{color:#F59E0B;font
   .app{grid-template-columns:72px 1fr}
   .sidebar{width:72px;padding:20px 8px 16px;overflow:hidden;z-index:10;
     transition:width var(--side-close) var(--side-ease) var(--side-close-delay),padding var(--side-close) var(--side-ease) var(--side-close-delay)}
-  .sidebar:hover{width:280px;padding:20px 12px 16px;box-shadow:var(--shadow);overflow-y:auto;
+  html:not(.touch) .sidebar:hover,.sidebar.open{width:300px;padding:20px 12px 16px;box-shadow:var(--shadow);overflow-y:auto;
     transition:width var(--side-open) var(--side-ease) var(--side-open-delay),padding var(--side-open) var(--side-ease) var(--side-open-delay)}
   .sidebar .logo{justify-content:center;padding-left:0;padding-right:0}
   .sidebar .logo .lsym,.sidebar .logo .ltxt,.sidebar .logo small,.sidebar .kakao-btn span,.sidebar .nav-sec>h6,.sidebar .nav .lbl,.sidebar .nav .ext,.sidebar .nav .chev,.sidebar .nav .tag,.sidebar .sub,.sidebar .side-foot,.sidebar .point-card{display:none}
   .sidebar .nav a,.sidebar .nav button{justify-content:center;padding:9px 0}
-  .sidebar:hover .logo{justify-content:flex-start;padding:4px 10px 18px}
-  .sidebar:hover .logo .lsym,.sidebar:hover .logo .ltxt,.sidebar:hover .logo small,.sidebar:hover .kakao-btn span,.sidebar:hover .nav-sec>h6,.sidebar:hover .nav .lbl{display:inline}
-  .sidebar:hover .logo .ltxt,.sidebar:hover .logo small,.sidebar:hover .kakao-btn span,.sidebar:hover .nav-sec>h6,.sidebar:hover .nav .lbl,.sidebar:hover .side-foot{animation:sideLabelIn var(--side-open) var(--side-ease) both calc(var(--side-open-delay) + .11s)}
-  .sidebar:hover .nav .ext,.sidebar:hover .nav .chev,.sidebar:hover .nav .tag{display:inline-block}
-  .sidebar:hover .open+.sub{display:block}.sidebar:hover .side-foot{display:flex}
-  .sidebar:hover .point-card.on{display:block}
-  .sidebar:hover .nav a,.sidebar:hover .nav button{justify-content:flex-start;padding:9px 10px}
+  html:not(.touch) .sidebar:hover .logo,.sidebar.open .logo{justify-content:flex-start;padding:4px 10px 18px}
+  html:not(.touch) .sidebar:hover .logo .lsym,.sidebar.open .logo .lsym,html:not(.touch) .sidebar:hover .logo .ltxt,.sidebar.open .logo .ltxt,html:not(.touch) .sidebar:hover .logo small,.sidebar.open .logo small,html:not(.touch) .sidebar:hover .kakao-btn span,.sidebar.open .kakao-btn span,html:not(.touch) .sidebar:hover .nav-sec>h6,.sidebar.open .nav-sec>h6,html:not(.touch) .sidebar:hover .nav .lbl,.sidebar.open .nav .lbl{display:inline}
+  html:not(.touch) .sidebar:hover .logo .ltxt,.sidebar.open .logo .ltxt,html:not(.touch) .sidebar:hover .logo small,.sidebar.open .logo small,html:not(.touch) .sidebar:hover .kakao-btn span,.sidebar.open .kakao-btn span,html:not(.touch) .sidebar:hover .nav-sec>h6,.sidebar.open .nav-sec>h6,html:not(.touch) .sidebar:hover .nav .lbl,.sidebar.open .nav .lbl,html:not(.touch) .sidebar:hover .side-foot,.sidebar.open .side-foot{animation:sideLabelIn var(--side-open) var(--side-ease) both calc(var(--side-open-delay) + .11s)}
+  html:not(.touch) .sidebar:hover .nav .ext,.sidebar.open .nav .ext,html:not(.touch) .sidebar:hover .nav .chev,.sidebar.open .nav .chev,html:not(.touch) .sidebar:hover .nav .tag,.sidebar.open .nav .tag{display:inline-block}
+  html:not(.touch) .sidebar:hover .open+.sub,.sidebar.open .open+.sub{display:block}html:not(.touch) .sidebar:hover .side-foot,.sidebar.open .side-foot{display:flex}
+  html:not(.touch) .sidebar:hover .point-card.on,.sidebar.open .point-card.on{display:block}
+  html:not(.touch) .sidebar:hover .nav a,.sidebar.open .nav a,html:not(.touch) .sidebar:hover .nav button,.sidebar.open .nav button{justify-content:flex-start;padding:9px 10px}
 }
 /* <768: sidebar hidden (slide-in via .open), bottom tab bar */
 .bottom-tab{display:none}
@@ -190,25 +190,25 @@ body:not(.admin) .nav a:hover,body:not(.admin) .nav button:hover,body:not(.admin
   .app{grid-template-columns:104px 1fr}
   .sidebar{width:76px;margin:14px 0 14px 14px;top:14px;height:calc(100vh - 28px);border-radius:22px;padding:18px 8px 16px;overflow:hidden;z-index:20;
     transition:width var(--side-close) var(--side-ease) var(--side-close-delay),padding var(--side-close) var(--side-ease) var(--side-close-delay),box-shadow var(--side-close) ease var(--side-close-delay)}
-  .sidebar:hover{width:280px;padding:18px 12px 16px;overflow-y:auto;box-shadow:0 18px 44px rgba(76,63,176,.35);
+  html:not(.touch) .sidebar:hover,.sidebar.open{width:300px;padding:18px 12px 16px;overflow-y:auto;box-shadow:0 18px 44px rgba(76,63,176,.35);
     transition:width var(--side-open) var(--side-ease) var(--side-open-delay),padding var(--side-open) var(--side-ease) var(--side-open-delay),box-shadow var(--side-open) ease var(--side-open-delay)}
   .sidebar .logo{justify-content:center;padding:2px 0 16px}
   .sidebar .logo .ltxt,.sidebar .logo small,.sidebar .kakao-btn span,.sidebar .nav-sec>h6,.sidebar .nav .lbl,.sidebar .nav .ext,.sidebar .nav .chev,.sidebar .nav .tag,.sidebar .sub,.sidebar .side-foot,.sidebar .point-card{display:none}
   .sidebar .nav a,.sidebar .nav button{justify-content:center;padding:10px 0}
   .sidebar .kakao-btn{width:44px;margin-left:auto;margin-right:auto;padding:0;justify-content:center}
-  .sidebar:hover .logo{justify-content:flex-start;padding:4px 10px 18px}
-  .sidebar:hover .logo .ltxt,.sidebar:hover .logo small,.sidebar:hover .kakao-btn span,.sidebar:hover .nav-sec>h6,.sidebar:hover .nav .lbl{display:inline}
-  .sidebar:hover .nav .ext,.sidebar:hover .nav .chev,.sidebar:hover .nav .tag{display:inline-block}
-  .sidebar:hover .open+.sub{display:block}
-  .sidebar:hover .side-foot{display:flex}
-  .sidebar:hover .logo .ltxt,.sidebar:hover .logo small,.sidebar:hover .kakao-btn span,.sidebar:hover .nav-sec>h6,.sidebar:hover .nav .lbl,.sidebar:hover .side-foot{animation:sideLabelIn var(--side-open) var(--side-ease) both calc(var(--side-open-delay) + .11s)}
-  .sidebar:hover .point-card.on{display:block}
-  .sidebar:hover .nav a,.sidebar:hover .nav button{justify-content:flex-start;padding:11px 12px}
-  .sidebar:hover .kakao-btn{width:auto;padding:0 14px}
+  html:not(.touch) .sidebar:hover .logo,.sidebar.open .logo{justify-content:flex-start;padding:4px 10px 18px}
+  html:not(.touch) .sidebar:hover .logo .ltxt,.sidebar.open .logo .ltxt,html:not(.touch) .sidebar:hover .logo small,.sidebar.open .logo small,html:not(.touch) .sidebar:hover .kakao-btn span,.sidebar.open .kakao-btn span,html:not(.touch) .sidebar:hover .nav-sec>h6,.sidebar.open .nav-sec>h6,html:not(.touch) .sidebar:hover .nav .lbl,.sidebar.open .nav .lbl{display:inline}
+  html:not(.touch) .sidebar:hover .nav .ext,.sidebar.open .nav .ext,html:not(.touch) .sidebar:hover .nav .chev,.sidebar.open .nav .chev,html:not(.touch) .sidebar:hover .nav .tag,.sidebar.open .nav .tag{display:inline-block}
+  html:not(.touch) .sidebar:hover .open+.sub,.sidebar.open .open+.sub{display:block}
+  html:not(.touch) .sidebar:hover .side-foot,.sidebar.open .side-foot{display:flex}
+  html:not(.touch) .sidebar:hover .logo .ltxt,.sidebar.open .logo .ltxt,html:not(.touch) .sidebar:hover .logo small,.sidebar.open .logo small,html:not(.touch) .sidebar:hover .kakao-btn span,.sidebar.open .kakao-btn span,html:not(.touch) .sidebar:hover .nav-sec>h6,.sidebar.open .nav-sec>h6,html:not(.touch) .sidebar:hover .nav .lbl,.sidebar.open .nav .lbl,html:not(.touch) .sidebar:hover .side-foot,.sidebar.open .side-foot{animation:sideLabelIn var(--side-open) var(--side-ease) both calc(var(--side-open-delay) + .11s)}
+  html:not(.touch) .sidebar:hover .point-card.on,.sidebar.open .point-card.on{display:block}
+  html:not(.touch) .sidebar:hover .nav a,.sidebar.open .nav a,html:not(.touch) .sidebar:hover .nav button,.sidebar.open .nav button{justify-content:flex-start;padding:11px 12px}
+  html:not(.touch) .sidebar:hover .kakao-btn,.sidebar.open .kakao-btn{width:auto;padding:0 14px}
   .paybar{left:104px}
 }
 @media(min-width:768px){
-  .sidebar:not(:hover) .logo .lsym{display:block;height:28px;margin:0 auto}
+  html:not(.touch) .sidebar:not(:hover) .logo .lsym,html.touch .sidebar:not(.open) .logo .lsym{display:block;height:28px;margin:0 auto}
 }
 
 /* 사이드바 가입 CTA — 카카오 노란 버튼을 숨기고 같은 자리에 이메일 가입을 둔다 (2026-09-29).
@@ -218,6 +218,15 @@ body:not(.admin) .nav a:hover,body:not(.admin) .nav button:hover,body:not(.admin
 .sidebar .kakao-btn.signup-btn svg{fill:none;stroke:#fff;width:18px;height:18px}
 
 /* 2026-10-13 JDH: 로고 왼쪽 정렬(메뉴 아이콘 줄에 맞춤) · 심볼 크게 · 글자 작고 덜 굵게 (서체는 Pretendard 유지) */
-.logo{justify-content:flex-start;padding:6px 12px 22px;gap:9px}
-.logo .lsym{height:40px}
-.logo .ltxt{font-size:21px;font-weight:700;letter-spacing:-.03em;padding-top:1px}
+.logo{justify-content:flex-start;align-items:center;padding:6px 12px 22px;gap:10px}
+.logo .lsym{height:38px}
+/* 2026-10-24 JDH "로고랑 문구가 안 맞는다·글자 키워라" — 둥근 선 심볼에 맞춰 둥근 고딕(나눔스퀘어라운드 ExtraBold), 심볼 세로 중심에 글자 높이를 맞춘다 */
+.logo .ltxt{font-family:'NanumSquareRound',var(--font);font-size:25px;font-weight:800;letter-spacing:-.04em;line-height:1;padding-top:3px}
+
+/* 터치 기기(태블릿 등): 사이드바는 탭으로 연다 — 버튼(.side-fab)·빈 곳 탭(.side-scrim)으로 닫는다 (2026-10-24) */
+.side-fab{display:none}
+@media (min-width:768px){
+  html.touch .side-fab{display:grid;place-items:center;position:fixed;left:14px;bottom:18px;z-index:45;width:46px;height:46px;border-radius:50%;background:var(--accent);color:#fff;box-shadow:var(--shadow)}
+  html.touch .sidebar.open{z-index:40}
+  html.touch .sidebar.open+.side-scrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.25);z-index:35}
+}

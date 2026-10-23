@@ -4,8 +4,8 @@
 <div class="ph"><div><h1>매체사 관리</h1><p>단가·규칙을 여기서 바꾸면 캠페인 생성 화면에 바로 반영됩니다.</p></div>
   <div class="act"><div class="chan-tabs">{% for k, v in channel_label.items() %}<a href="/admin/media?channel={{ k }}"><button type="button"{% if channel == k %} class="on"{% endif %}><i class="dot c-{{ k }}"></i>{{ v }} {{ counts[k] }}</button></a>{% endfor %}</div><a class="btn pri" href="/admin/media?channel={{ channel }}&new=1">+ 매체사 추가</a></div></div>
 <div class="card" style="margin-bottom:14px"><div class="cb" style="padding:14px 18px;display:flex;align-items:center;gap:10px"><i data-lucide="trending-up" class="i" style="color:var(--accent)"></i><span>이번 주 운영팀 추천(TOP 3)은 <b>인기 트래픽 설정</b>에서 정합니다.</span><a class="btn sec sm" href="/admin/popular?channel={{ channel }}" style="margin-left:auto">인기 트래픽 설정으로</a></div></div>
-<div class="card" style="margin-bottom:14px"><div class="ch"><h3>오늘의 인기</h3><span class="thin">{{ today | fmt_date }} · 위저드 상단 띠에 표시</span></div><div class="cb">
-    <form method="post" action="/admin/media/picks">
+<div class="card" style="margin-bottom:14px"><div class="ch"><h3>오늘의 인기</h3><span class="thin">{{ today | fmt_date }} · 위저드 상단 띠에 표시 · 최대 6개 <b id="pickCnt" class="num" style="color:var(--text)">{{ picks | length }}</b>/6</span></div><div class="cb">
+    <form method="post" action="/admin/media/picks" id="pickForm">
       <input type="hidden" name="channel" value="{{ channel }}">
       <div class="pickgrid">
         {% for m in rows %}{% if m.is_active %}
@@ -14,6 +14,17 @@
       </div>
       <button class="btn pri sm" type="submit">오늘의 인기 저장</button>
     </form>
+    <script>
+    // max 6 picks — the server keeps only 6, so stop the 7th here instead of dropping it silently
+    (function () {
+      var f = document.getElementById('pickForm'), cnt = document.getElementById('pickCnt');
+      f.addEventListener('change', function (e) {
+        var on = f.querySelectorAll('input[name=type_ids]:checked');
+        if (on.length > 6) { e.target.checked = false; alert('오늘의 인기는 최대 6개까지 고를 수 있습니다.'); }
+        cnt.textContent = f.querySelectorAll('input[name=type_ids]:checked').length;
+      });
+    })();
+    </script>
   </div></div>
 <div class="form2">
   <div class="card"><div class="cb" style="padding-top:14px">
@@ -32,19 +43,19 @@
   <div class="card"><div class="ch"><h3>{% if edit %}{{ m.name }} 수정{% else %}매체사 추가{% endif %}</h3><a class="icon-btn" style="margin-left:auto" href="/admin/media?channel={{ channel }}"><i data-lucide="x" class="i"></i></a></div><div class="cb">
     <form method="post" action="/admin/media/save">
       {% if edit %}<input type="hidden" name="id" value="{{ m.id }}">{% endif %}<input type="hidden" name="channel" value="{{ channel }}">
-      <div class="row2"><div class="f"><label>이름</label><input class="in" name="name" value="{{ m.name or '' }}" required></div><div class="f"><label>섹션</label><select class="in" name="group_name">{% for s in sections %}<option{% if m.group_name == s %} selected{% endif %}>{{ s }}</option>{% endfor %}</select></div></div>
-      <div class="f"><label>한 줄 설명<small>목록에서 이름 옆에 표시</small></label><input class="in" name="tagline" value="{{ m.tagline or '' }}"></div>
+      <div class="row2"><div class="f"><label>이름</label><input class="in" name="name" value="{{ m.name or '' }}" required maxlength="40"></div><div class="f"><label>섹션</label><select class="in" name="group_name">{% for s in sections %}<option{% if m.group_name == s %} selected{% endif %}>{{ s }}</option>{% endfor %}</select></div></div>
+      <div class="f"><label>한 줄 설명<small>목록에서 이름 옆에 표시</small></label><input class="in" name="tagline" value="{{ m.tagline or '' }}" maxlength="80"></div>
       <div class="row2"><div class="f"><label>단가<small>원 / 건</small></label><input class="in num" name="unit_price" type="number" value="{{ m.unit_price or 100 }}" required></div><div class="f"><label>정가<small>세일 표시용, 비우면 없음</small></label><input class="in num" name="list_price" type="number" value="{{ m.list_price or '' }}" placeholder="—"></div></div>
       <div class="row2"><div class="f"><label>최소 일수</label><input class="in num" name="min_days" type="number" value="{{ m.min_days or 3 }}"></div><div class="f"><label>접수 마감</label><input class="in" name="cutoff_time" type="time" value="{{ (m.cutoff_time | string)[:5] if m.cutoff_time else '13:30' }}"></div></div>
       <div class="row2"><div class="f"><label>일 수량 최소</label><input class="in num" name="min_daily" type="number" value="{{ m.get('min_daily') if m.get('min_daily') is not none else 100 }}"></div><div class="f"><label>일 수량 최대<small>0 = 상한 없음</small></label><input class="in num" name="max_daily" type="number" value="{{ m.get('max_daily') if m.get('max_daily') is not none else 0 }}"></div></div>
       <div class="f"><label>뱃지</label><div class="chan-tabs" id="badgeTabs" style="display:flex;flex-wrap:wrap">{% for key, label in [('hot','인기'),('best','BEST'),('new','NEW'),('pick','추천'),('','없음')] %}<button type="button" data-badge="{{ key }}"{% if (m.badge or '') == key %} class="on"{% endif %} style="flex:1;justify-content:center;padding:8px 4px;white-space:nowrap">{{ label }}</button>{% endfor %}</div><input type="hidden" name="badge" id="badgeVal" value="{{ m.badge or '' }}"></div>
       <div class="f"><label>뱃지 만료일<small>이 날짜가 지나면 뱃지를 표시하지 않습니다. 비우면 계속 표시</small></label><input class="in" name="badge_until" type="date" value="{{ m.badge_until.isoformat() if m.badge_until else '' }}"></div>
       <div class="f"><label>유형 설명<small>위저드 우측 패널에 표시 · 300자</small></label><textarea class="in" name="description" rows="3" maxlength="300" placeholder="예) 검색 → 클릭 → 30초 이상 체류까지 보장합니다.">{{ m.description or '' }}</textarea></div>
-      <div class="f"><label>이런 상품에 맞아요<small>쉼표로 구분</small></label><input class="in" name="fit_for" value="{{ m.fit_for | join(', ') if m.fit_for else '' }}" placeholder="순위 진입 목표, 경쟁 키워드"></div>
-      <div class="f"><label>운영팀 한줄평<small>인기 트래픽 추천 카드와 드로어에 표시 · 200자</small></label><textarea class="in" name="op_note" rows="2" maxlength="200" placeholder="예) 쇼핑은 타이탄이 기준점입니다. 다른 상품은 타이탄 대비 뭐가 다른지로 고르세요.">{{ m.op_note or '' }}</textarea></div>
+      <div class="f"><label>이런 상품에 맞아요<small>쉼표로 구분</small></label><input class="in" name="fit_for" value="{{ m.fit_for | join(', ') if m.fit_for else '' }}" placeholder="순위 진입 목표, 경쟁 키워드" maxlength="200"></div>
+      <div class="f"><label>운영팀 한줄평<small>인기 트래픽 추천 카드와 드로어에 표시 · 60자</small></label><textarea class="in" name="op_note" rows="2" maxlength="60" data-count placeholder="예) 쇼핑은 타이탄이 기준점입니다. 다른 상품은 타이탄 대비 뭐가 다른지로 고르세요.">{{ m.op_note or '' }}</textarea></div>
       <div class="row2"><div class="f"><label>환불 불가 일수<small>비우면 미진행분 환불 가능</small></label><input class="in num" name="no_refund_days" type="number" min="0" max="60" value="{{ m.no_refund_days if m.no_refund_days is not none else '' }}" placeholder="예) 7"></div>
         <div class="f"><label>순위 반영<small>드로어 이용 조건에 표시</small></label><input class="in" name="rank_lead_days" maxlength="20" value="{{ m.rank_lead_days or '' }}" placeholder="예) 보통 3~5일"></div></div>
-      <div class="f"><label>진행 방식<small>쉼표로 구분 · 순서대로</small></label><input class="in" name="flow_steps" value="{{ m.flow_steps | join(', ') if m.flow_steps else '' }}" placeholder="키워드 검색, 상품 클릭, 30초 체류"></div>
+      <div class="f"><label>진행 방식<small>쉼표로 구분 · 순서대로</small></label><input class="in" name="flow_steps" value="{{ m.flow_steps | join(', ') if m.flow_steps else '' }}" placeholder="키워드 검색, 상품 클릭, 30초 체류" maxlength="300"></div>
       <div class="row2"><div class="f"><label>정렬</label><input class="in num" name="sort" type="number" value="{{ m.sort or 0 }}"></div><div></div></div>
       <label class="chk{% if m.is_active is not defined or m.is_active %} on{% endif %}" style="cursor:pointer"><input type="checkbox" name="is_active" value="1" hidden{% if m.is_active is not defined or m.is_active %} checked{% endif %}><i></i>캠페인 생성 화면에 노출</label>
       <div style="display:flex;gap:8px;margin-top:12px"><button class="btn pri" style="flex:1" type="submit">저장</button><a class="btn sec" href="/admin/media?channel={{ channel }}">취소</a></div>

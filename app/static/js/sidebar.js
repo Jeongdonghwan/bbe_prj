@@ -88,5 +88,17 @@
     if (e.persisted && document.querySelector('.is-busy, form[data-fresh]')) location.reload();
   });
 
+  // [data-count] + maxlength: show "12/60" under the field. Delegated so modal-filled values update too.
+  function countFor(el) {
+    var c = el.nextElementSibling;
+    if (!c || !c.classList.contains('charcount')) {
+      c = document.createElement('div'); c.className = 'charcount'; el.insertAdjacentElement('afterend', c);
+    }
+    c.textContent = el.value.length + '/' + el.maxLength;
+  }
+  document.querySelectorAll('[data-count]').forEach(countFor);
+  document.addEventListener('input', function (e) { if (e.target.hasAttribute && e.target.hasAttribute('data-count')) countFor(e.target); });
+  document.addEventListener('focusin', function (e) { if (e.target.hasAttribute && e.target.hasAttribute('data-count')) countFor(e.target); });
+
   if (window.lucide) window.lucide.createIcons();
 })();

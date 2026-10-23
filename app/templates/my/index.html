@@ -28,7 +28,7 @@
       <p style="font-size:12.5px;color:var(--text-2)">사업자등록증으로 인증하면 대행사 등급이 부여되고, 대행의뢰에 제안을 보낼 수 있습니다.{% if my_apply and my_apply.status == 'rejected' %} <b style="color:var(--danger)">이전 신청이 반려되었습니다. 다시 신청할 수 있어요.</b>{% endif %}</p>
       <form method="post" action="/community/agency/apply" enctype="multipart/form-data" style="margin-top:10px">
         <input type="hidden" name="back" value="/my">
-        <div class="f"><label>사업자번호</label><input class="in" name="biz_no" value="{{ u.biz_no or '' }}" placeholder="123-45-67890" required></div>
+        <div class="f"><label>사업자번호</label><input class="in" name="biz_no" value="{{ u.biz_no or '' }}" placeholder="123-45-67890" required maxlength="12"></div>
         <div class="f"><label>사업자등록증 <small>이미지 파일</small></label><input class="in" type="file" name="cert" accept="image/*" required style="padding-top:8px"></div>
         <button class="btn sec" style="width:100%" type="submit">인증 신청</button>
       </form>
@@ -98,10 +98,10 @@
   <form class="modal-box" method="post" action="/my/biz">
     <h3>사업자 정보 수정</h3>
     <div class="f" style="margin-top:12px"><label>상호</label><input class="in" name="biz_name" value="{{ u.biz_name or '' }}" maxlength="60"></div>
-    <div class="f"><label>사업자번호</label><input class="in" name="biz_no" value="{{ u.biz_no or '' }}" placeholder="123-45-67890"></div>
+    <div class="f"><label>사업자번호</label><input class="in" name="biz_no" value="{{ u.biz_no or '' }}" placeholder="123-45-67890" maxlength="12"></div>
     <div class="row2"><div class="f"><label>업태</label><input class="in" name="biz_type" value="{{ u.biz_type or '' }}" placeholder="예) 서비스" maxlength="40"></div>
     <div class="f"><label>업종</label><input class="in" name="biz_item" value="{{ u.biz_item or '' }}" placeholder="예) 광고대행" maxlength="40"></div></div>
-    <div class="f"><label>이메일주소 <small>세금계산서 수신용</small></label><input class="in" type="email" name="biz_email" value="{{ u.biz_email or '' }}" placeholder="tax@company.com"></div>
+    <div class="f"><label>이메일주소 <small>세금계산서 수신용</small></label><input class="in" type="email" name="biz_email" value="{{ u.biz_email or '' }}" placeholder="tax@company.com" maxlength="120"></div>
     <div style="display:flex;gap:8px;margin-top:14px"><button class="btn sec" type="button" data-close style="flex:1">취소</button><button class="btn pri" type="submit" style="flex:1">저장</button></div>
   </form>
 </div>
@@ -109,7 +109,7 @@
   <form class="modal-box" method="post" action="/my/withdraw">
     <h3>정말 탈퇴하시겠어요?</h3>
     <p class="thin" style="margin:6px 0 12px">캠페인 이력과 작성한 글이 모두 사라집니다. 확인을 위해 <b>탈퇴</b>를 입력해주세요.</p>
-    <div class="f"><input class="in" name="confirm" placeholder="탈퇴" autocomplete="off"></div>
+    <div class="f"><input class="in" name="confirm" placeholder="탈퇴" autocomplete="off" maxlength="10"></div>
     <div style="display:flex;gap:8px;margin-top:8px"><button class="btn sec" type="button" data-close style="flex:1">취소</button><button class="btn pri" type="submit" style="flex:1;background:var(--danger)">탈퇴하기</button></div>
   </form>
 </div>

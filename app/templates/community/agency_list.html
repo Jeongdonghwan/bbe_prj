@@ -12,11 +12,11 @@
     {% if current_user %}
     <form class="card" method="post" action="/community/agency/new" id="askForm" style="display:none;margin:8px 0 4px"><div class="ch"><h3>의뢰 올리기</h3><span class="thin">무료 · 연락처는 제안을 수락한 곳에만 공개됩니다</span></div><div class="cb"><div class="agform">
       <div class="f"><label>채널</label><select class="in" name="channel">{% for k, v in ag_channel.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></div>
-      <div class="f"><label>업종</label><input class="in" name="industry" placeholder="예) 피부과" required></div>
+      <div class="f"><label>업종</label><input class="in" name="industry" placeholder="예) 피부과" required maxlength="40"></div>
       <div class="f"><label>월 예산</label><select class="in" name="budget">{% for k, v in budget_label.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></div>
-      <div class="f"><label>지역</label><input class="in" name="region" placeholder="예) 인천 부평"></div>
-      <div class="f wide"><label>요청 내용</label><textarea class="in" name="body" rows="3" placeholder="현재 상황, 목표 순위, 기간 등을 적어주세요. 업체명은 안 적어도 됩니다." required></textarea></div>
-      <div class="f wide"><label>연락처<small>선택 · 수락한 대행사에게만 공개</small></label><input class="in" name="contact" placeholder="카카오 ID 또는 전화번호" value="{{ current_user.phone or '' }}"></div>
+      <div class="f"><label>지역</label><input class="in" name="region" placeholder="예) 인천 부평" maxlength="40"></div>
+      <div class="f wide"><label>요청 내용</label><textarea class="in" name="body" rows="3" placeholder="현재 상황, 목표 순위, 기간 등을 적어주세요. 업체명은 안 적어도 됩니다." required maxlength="2000"></textarea></div>
+      <div class="f wide"><label>연락처<small>선택 · 수락한 대행사에게만 공개</small></label><input class="in" name="contact" placeholder="카카오 ID 또는 전화번호" value="{{ current_user.phone or '' }}" maxlength="60"></div>
       <div class="f wide" style="display:flex;justify-content:flex-end;gap:8px"><span class="anonlbl" style="margin-right:auto;font-size:11.5px;color:var(--text-3);display:flex;align-items:center;gap:4px"><i data-lucide="lock" class="i i14"></i>목록에는 <b style="color:var(--text)">{{ nick }}</b>로 표시</span><button class="btn sec" type="button" id="askCancel">취소</button><button class="btn pri" type="submit">의뢰 등록</button></div>
     </div></div></form>
     {% endif %}
@@ -26,7 +26,7 @@
       {% for key, label in [('all','전체'),('open','모집 중'),('matched','매칭 완료'),('mine','내 의뢰')] %}<a href="/community/agency?f={{ key }}{% if channel %}&channel={{ channel }}{% endif %}{% if q %}&q={{ q | urlencode }}{% endif %}"{% if f == key %} class="on"{% endif %}>{{ label }}</a>{% endfor %}
       <span style="flex:none;width:1px;height:16px;background:var(--border);margin:0 4px"></span>
       {% for k in ['place','store','coupang'] %}<a href="/community/agency?f={{ f }}{% if channel != k %}&channel={{ k }}{% endif %}{% if q %}&q={{ q | urlencode }}{% endif %}"{% if channel == k %} class="on"{% endif %}>{{ ag_channel[k] }}</a>{% endfor %}
-      <input class="search-input" type="text" name="q" value="{{ q or '' }}" placeholder="업종 · 지역 · 내용 검색" style="flex:0 1 200px;min-width:120px;margin-left:auto;height:34px;border:1px solid var(--border);border-radius:8px;padding:0 12px;background:var(--surface);outline:none;font-size:13px">
+      <input class="search-input" type="text" name="q" value="{{ q or '' }}" placeholder="업종 · 지역 · 내용 검색" style="flex:0 1 200px;min-width:120px;margin-left:auto;height:34px;border:1px solid var(--border);border-radius:8px;padding:0 12px;background:var(--surface);outline:none;font-size:13px" maxlength="60">
     </form>
     {% if q %}<div class="thin" style="margin:6px 0 0">'{{ q }}' 검색 결과 <a class="lnk" href="/community/agency?f={{ f }}">검색닫기</a></div>{% endif %}
 

@@ -75,7 +75,7 @@
   <div class="card"><div class="ch"><h3>운영자 추가</h3></div><div class="cb">
     <form method="post" action="/admin/operators/create">
       <div class="f"><label>아이디<small>로그인에 씁니다. 예) admin</small></label><input class="in" name="username" maxlength="30" placeholder="admin"></div>
-      <div class="f"><label>이메일<small>선택 — 아이디 대신 써도 됩니다</small></label><input class="in" type="email" name="email" placeholder="ops@회사도메인"></div>
+      <div class="f"><label>이메일<small>선택 — 아이디 대신 써도 됩니다</small></label><input class="in" type="email" name="email" placeholder="ops@회사도메인" maxlength="120"></div>
       <div class="f"><label>이름</label><input class="in" name="nickname" maxlength="20" placeholder="운영팀" value="운영팀"></div>
       <div class="f"><label>비밀번호<small>비우면 안전한 값을 자동 생성</small></label><input class="in" type="text" name="password" maxlength="72" placeholder="비우면 자동 생성"></div>
       <button class="btn pri" type="submit" style="width:100%">계정 만들기</button>

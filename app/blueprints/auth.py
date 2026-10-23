@@ -178,7 +178,7 @@ def admin_login():
         if user["status"] != "active":
             flash("이용이 제한된 계정입니다.")
             return redirect(url_for("auth.admin_login"))
-        return _login(user["id"], next_url)
+        return _login(user["id"], "/admin")   # always land on 운영 현황 (2026-10-24 JDH)
     return render_template("auth/admin_login.html", next_url=next_url)
 
 
