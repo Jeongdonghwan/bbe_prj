@@ -246,3 +246,12 @@
 .poppage .p-pc .p-ds{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .poppage .p-top3 .p-pc .p-op{margin-top:auto}
 .poppage .p-pc .p-op-t{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+/* 추천 카드 = 이름 타일 복구 (2026-10-26) — 순위는 타일 오른쪽 위 */
+.poppage .p-pc .p-pc-rank{position:absolute;top:16px;right:16px;z-index:2;margin:0;font-size:11px;font-weight:800;color:#fff;background:#6C5CE7;border-radius:5px;padding:2px 7px}
+.poppage .p-top3 .p-card.p-pc{gap:0}
+.poppage .p-pc .p-tile+.p-r{margin-top:12px;padding-top:10px;border-top:1px solid var(--p-line)}
+.poppage .p-pc .p-ds{margin-top:8px}
+.poppage .p-top3 .p-pc .p-op{margin-top:auto;padding-top:0}
+.poppage .p-pc .p-op{margin-bottom:0}
+.poppage .p-pc .p-ds+.p-op,.poppage .p-pc .p-tg+.p-op{margin-top:10px}
+.poppage .p-pc .p-ctop{top:24px;left:24px}.poppage .p-pc .p-pc-rank{top:24px;right:24px}
