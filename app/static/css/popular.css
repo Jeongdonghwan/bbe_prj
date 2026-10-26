@@ -236,5 +236,13 @@
 .poppage .p-top3 .p-pc .p-op{margin:2px 0 0}
 /* 카드: 이름 줄 제거, 리워드/유입플 라벨은 타일 왼쪽 위 (2026-10-26) */
 .poppage .p-card{position:relative}
-.poppage .p-card .p-kind-top{position:absolute;top:16px;left:16px;z-index:2}
 .poppage .p-card .p-tile+.p-r{margin-top:10px;padding-top:10px;border-top:1px solid var(--p-line)}
+/* 라벨 줄: 리워드/유입플 + BEST/NEW 나란히 (2026-10-26) */
+.poppage .p-card .p-ctop{position:absolute;top:16px;left:16px;z-index:2;display:flex;gap:4px;align-items:center}
+.poppage .p-card .p-ctop .p-pill{position:static;box-shadow:none;padding:2px 7px;font-size:10.5px;line-height:1.5;border-radius:5px}
+/* 운영팀 추천: 글이 길어도 세 장 높이가 같게 — 설명 2줄 · 코멘트 3줄에서 자르고 전문은 툴팁·드로어 */
+.poppage .p-top3{align-items:stretch}
+.poppage .p-top3 .p-card.p-pc{height:100%}
+.poppage .p-pc .p-ds{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.poppage .p-top3 .p-pc .p-op{margin-top:auto}
+.poppage .p-pc .p-op-t{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
