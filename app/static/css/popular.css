@@ -234,3 +234,7 @@
 .poppage .p-pc .p-ds{margin:0;min-height:0;font-size:12.5px}
 .poppage .p-pc .p-tg{margin:0}
 .poppage .p-top3 .p-pc .p-op{margin:2px 0 0}
+/* 카드: 이름 줄 제거, 리워드/유입플 라벨은 타일 왼쪽 위 (2026-10-26) */
+.poppage .p-card{position:relative}
+.poppage .p-card .p-kind-top{position:absolute;top:16px;left:16px;z-index:2}
+.poppage .p-card .p-tile+.p-r{margin-top:10px;padding-top:10px;border-top:1px solid var(--p-line)}
