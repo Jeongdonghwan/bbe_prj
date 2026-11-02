@@ -255,3 +255,4 @@
 .poppage .p-pc .p-ctop{top:24px;left:24px}
 .poppage .p-api{margin:-6px 0 18px;padding:10px 14px;border-radius:10px;background:#f1effd;font-size:13px;color:var(--p-ink-2)}.poppage .p-api b{color:var(--p-ink)}
 .poppage .p-chh{font-size:18px;font-weight:800;margin:30px 0 4px;padding-top:14px;border-top:1px solid var(--p-line)}.poppage .p-chh small{font-size:13px;font-weight:500;color:var(--p-ink-3);margin-left:4px}
+.p-drawer .p-btn.p-off{opacity:.5;cursor:not-allowed;filter:grayscale(1)}

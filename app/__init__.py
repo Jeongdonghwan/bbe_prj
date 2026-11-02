@@ -307,4 +307,11 @@ def create_app():
         except (TypeError, ValueError):
             return v
 
+    @app.template_filter("hhmm")
+    def hhmm(v):
+        """TIME 컬럼(timedelta/time) → 'HH:MM', 없으면 빈 문자열 (매체 마감 입력칸)."""
+        from .models.media import _as_time
+        t = _as_time(v)
+        return t.strftime("%H:%M") if t else ""
+
     return app

@@ -249,6 +249,9 @@ def _create(channel):
     if not media or media["channel"] != channel or not media["is_active"]:
         flash("광고 유형을 선택해주세요.")
         return redirect(url_for("campaign.new", channel=channel))
+    if media_model.is_closed(media):
+        flash(f"'{media['name']}' 은(는) 오늘 접수가 마감되었습니다({media['cutoff_label']}). 내일 0시부터 접수할 수 있습니다. 다른 광고 유형을 골라주세요.")
+        return redirect(url_for("campaign.new", channel=channel))
     days = request.form.get("days", type=int)
     # 프리셋(10/20/30) 외에 직접 입력도 받는다. 매체별 최소 일수는 _parse_form 이 검사한다.
     if not days or days < 1 or days > 60:

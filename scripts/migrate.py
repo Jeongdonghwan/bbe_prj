@@ -314,6 +314,13 @@ def main():
         if cur.rowcount:
             done.append("최고 관리자 지정(가장 오래된 운영자)")
 
+    # -- 매체별 접수 마감 (2026-11-02 JDH) — 예전 cutoff_time(13:30 고정값)은 아무도 안 읽었다. 비우고 새로 쓴다
+    if not col("media", "cutoff_weekend"):
+        cur.execute("ALTER TABLE media MODIFY cutoff_time TIME NULL")
+        cur.execute("UPDATE media SET cutoff_time = NULL")
+        cur.execute("ALTER TABLE media ADD COLUMN cutoff_weekend TIME NULL AFTER cutoff_time")
+        done.append("media.cutoff_weekend (매체 마감 초기화)")
+
     # -- 뱃지 단 시각 (2026-11-02) — 같은 뱃지끼리는 먼저 단 상품이 앞
     if not col("media", "badge_set_at"):
         cur.execute("ALTER TABLE media ADD COLUMN badge_set_at DATETIME NULL AFTER badge_until")

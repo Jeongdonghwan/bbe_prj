@@ -119,8 +119,19 @@
     renderDetail(); sync(); save();
   }
   document.querySelectorAll('#typegrid .w-card[data-id]').forEach(function (c) {
-    c.addEventListener('click', function () { pick(c.dataset.id); });
+    c.addEventListener('click', function () { if (!c.disabled) pick(c.dataset.id); });
   });
+  // 매체 마감 — 화면을 켜 둔 채 마감 시각이 지나면 그 자리에서 회색으로 (서버도 같은 기준으로 거절한다)
+  function closeDue() {
+    var d = new Date(), hm = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    document.querySelectorAll('#typegrid .w-card[data-cut]').forEach(function (c) {
+      if (c.disabled || hm < c.dataset.cut) return;
+      c.disabled = true; c.classList.add('w-closed'); c.classList.remove('w-on');
+      var t = c.querySelector('.w-cut'); if (t) t.textContent = '오늘 접수 마감 · 내일 0시부터';
+      if (mediaId.value === c.dataset.id) { mediaId.value = ''; renderDetail(); err('e-media', '선택한 광고 유형의 오늘 접수가 마감되었습니다. 다른 유형을 골라주세요.'); }
+    });
+  }
+  setInterval(closeDue, 30000);
   function renderDetail() {
     var t = sel(), el = $('detail');
     if (!t) { el.innerHTML = '<div class="w-db"><p class="w-ds">왼쪽에서 광고 유형을 선택하세요.</p></div>'; return; }
@@ -411,6 +422,8 @@
 
   /* ── init ── */
   restore();
+  var pc = mediaId.value && document.querySelector('#typegrid .w-card[data-id="' + mediaId.value + '"]');
+  if (pc && pc.disabled) { mediaId.value = ''; }   // 저장해 둔 선택이 그사이 마감된 매체면 비운다
   if (mediaId.value) {
     document.querySelectorAll('#typegrid .w-card[data-id]').forEach(function (c) { c.classList.toggle('w-on', c.dataset.id === mediaId.value); });
   }

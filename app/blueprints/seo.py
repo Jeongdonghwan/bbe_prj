@@ -57,7 +57,9 @@ def learn_page(slug):
         lds.append(jsonld.place_area(page["region"], page["sido"]))
     if prices.get(page["channel"]):
         lds.append(jsonld.service(o, f"{page['kw']} 셀프 유입 캠페인", page["desc"], page["path"], prices[page["channel"]], name))
-    return render_template("learn/page.html", page=page, meta=seo_pages.meta(), prices=prices,
+    from ..services import seo_regional
+    m = seo_regional.meta() if page["kind"] in seo_regional.BUILDERS else seo_pages.meta()
+    return render_template("learn/page.html", page=page, meta=m, prices=prices,
                            meta_title=page["title"], meta_desc=page["desc"], jsonld=lds)
 
 
@@ -131,8 +133,11 @@ def sitemap_part(name):
         return _urlset([(o + p, None, pr) for p, pr in STATIC_PAGES])
     if name == "learn":
         lm = seo_pages.meta().get("collected")
-        pr = {"bizhub": "0.8", "topic": "0.8", "regionhub": "0.7", "bizangle": "0.7", "regionbiz": "0.6", "storecat": "0.6"}
-        return _urlset([(o + p, lm, pr[k]) for p, k, _ in seo_pages.all_paths()])
+        pr = {"bizhub": "0.8", "topic": "0.8", "regionhub": "0.7", "bizangle": "0.7", "regionbiz": "0.6", "storecat": "0.6",
+              "sidohub": "0.8", "sghub": "0.7", "rbi": "0.6"}
+        from ..services import seo_regional
+        lm2 = seo_regional.meta().get("collected")
+        return _urlset([(o + p, lm2 if k in seo_regional.BUILDERS else lm, pr[k]) for p, k, _ in seo_pages.all_paths()])
     if name == "blog":
         return _urlset([(o + p["path"], max(p["date"], p["updated"]).isoformat(), "0.6") for p in blog.posts()])
     abort(404)

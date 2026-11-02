@@ -58,7 +58,8 @@ CREATE TABLE IF NOT EXISTS media (
   rank_lead_days    VARCHAR(20) NULL,
   efficiency_auto   TINYINT NOT NULL DEFAULT 0,
   efficiency_manual TINYINT NULL,
-  cutoff_time       TIME NOT NULL DEFAULT '13:30:00',
+  cutoff_time       TIME NULL,   -- 매체 접수 마감(평일). 이 시각부터 자정까지 선택 불가. NULL = 마감 없음
+  cutoff_weekend    TIME NULL,   -- 토·일 마감 (NULL 이면 평일과 같음)
   same_day          TINYINT(1) NOT NULL DEFAULT 1,
   description       TEXT NULL,
   op_note           VARCHAR(200) NULL,

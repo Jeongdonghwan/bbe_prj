@@ -187,16 +187,13 @@ def main():
     ok(c4["rank_now"] == 12 and c4["rank_start"] == 60, "늦게 온 옛 날짜가 현재 순위를 덮지 않음",
        f"start={c4['rank_start']} now={c4['rank_now']}")
 
-    # 8) 접수 마감 — 평일 16:00 · 토일 10:00 (2026-09-30 JDH)
-    print("\n=== 8. 접수 마감 시각 ===")
+    # 8) 시작일 — 공통 마감 폐기(2026-11-02), 언제 접수해도 다음 날부터. 매체별 마감은 tests/media_cutoff.py
+    print("\n=== 8. 접수 시각과 상관없이 익일 구동 ===")
     from datetime import datetime
-    cases = [("2026-10-02 15:59", 1, "금 15:59 → 익일"), ("2026-10-02 16:01", 2, "금 16:01 → 익익일"),
-             ("2026-10-03 09:59", 1, "토 09:59 → 익일"), ("2026-10-03 10:01", 2, "토 10:01 → 익익일"),
-             ("2026-10-04 12:00", 2, "일 12:00 → 익익일"), ("2026-10-05 12:00", 1, "월 12:00 → 익일")]
-    for s, d, name in cases:
-        n = datetime.fromisoformat(s)
+    for s_ in ("2026-10-02 15:59", "2026-10-02 23:59", "2026-10-03 10:01", "2026-10-04 00:00"):
+        n = datetime.fromisoformat(s_)
         got = (campaign_service.earliest_start(n) - n.date()).days
-        ok(got == d, name, f"+{got}")
+        ok(got == 1, f"{s_} → 익일", f"+{got}")
 
     cleanup(app)
     print("\n" + ("전부 통과" if not fails else f"{len(fails)}건 실패: " + ", ".join(fails)))

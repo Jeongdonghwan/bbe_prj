@@ -33,3 +33,9 @@
 .lr-list a b{display:block;font-size:16.5px;margin-bottom:4px}.lr-list a span{font-size:13.5px;color:var(--text-2)}
 .lr-list a:hover b{color:var(--accent)}
 @media (max-width:640px){.lr h1{font-size:23px}.lr-stats{grid-template-columns:1fr 1fr}}
+/* 하단 고정 바 — 모든 /learn 페이지에서 /intro 로 (2026-11-02) */
+.lr{padding-bottom:70px}
+.lr-bar{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;align-items:center;justify-content:center;gap:14px;padding:10px 16px;background:var(--surface);border-top:1px solid var(--border);box-shadow:0 -6px 18px rgba(0,0,0,.06)}
+.lr-bar span{font-weight:700;font-size:14px}
+.lr-bar .btn{height:40px}
+@media (max-width:767px){.lr-bar{bottom:56px}.lr-bar span{display:none}.lr-bar .btn{flex:1}}

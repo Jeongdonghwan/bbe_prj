@@ -15,7 +15,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 BLOG_DIR = ROOT / "content" / "blog"
 MAX_JACCARD = 0.35
-MIN_CHARS = {"blog": 1500, "bizhub": 1100, "bizangle": 1100, "regionbiz": 1000, "regionhub": 450, "topic": 900, "storecat": 1050}
+MIN_CHARS = {"blog": 1500, "bizhub": 1100, "bizangle": 1100, "regionbiz": 1000, "regionhub": 450, "topic": 900, "storecat": 1050,
+             "rbi": 1300, "sghub": 450, "sidohub": 300}   # rbi = 전국 지역×업종×의도 (2026-11-02, curtain 기준 1,300자)
+PAIR_CAP = 60   # 한 묶음 안 비교 쌍 상한 — 1.8만 페이지라 전부 비교하면 수천만 쌍이다 (표본, 시드 고정)
 
 # 단정적 보장·과장. "보장 업체를 경계하라" 같은 부정 문맥은 걸리지 않게 '보장합니다/드립니다' 형태만.
 BANNED = [r"보장\s?합니다", r"보장해\s?드(립|려)", r"보장\s?드립", r"확실히\s?(올라|오릅|상승)", r"무조건\s?(상위|1위|노출|올)",
@@ -144,9 +146,11 @@ def check_learn():
     app = create_app()
     app.config["TESTING"] = True
     fails = []
+    from app.services import seo_regional
+    seo_regional.is_open = lambda slug: True   # 오픈 예정 페이지까지 전부 검사
     with app.test_request_context():
         prices = _prices()
-        pages = [seo_pages.build(slug, prices) for _, _, slug in seo_pages.all_paths()]
+        pages = [seo_pages.build(slug, prices) for _, _, slug in seo_pages.all_paths(include_closed=True)]
     tc = app.test_client()
     by_group = {}
     for p in pages:
@@ -175,11 +179,23 @@ def check_learn():
         if k == "regionbiz":
             by_group.setdefault((k, p["region"]), []).append(p)
             by_group.setdefault((k, p["kw"].split(" ", 1)[1]), []).append(p)
+        if k == "rbi":
+            q, b, i = seo_pages.registry()[slug][1]
+            by_group.setdefault((k, "pair", q, b), []).append(p)     # 같은 지역·업종, 다른 의도
+            by_group.setdefault((k, "rq", q, i), []).append(p)       # 같은 지역·의도, 다른 업종
+            by_group.setdefault((k, "bi", b, i), []).append(p)       # 같은 업종·의도, 다른 지역
+        if k in ("sghub", "sidohub"):
+            by_group.setdefault((k, "all"), []).append(p)
     # 유사도 — 가장 닮기 쉬운 묶음(같은 업종 / 같은 지역 / 쇼핑) 안에서 전부 비교
     worst = (0, None, None)
     gcache = {}
+    import random
+    rnd = random.Random(7)
     for group in by_group.values():
-        for a, b in combinations(group, 2):
+        pairs = list(combinations(group, 2))
+        if len(pairs) > PAIR_CAP and group and group[0]["kind"] in ("rbi", "sghub"):
+            pairs = rnd.sample(pairs, PAIR_CAP)
+        for a, b in pairs:
             ga = gcache.setdefault(a["path"], grams(prose(a)))
             gb = gcache.setdefault(b["path"], grams(prose(b)))
             j = jaccard(ga, gb)
@@ -188,13 +204,13 @@ def check_learn():
             if j > MAX_JACCARD:
                 fails.append((a["path"], [f"유사도 {j:.0%} vs {b['path']}"]))
     # 렌더 검사 — 상태 코드·h1 개수 (표본)
-    for path, kind, _ in seo_pages.all_paths()[::25]:
+    for path, kind, _ in seo_pages.all_paths()[::25]:   # 렌더 검사는 지금 열린 페이지만
         h = tc.get(path)
         if h.status_code != 200 or h.get_data(as_text=True).count("<h1") != 1:
             fails.append((path, [f"status {h.status_code} / h1 {h.get_data(as_text=True).count('<h1')}"]))
     print(f"페이지 {len(pages)}개 · 최대 유사도 {worst[0]:.1%} ({worst[1]} ↔ {worst[2]})")
     from collections import Counter
-    kinds = {path: k for path, k, _ in seo_pages.all_paths()}
+    kinds = {path: k for path, k, _ in seo_pages.all_paths(include_closed=True)}
     summary = Counter((kinds.get(path, "?"), re.sub(r"[0-9.,%]+", "N", e.split(" vs ")[0])) for path, errs in fails for e in errs)
     for (k, e), n in summary.most_common(20):
         print(f"  {n:5}  {k:10} {e}")

@@ -89,18 +89,17 @@ def index():
     asks, n_ask = post_model.qna_waiting(8)   # 질문답변 중 운영팀 답변 대기
     for r in asks:
         r["age_min"] = int((datetime.now() - r["created_at"]).total_seconds() // 60)
-    # next intake cutoff (weekday 16:00 / weekend 10:00) for the header countdown
-    from ..constants import order_cutoff_for
+    # 오늘 아직 안 닫힌 매체 마감 중 가장 이른 것 — 헤더 카운트다운 (공통 마감은 2026-11-02 폐기, 매체별만)
     now = datetime.now()
-    cut = datetime.combine(now.date(), datetime.strptime(order_cutoff_for(now.date()), "%H:%M").time())
-    if cut <= now:
-        nxt = (now + timedelta(days=1)).date()
-        cut = datetime.combine(nxt, datetime.strptime(order_cutoff_for(nxt), "%H:%M").time())
+    upcoming = sorted((datetime.combine(now.date(), media_model.cutoff_today(m, now)), m["name"])
+                      for ch in CHANNEL_LABEL for m in media_model.list_by_channel(ch)
+                      if m.get("origin") != "ready" and media_model.cutoff_today(m, now) and not m["closed"])
+    cut, cut_names = (upcoming[0][0], [n for t, n in upcoming if t == upcoming[0][0]]) if upcoming else (None, [])
     return render_template(
         "admin/dashboard.html",
         q_review=counts.get("review", 0), oldest=campaign_model.oldest_review_minutes(),
         reports=report_model.count_reported(), today_n=intake["n"], today_amount=int(intake["amount"]),
-        queue=queue, charges=charges, n_charge=n_charge, asks=asks, n_ask=n_ask, cutoff=cut, tab=request.args.get("tab") or "review",
+        queue=queue, charges=charges, n_charge=n_charge, asks=asks, n_ask=n_ask, cutoff=cut, cut_names=cut_names, tab=request.args.get("tab") or "review",
         by_media=campaign_model.today_intake_by_media(5), logs=admin_log.recent(10),
         channel_label=CHANNEL_LABEL,
     )
@@ -605,7 +604,9 @@ def media_save():
             "tagline": f.get("tagline", "").strip()[:80] or None, "color": f.get("color", "#4B5563")[:7],
             "unit_price": int(f.get("unit_price")), "list_price": int(f["list_price"]) if f.get("list_price", "").strip() else None,
             "min_days": int(f.get("min_days", 3)), "min_daily": int(f.get("min_daily", 50)), "max_daily": int(f.get("max_daily", 500)),
-            "cutoff_time": (f.get("cutoff_time") or "13:30")[:5] + ":00",
+            # 매체 접수 마감 — 이 시각부터 자정까지 위저드에서 선택 불가 (비우면 마감 없음, 주말 칸이 비면 평일 시각)
+            "cutoff_time": (f.get("cutoff_time") or "")[:5] + ":00" if f.get("cutoff_time") else None,
+            "cutoff_weekend": (f.get("cutoff_weekend") or "")[:5] + ":00" if f.get("cutoff_weekend") else None,
             "efficiency_manual": int(f["efficiency_manual"]) if f.get("efficiency_manual", "").strip() else None,
             "badge": f.get("badge") if f.get("badge") in ("hot", "best", "new", "pick") else None,
             "badge_until": f.get("badge_until") or None,

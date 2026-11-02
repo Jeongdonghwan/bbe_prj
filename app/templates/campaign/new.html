@@ -87,10 +87,11 @@
                   <div class="w-p"><b style="color:var(--accent)">카카오톡 문의</b></div>
                 </a>
                 {% else %}
-                <button type="button" class="w-card{% if pre.media_id == m.id %} w-on{% endif %}" data-id="{{ m.id }}">
+                <button type="button" class="w-card{% if pre.media_id == m.id and not m.closed %} w-on{% endif %}{% if m.closed %} w-closed{% endif %}" data-id="{{ m.id }}"{% if m.cutoff_label %} data-cut="{{ m.cutoff_label }}"{% endif %}{% if m.closed %} disabled aria-disabled="true"{% endif %}>
                   {% if m.badge %}<span class="w-bd w-{{ m.badge }}">{{ m.badge_label }}</span>{% endif %}
                   <div class="w-n">{{ m.name }}</div>
                   <div class="w-p w-num"><b>{{ m.unit_price | fmt_num }}원</b> / 회</div>
+                  {% if m.cutoff_label %}<div class="w-cut">{% if m.closed %}오늘 접수 마감 · 내일 0시부터{% else %}{{ m.cutoff_label }} 마감{% endif %}</div>{% endif %}
                 </button>
                 {% endif %}
                 {% endfor %}

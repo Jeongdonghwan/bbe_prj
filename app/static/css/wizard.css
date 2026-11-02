@@ -240,3 +240,8 @@
 .wzpage .w-detail .w-ds{max-height:150px;overflow-y:auto}
 .wzpage .w-detail .w-chips{max-height:92px;overflow-y:auto}
 .wzpage .w-detail .w-flow{max-height:180px;overflow-y:auto}
+
+/* 매체 마감 (2026-11-02) — 마감 시각부터 자정까지 회색, 선택 불가 */
+.wzpage .w-card .w-cut{font-size:11.5px;color:var(--ink-3);margin-top:4px}
+.wzpage .w-card.w-closed{opacity:.5;filter:grayscale(1);cursor:not-allowed;background:var(--panel-2)}
+.wzpage .w-card.w-closed .w-cut{color:var(--ink-2);font-weight:600}

@@ -22,12 +22,42 @@ def decorate(m):
     if m.get("badge") and m.get("badge_until") and m["badge_until"] < date.today():
         m["badge"] = None
     m["badge_label"] = BADGE_LABEL.get(m.get("badge"))
+    cut = cutoff_today(m)
+    m["cutoff_label"] = cut.strftime("%H:%M") if cut else None
+    m["closed"] = is_closed(m)
     return m
 
 
 def list_by_channel(channel, active_only=True):
     where = "channel = %s" + (" AND is_active = 1" if active_only else "")
     return [decorate(m) for m in query(f"SELECT * FROM media WHERE {where} ORDER BY group_name, sort, id", [channel])]
+
+
+def _as_time(v):
+    """TIME 컬럼은 pymysql 이 timedelta 로 준다 → datetime.time"""
+    from datetime import time, timedelta
+    if v is None or isinstance(v, time):
+        return v
+    if isinstance(v, timedelta):
+        s = int(v.total_seconds())
+        return time(s // 3600 % 24, s % 3600 // 60)
+    return None
+
+
+def cutoff_today(m, now=None):
+    """오늘 이 매체의 접수 마감 시각(time) — 없으면 None. 주말 칸이 비면 평일 시각을 쓴다."""
+    from datetime import datetime
+    now = now or datetime.now()
+    wk = _as_time(m.get("cutoff_weekend")) if now.weekday() >= 5 else None
+    return wk or _as_time(m.get("cutoff_time"))
+
+
+def is_closed(m, now=None):
+    """마감 시각부터 자정까지 접수 불가 (2026-11-02 JDH). 판정은 여기 한 곳 — 위저드·서버·인기 트래픽이 같이 쓴다."""
+    from datetime import datetime
+    now = now or datetime.now()
+    cut = cutoff_today(m, now)
+    return bool(cut) and now.time() >= cut
 
 
 def get(media_id):

@@ -28,9 +28,9 @@
     {% endif %}
   </section>
   {% if loop.index == 2 %}
-  <div class="lr-cta"><p>'{{ page.kw }}' 순위를 직접 관리해 보세요. 캠페인을 등록하는 순간부터 일자별 순위가 기록됩니다.</p>
-    <a class="btn pri" href="/campaign/{{ page.channel }}/new?kw={{ page.kw | urlencode }}">이 키워드로 캠페인 만들기</a>
-    <a class="btn sec" href="/tools/keyword?q={{ page.kw | urlencode }}">무료 키워드 조회</a></div>
+  <div class="lr-cta"><p>'{{ page.kw }}', 대행사 없이 직접 해 보세요. 매체 단가를 보고 고르고, 등록하는 순간부터 일자별 순위가 기록됩니다.</p>
+    <a class="btn pri" href="/intro">{{ APP_NAME }} 알아보기</a>
+    <a class="btn sec" href="{{ KAKAO_CHAT_URL }}" target="_blank" rel="noopener">카카오톡 상담</a></div>
   {% endif %}
   {% endfor %}
 
@@ -44,6 +44,9 @@
   <section class="lr-sec"><h2>{{ title }}</h2><div class="lr-links">{% for n, p in items %}<a href="{{ p }}">{{ n }}</a>{% endfor %}</div></section>
   {% endfor %}
 
+  <div class="lr-cta lr-end"><p>우리 가게에 맞는 광고 상품과 단가를 한 화면에서 확인하세요. 월 이용료 없이 쓴 만큼만.</p>
+    <a class="btn pri" href="/intro">{{ APP_NAME }} 알아보기</a></div>
   <p class="lr-src">검색량: {{ meta.source }} 월간 조회수, {{ meta.collected }} 기준. 실제 검색량은 시기에 따라 달라질 수 있습니다. 순위·노출은 검색엔진이 정하며 보장할 수 없습니다.</p>
 </article>
+<div class="lr-bar"><span>대행사 없이 내 손으로 하는 상위노출</span><a class="btn pri" href="/intro">{{ APP_NAME }} 알아보기</a></div>
 {% endblock %}

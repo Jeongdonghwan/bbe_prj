@@ -425,6 +425,9 @@ def registry():
     def add(slug, kind, key):
         reg.setdefault(slug, (kind, key))
 
+    from . import seo_regional   # 전국 지역×업종×의도 (2026-11-02) — 먼저 등록해 같은 주소면 새 내용이 이긴다
+    seo_regional.register(add)
+
     for b in _biz_rows():
         add(f"{b['biz']}-마케팅", "bizhub", b["biz"])
         for a in ANGLES:
@@ -440,8 +443,11 @@ def registry():
     return reg
 
 
-def all_paths():
-    return [(f"/learn/{slug}/", kind, slug) for slug, (kind, _) in registry().items()]
+def all_paths(include_closed=False):
+    """열린 페이지만 (사이트맵·검사). include_closed=True 면 오픈 예정까지 전부."""
+    from . import seo_regional
+    return [(f"/learn/{slug}/", kind, slug) for slug, (kind, _) in registry().items()
+            if include_closed or seo_regional.visible(kind, slug)]
 
 
 @lru_cache(maxsize=1)
@@ -456,8 +462,12 @@ def build(slug, prices):
     if not hit:
         return None
     kind, key = hit
+    from . import seo_regional
+    if not seo_regional.visible(kind, slug):
+        return None                                 # 오픈 전 — 404
+    builder = BUILDERS.get(kind) or seo_regional.BUILDERS[kind]
     salt = salts().get(slug)
-    page = BUILDERS[kind](key, f"{slug}#{salt}" if salt else slug, prices)
+    page = builder(key, f"{slug}#{salt}" if salt else slug, prices)
     page.update(kind=kind, slug=slug, path=f"/learn/{slug}/")
     page["desc"] = fit_desc(page["desc"])
     return page
@@ -686,9 +696,12 @@ def hub():
     by = {}
     for slug, (kind, key) in reg.items():
         by.setdefault(kind, []).append(slug)
+    from . import seo_regional
     regions = {}
     for r in _place_rows():
         regions.setdefault(r["sido"], set()).add(r["region"])
-    return {"count": len(reg), "biz": [b["biz"] for b in _biz_rows()], "regions": {k: sorted(v) for k, v in regions.items()},
+    for sido, qs in seo_regional._idx()["sido"].items():   # 전국 시군구 허브
+        regions.setdefault(sido, set()).update(qs)
+    return {"count": len(all_paths()), "sidos": list(seo_regional._idx()["sido"]), "biz": [b["biz"] for b in _biz_rows()], "regions": {k: sorted(v) for k, v in regions.items()},
             "topics": [(f"{p} {a}", f"/learn/{p}-{a.replace(' ', '-')}/") for p, a, _ in TOPICS],
             "store": [s["kw"] for s in _store_rows()]}

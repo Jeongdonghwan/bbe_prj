@@ -66,14 +66,13 @@ def create(user, media, form, method, depositor=None):
 
 
 def earliest_start(now=None):
-    """접수는 24시간, 구동은 익일부터. 마감 시각 이후 접수는 익익일.
+    """가장 이른 구동 시작일 — 항상 다음 날 (당일 구동 없음).
 
-    마감은 평일 ORDER_CUTOFF(16:00), 주말(토·일) ORDER_CUTOFF_WEEKEND(10:00) — 2026-09-30 JDH.
-    판정은 이 함수 한 곳. 화면 문구는 constants.ORDER_CUTOFF_LABEL 을 쓴다.
+    2026-11-02 JDH: 공통 접수 마감(평일 16시·주말 10시 → 익익일)을 없애고 매체별 마감만 쓴다.
+    매체 마감 이후에는 그 매체를 아예 고를 수 없으므로(media.is_closed) 날짜를 미룰 일이 없다.
     """
-    from ..constants import order_cutoff_for
     now = now or datetime.now()
-    return now.date() + timedelta(days=1 if now.strftime("%H:%M") < order_cutoff_for(now.date()) else 2)
+    return now.date() + timedelta(days=1)
 
 
 def create_with_credit(user, media, form):

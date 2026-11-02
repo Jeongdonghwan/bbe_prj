@@ -1,7 +1,7 @@
 {% extends "layout/base.html" %}
 {% block title %}운영 현황{% endblock %}
 {% block content %}
-<div class="ph"><div><h1>운영 현황</h1><p>지금 처리해야 할 것부터. <span class="thin" title="입력 중이거나 창이 열려 있으면 잠시 멈춥니다">· 10초마다 자동 새로고침</span></p></div><div class="act"><span class="thin">다음 접수 마감({{ cutoff.strftime('%m.%d %H:%M') }})까지 <b id="cd2" class="num" data-at="{{ cutoff.isoformat() }}" style="color:var(--text)">—</b></span></div></div>
+<div class="ph"><div><h1>운영 현황</h1><p>지금 처리해야 할 것부터. <span class="thin" title="입력 중이거나 창이 열려 있으면 잠시 멈춥니다">· 10초마다 자동 새로고침</span></p></div><div class="act">{% if cutoff %}<span class="thin">다음 매체 마감 {{ cutoff.strftime('%H:%M') }} · {{ cut_names[:2] | join(', ') }}{% if cut_names | length > 2 %} 외 {{ cut_names | length - 2 }}개{% endif %}까지 <b id="cd2" class="num" data-at="{{ cutoff.isoformat() }}" style="color:var(--text)">—</b></span>{% else %}<span class="thin">오늘 남은 매체 마감 없음</span>{% endif %}</div></div>
 <div id="dash">
 <div class="queue">
   <a class="card" href="/admin/orders?status=review"><span class="k">검수 대기</span><span class="v num{% if q_review %} alert{% endif %}">{{ q_review }}</span><span class="d">{% if oldest is not none %}가장 오래된 건 {% if oldest >= 60 %}{{ oldest // 60 }}시간 {% endif %}{{ oldest % 60 }}분{% else %}대기 없음{% endif %}</span></a>
