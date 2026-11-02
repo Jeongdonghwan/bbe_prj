@@ -182,6 +182,15 @@
   <span class="copy">© {{ now_year }} {{ APP_NAME }}</span>
 </div></footer>
 
+<a class="btn pri ld-fab" id="ldFab" href="/auth/register" aria-label="광고 시작하기"><i data-lucide="rocket"></i>광고 시작하기</a>
+<script>
+// 히어로를 지나면 떠 있는 '광고 시작하기' (2026-11-02 JDH)
+(function () {
+  var f = document.getElementById('ldFab');
+  function t() { f.classList.toggle('on', window.scrollY > 420); }
+  window.addEventListener('scroll', t, { passive: true }); t();
+})();
+</script>
 <script src="https://cdn.jsdelivr.net/npm/lucide@0.469.0/dist/umd/lucide.min.js"></script>
 <script>lucide.createIcons();</script>
 <script src="{{ url_for('static', filename='js/landing.js') }}"></script>

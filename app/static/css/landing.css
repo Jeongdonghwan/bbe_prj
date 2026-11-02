@@ -247,3 +247,11 @@
   .ld-final h2{font-size:26px}
   .ld-foot .copy{margin-left:0}
 }
+
+/* 떠 있는 광고 시작하기 — 히어로 아래로 내려가면 나타난다 */
+.ld .ld-fab{position:fixed;right:24px;bottom:24px;z-index:50;height:54px;padding:0 24px;border-radius:999px;font-size:15.5px;
+  opacity:0;transform:translateY(16px);pointer-events:none;transition:opacity .25s,transform .25s,box-shadow .15s}
+.ld .ld-fab.on{opacity:1;transform:none;pointer-events:auto}
+.ld .ld-fab svg{width:18px;height:18px}
+@media (max-width:640px){.ld .ld-fab{left:16px;right:16px;bottom:16px;height:52px}}
+@media (prefers-reduced-motion:reduce){.ld .ld-fab{transition:none}}
