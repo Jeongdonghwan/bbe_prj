@@ -16,6 +16,17 @@
       if (window.lucide) window.lucide.createIcons();
     });
   }
+  // 취소·중단 — 접수일 포함 3일 안이면 막고 안내 (서버도 같은 규칙으로 거절한다, refund_rule)
+  document.addEventListener('submit', function (e) {
+    var f = e.target.closest('form[data-refund]'); if (!f) return;
+    if (f.dataset.refund === 'locked') {
+      e.preventDefault();
+      alert('최소 작업일수는 3일입니다. 환불은 불가합니다.' + (f.dataset.unlock ? '
+(' + f.dataset.unlock + '부터 중단할 수 있습니다)' : ''));
+      return;
+    }
+    if (!confirm(f.dataset.ask)) e.preventDefault();
+  }, true);
   var rm = document.getElementById('rankModal'), rb = document.getElementById('rankBody');
   function closeRanks() { if (rm) rm.classList.remove('on'); }
   // 회원 목록(어드민)처럼 순위 모달이 없는 화면도 이 파일을 쓴다 — 없으면 여기서 멈춰 행 클릭이 안 붙었다

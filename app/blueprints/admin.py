@@ -620,6 +620,13 @@ def media_save():
             "is_active": 1 if f.get("is_active") == "1" else 0,
             "sort": int(f.get("sort") or 0),
         }
+        from ..constants import section_kind
+        fields["origin"], fields["group_key"] = section_kind(fields["group_name"])
+        old = media_model.get(mid) if mid else None
+        if not fields["badge"]:
+            fields["badge_set_at"] = None
+        elif not old or old.get("badge") != fields["badge"] or not old.get("badge_set_at"):
+            fields["badge_set_at"] = datetime.now()   # 뱃지를 새로 달거나 바꾼 시각 — 진열 순서 동점 처리
         if not fields["name"]:
             raise ValueError("이름을 입력해주세요.")
         if fields["max_daily"] and fields["min_daily"] > fields["max_daily"]:

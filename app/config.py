@@ -30,8 +30,9 @@ class Config:
     PERMANENT_SESSION_LIFETIME = 30 * 24 * 3600   # 로그인 상태 유지 (회원 로그인 화면 체크박스)
     SESSION_COOKIE_SAMESITE = "Lax"
     # Search console ownership tags (네이버 서치어드바이저 / Google Search Console). Empty -> tag omitted.
-    NAVER_SITE_VERIFICATION = os.getenv("NAVER_SITE_VERIFICATION", "")
-    GOOGLE_SITE_VERIFICATION = os.getenv("GOOGLE_SITE_VERIFICATION", "")
+    # 검색 등록 인증 태그 — 페이지 HTML 에 그대로 찍히는 공개값이라 기본값으로 둔다 (셀프마이마케팅.kr, 2026-11-02)
+    NAVER_SITE_VERIFICATION = os.getenv("NAVER_SITE_VERIFICATION") or "be4006e315f1308ebaa2fd240830d2dff7349bf1"
+    GOOGLE_SITE_VERIFICATION = os.getenv("GOOGLE_SITE_VERIFICATION") or "xQmrBGqYS22hhJTE8r1mlcraIxzgwtOO2DYw_cbcW9c"
     KAKAO_CHAT_URL = os.getenv("KAKAO_CHAT_URL", "http://pf.kakao.com/_uuxgxaX/chat")
 
     PER_PAGE = 20

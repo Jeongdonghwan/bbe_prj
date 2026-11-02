@@ -44,7 +44,7 @@
     if (e.key === 'Escape' || e.keyCode === 27) { close(); }
   });
 
-  /* ── 정렬 (추천순 = 순위 → 후기수) ── */
+  /* ── 정렬 (추천순 = 서버 진열 순서: NEW → BEST → 인기 → 추천 → 순위 → 후기수) ── */
   document.querySelectorAll('[data-sort]').forEach(function (btn) {
     btn.addEventListener('click', function () {
       var mode = btn.dataset.sort;
@@ -54,7 +54,7 @@
         cards.sort(function (a, b) {
           if (mode === 'rev') { return +b.dataset.cnt - +a.dataset.cnt; }
           if (mode === 'price') { return +a.dataset.price - +b.dataset.price; }
-          return (+a.dataset.rank - +b.dataset.rank) || (+b.dataset.cnt - +a.dataset.cnt);
+          return +a.dataset.pos - +b.dataset.pos;   // 추천순 = 서버가 정한 진열 순서 (뱃지 → 순위 → 후기)
         });
         cards.forEach(function (c) { grid.appendChild(c); });
       });

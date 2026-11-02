@@ -30,8 +30,16 @@ MEDIA_CATALOG = {
 MEDIA_SECTIONS = {
     "place": ["자체 프로그램", "기성 프로그램"],
     "store": ["자체 · 리워드", "자체 · 유입플", "기성"],
-    "coupang": ["기성"],
+    "coupang": ["자체 · 리워드", "자체 · 유입플", "기성"],
 }
+
+
+def section_kind(group_name):
+    """섹션 이름 → (origin, group_key). 매체의 자체/기성 구분은 섹션 하나로만 정한다 —
+    섹션만 저장되고 origin 이 기본값(기성)으로 남아 '자체로 골라도 기성으로 추가'되던 버그 (2026-11-02)."""
+    if not (group_name or "").startswith("자체"):
+        return "ready", None
+    return "own", ("reward" if "리워드" in group_name else "inflow" if "유입" in group_name else None)
 
 MEDIA_COLORS = ["#6C5CE7", "#0EA5E9", "#8B5CF6", "#F97316", "#10B981", "#EC4899", "#F59E0B", "#2563EB"]
 MEDIA_MIN_DAILY = 100
@@ -73,15 +81,22 @@ def status_tabs(counts):
 # Campaign status transition table (from -> allowed to).
 TRANSITIONS = {
     "pay_wait": {"review", "cancelled"},
-    "review": {"running", "approved", "rejected"},   # 승인 = 곧장 running. approved 는 옛 주문용.
-    "approved": {"running", "rejected"},
-    "running": {"done", "stopped"},
+    "review": {"running", "approved", "rejected", "cancelled"},   # 승인 = 곧장 running. approved 는 옛 주문용.
+    "approved": {"running", "rejected", "cancelled"},
+    "running": {"done", "stopped", "cancelled"},   # cancelled = 회원 취소(전액 환불, 구동 전)
 }
 
 PAY_METHOD_LABEL = {"card": "카드", "bank": "무통장입금", "credit": "크레딧"}
 PAYMENT_STATUS_LABEL = {"pending": "결제 대기", "paid": "결제 완료", "partial_refund": "부분 환불",
                         "refunded": "전액 환불", "cancelled": "취소", "expired": "기한 만료"}
 BANK_DUE_DAYS = 3
+
+# 환불 규칙 (2026-11-02 JDH) — 판정은 campaign_service.refund_rule() 한 곳
+MIN_WORK_DAYS = 3            # 최소 작업일수 = 광고 기간 최소 일수
+NO_REFUND_DAYS = 3           # 접수일 포함 3일간 중단·환불 불가 (매체 no_refund_days 가 더 길면 그쪽)
+SAME_DAY_REFUND_UNTIL = 12   # 접수한 날 이 시각(시) 전에 취소하면 전액 환불
+REFUND_NOTICE = (f"최소 작업일수는 {MIN_WORK_DAYS}일입니다. 접수일 포함 {NO_REFUND_DAYS}일간은 중단·환불이 불가합니다. "
+                 f"(접수한 날 낮 {SAME_DAY_REFUND_UNTIL}시 전 취소는 전액 환불)")
 
 CUTOFF_TIME = "13:30"
 DATE_PRESETS = [10, 20, 30]

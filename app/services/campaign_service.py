@@ -594,10 +594,62 @@ def reject(campaign, admin_id, reason):
     return campaign_model.get(c["id"])
 
 
-def stop(campaign, actor_id, reason="사용자 중단 요청"):
-    """running -> stopped, refund remaining days pro-rata."""
+# ---- 회원 취소·중단 환불 규칙 (2026-11-02 JDH) ------------------------------
+# 이 시각 이후 접수 건부터 적용 — 그 전에 접수한 건은 예전처럼 언제든 잔여일분 환불.
+REFUND_POLICY_FROM = datetime(2026, 11, 2)
+
+
+def refund_rule(campaign, now=None):
+    """회원이 지금 취소·중단을 누르면 어떻게 되는지.
+
+    ("full", None)        접수한 날 낮 12시 전 — 전액 환불하고 취소
+    ("locked", 날짜)       접수일 포함 3일(매체 환불불가 일수가 더 길면 그만큼) — 중단·환불 불가, 날짜부터 가능
+    ("normal", None)      그 이후 — 구동 전이면 전액, 구동 중이면 잔여일분 환불
+    """
+    from ..constants import NO_REFUND_DAYS, SAME_DAY_REFUND_UNTIL
+    now = now or datetime.now()
+    created = campaign["created_at"]
+    if created < REFUND_POLICY_FROM:
+        return "normal", None
+    if created.date() == now.date() and now.hour < SAME_DAY_REFUND_UNTIL:
+        return "full", None
+    media = media_model.get(campaign["media_id"]) or {}
+    days = max(NO_REFUND_DAYS, media.get("no_refund_days") or 0)
+    unlock = created.date() + timedelta(days=days)
+    if now.date() < unlock:
+        return "locked", unlock
+    return "normal", None
+
+
+def locked_message(unlock):
+    from ..constants import MIN_WORK_DAYS
+    return f"최소 작업일수는 {MIN_WORK_DAYS}일입니다. 환불은 불가합니다. ({unlock:%m.%d}부터 중단할 수 있습니다)"
+
+
+def user_cancel(campaign, actor_id):
+    """회원 취소 — 구동 전(검수·승인·시작일 전) 캠페인을 전액 환불하고 cancelled 로."""
+    st = campaign["status"]
+    started = st == "running" and date.today() >= campaign["start_date"]
+    if st not in ("review", "approved", "running") or started:
+        raise CampaignError("구동 전 캠페인만 취소할 수 있습니다. 구동 중이면 중단을 이용해주세요.")
+    rule, unlock = refund_rule(campaign)
+    if rule == "locked":
+        raise CampaignError(locked_message(unlock))
+    c = transition(campaign, "cancelled", actor_id, "회원 취소 · 전액 환불" + (" (접수 당일 낮 12시 전)" if rule == "full" else ""))
+    left = c["paid_amount"] - c["refund_amount"]
+    if left > 0:
+        payment_service.refund(c, left, actor_id, "회원 취소 · 전액")
+    return campaign_model.get(c["id"])
+
+
+def stop(campaign, actor_id, reason="사용자 중단 요청", by_user=False):
+    """running -> stopped, refund remaining days pro-rata. 회원 중단은 refund_rule 을 지킨다."""
     if campaign["status"] != "running":
         raise CampaignError("진행 중인 캠페인만 중단할 수 있습니다.")
+    if by_user:
+        rule, unlock = refund_rule(campaign)
+        if rule == "locked":
+            raise CampaignError(locked_message(unlock))
     today = date.today()
     total_days = days_between(campaign["start_date"], campaign["end_date"])
     elapsed = max(0, min(total_days, (today - campaign["start_date"]).days + 1))

@@ -26,5 +26,9 @@
 {% if NAVER_SITE_VERIFICATION %}<meta name="naver-site-verification" content="{{ NAVER_SITE_VERIFICATION }}">{% endif %}
 {% if GOOGLE_SITE_VERIFICATION %}<meta name="google-site-verification" content="{{ GOOGLE_SITE_VERIFICATION }}">{% endif %}
 <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo-sym-violet.png') }}">
-{% for j in jsonld or [] %}<script type="application/ld+json">{{ j | tojson }}</script>
+{% if request.path in ('/', '/intro') %}{# 브랜드 검색("마이마케팅")에 사이트 이름으로 잡히게 — 홈·인트로에만 #}
+<script type="application/ld+json">{{ {"@context": "https://schema.org", "@graph": [
+  {"@type": "WebSite", "@id": _origin ~ "/#website", "name": APP_NAME, "alternateName": ["셀프마이마케팅", SEO.domain], "url": _origin ~ "/", "inLanguage": "ko", "description": SEO.description},
+  {"@type": "Organization", "@id": _origin ~ "/#org", "name": APP_NAME, "alternateName": "셀프마이마케팅", "url": _origin ~ "/", "logo": _origin ~ url_for('static', filename='img/logo.png')}]} | tojson }}</script>
+{% endif %}{% for j in jsonld or [] %}<script type="application/ld+json">{{ j | tojson }}</script>
 {% endfor %}<link rel="alternate" type="application/rss+xml" title="{{ APP_NAME }} 블로그" href="{{ _origin }}/rss.xml">

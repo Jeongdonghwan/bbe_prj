@@ -68,6 +68,7 @@ CREATE TABLE IF NOT EXISTS media (
   flow_steps        JSON NULL,
   badge             ENUM('hot','best','new','pick') NULL,
   badge_until       DATE NULL,
+  badge_set_at      DATETIME NULL,   -- 뱃지를 단 시각 (같은 뱃지끼리 먼저 단 상품이 앞)
   eff_level         ENUM('normal','good','best') NOT NULL DEFAULT 'good',
   eff_note          VARCHAR(120) NULL,
   sort              INT NOT NULL DEFAULT 0,

@@ -5,7 +5,7 @@ from datetime import date, datetime, timedelta
 from flask import (Blueprint, abort, current_app, flash, g, jsonify, redirect, render_template, request, session,
                    url_for)
 
-from ..constants import (CHANNEL_LABEL, DATE_PRESETS, PAY_METHOD_LABEL, PAYMENT_STATUS_LABEL, PLACE_CATEGORIES, TRAFFIC_CHANNELS,
+from ..constants import (CHANNEL_LABEL, DATE_PRESETS, MIN_WORK_DAYS, REFUND_NOTICE, PAY_METHOD_LABEL, PAYMENT_STATUS_LABEL, PLACE_CATEGORIES, TRAFFIC_CHANNELS,
                          STATUS_CLASS, STATUS_LABEL, STORE_SLOT_MAX, reco_qty, status_tabs)
 from ..models import campaign as campaign_model
 from ..models import content as content_model
@@ -158,11 +158,11 @@ def new(channel):
         types_json=json.dumps({
             m["id"]: {"g": next((i for i, s in enumerate(sections) if m in s["items"]), 0),
                       "n": m["name"], "p": m["unit_price"], "max": m["max_daily"] or 0,
-                      "mind": m["min_days"] or 1,
+                      "mind": max(MIN_WORK_DAYS, m["min_days"] or 1),   # 최소 작업일수 3일
                       "badge": m["badge"], "badge_label": m["badge_label"],
                       "desc": m["description"] or "", "fit": m["fit_for"], "flow": m["flow_steps"]}
             for m in medias if m["origin"] != "ready"}, ensure_ascii=False),   # 기성은 직접 발주 불가
-        today_picks=today_picks,
+        today_picks=today_picks, refund_notice=REFUND_NOTICE,
         # 미리보기는 쇼핑·스토어만. 쿠팡·플레이스는 순위 서버가 읽지 못한다 (2026-09-21 JDH).
         preview_on=channel == "store",
         preview_live=channel == "store" and rank_client.configured(),
@@ -184,8 +184,9 @@ def _parse_form(channel, media, form):
     if f["start_date"] <= date.today():
         return None, "시작일은 내일 이후여야 합니다. 당일 구동은 제공하지 않습니다."
     days = campaign_service.days_between(f["start_date"], f["end_date"])
-    if days < media["min_days"]:
-        return None, f"이 매체는 최소 {media['min_days']}일 이상 설정해야 합니다."
+    min_days = max(MIN_WORK_DAYS, media["min_days"] or 1)
+    if days < min_days:
+        return None, f"최소 작업일수는 {min_days}일입니다. 기간을 {min_days}일 이상으로 설정해주세요."
     if days > 60:
         return None, "기간은 최대 60일입니다."
     try:
@@ -351,8 +352,11 @@ def manage(channel):
     per_page = current_app.config["PER_PAGE"]
     rows = campaign_model.list_user(uid, channel, status, period, media_id, q, page, per_page)
     total = campaign_model.count_user(uid, channel, status, period, media_id, q)
+    today = date.today()
     for r in rows:
         r["prog"] = campaign_service.progress(r)
+        r["started"] = r["status"] == "running" and today >= r["start_date"]
+        r["rule"], r["unlock"] = campaign_service.refund_rule(r)
     # 순위가 아직 빈 건은 뒤에서 당겨온다 (콜백이 늦어도 화면이 오래 비어 있지 않게).
     campaign_service.refresh_ranks_async(rows)
     counts = campaign_model.status_counts(uid, channel)
@@ -387,8 +391,10 @@ def drawer(channel, campaign_id):
     for d in ranks:
         # lower rank = taller bar
         d["h"] = 100 if worst == best else int(30 + (worst - d["rank"]) / (worst - best) * 70)
+    rule, unlock = campaign_service.refund_rule(c)
+    started = c["status"] == "running" and date.today() >= c["start_date"]
     return render_template(
-        "campaign/_drawer.html", channel=channel, c=c, p=p, daily=daily, ranks=ranks[-14:],
+        "campaign/_drawer.html", rule=rule, unlock=unlock, started=started, channel=channel, c=c, p=p, daily=daily, ranks=ranks[-14:],
         done_qty=campaign_model.total_done_qty(c["id"]), logs=campaign_model.list_log(c["id"]),
         prog=campaign_service.progress(c), day_idx=campaign_service.day_index(c),
         status_label=STATUS_LABEL, status_class=STATUS_CLASS, pay_method_label=PAY_METHOD_LABEL,
@@ -412,11 +418,15 @@ def ranks(channel, campaign_id):
 def cancel(channel, campaign_id):
     c = _own(_channel(channel), campaign_id)
     try:
-        campaign_service.cancel(c, g.user["id"])
-        flash("주문을 취소했습니다.")
+        if c["status"] == "pay_wait":   # 옛 결제 대기 주문
+            campaign_service.cancel(c, g.user["id"])
+            flash("주문을 취소했습니다.")
+        else:                           # 구동 전 취소 — 환불 규칙(refund_rule) 적용, 전액 환불
+            c = campaign_service.user_cancel(c, g.user["id"])
+            flash(f"캠페인을 취소했습니다. {c['refund_amount']:,}원이 크레딧으로 환불되었습니다.")
         from ..services.notify_service import notify_admins
         notify_admins(f"환불 신청(취소) · {g.user['nickname']} [{c['order_no']}]", f"/admin/orders?q={c['order_no']}", sms=True)
-    except campaign_service.CampaignError as e:
+    except (campaign_service.CampaignError, payment_service.PaymentError) as e:
         flash(str(e))
     return redirect(url_for("campaign.manage", channel=channel))
 
@@ -426,7 +436,7 @@ def cancel(channel, campaign_id):
 def stop(channel, campaign_id):
     c = _own(_channel(channel), campaign_id)
     try:
-        c = campaign_service.stop(c, g.user["id"])
+        c = campaign_service.stop(c, g.user["id"], by_user=True)
         flash(f"캠페인을 중단했습니다. 잔여일분 {c['refund_amount']:,}원이 환불 처리됩니다.")
         from ..services.notify_service import notify_admins
         notify_admins(f"환불 신청(중단) · {g.user['nickname']} [{c['order_no']}] 잔여 {c['refund_amount']:,}원",
@@ -517,6 +527,14 @@ def _channel_view(channel):
     ready = [m for m in rows if m["origin"] == "ready"]
     if ready:
         groups.append(("기성 매체", ready))
+    # 진열 순서 (2026-11-02 JDH): NEW → BEST → 인기 → 추천 → 뱃지 없음, 같은 뱃지는 먼저 단 상품이 앞.
+    # 위젯 TOP5·추천 3장은 운영팀 순위 그대로(traffic_list) — 여기 그룹 목록만 바꾼다.
+    order = {"new": 0, "best": 1, "hot": 2, "pick": 3}
+    far = datetime.max
+    for _, items in groups:
+        items.sort(key=lambda m: (order.get(m["badge"], 9), m.get("badge_set_at") or far, m["rank"] or 99, -m["review_cnt"]))
+        for i, m in enumerate(items):
+            m["pos"] = i
     return {"top3": [m for m in rows if m["rank"]][:3], "groups": groups, "total": len(rows)}
 
 
@@ -524,8 +542,9 @@ def _channel_view(channel):
 def popular():
     """채널·정렬 모두 클라이언트 전환. 현재 채널은 ?ch= 에 남겨 새로고침·공유 시 유지된다."""
     valid = [k for k, _ in TRAFFIC_CHANNELS]
-    channel = request.args.get("ch") if request.args.get("ch") in valid else valid[0]
-    shown_week = weekly_rank.latest_week(channel) or weekly_rank.week_start()
+    # ?ch=all = 전체 트래픽 상품 보기 (세 채널을 탭 없이 한 화면, 2026-11-02 JDH)
+    channel = request.args.get("ch") if request.args.get("ch") in valid + ["all"] else valid[0]
+    shown_week = weekly_rank.latest_week(valid[0] if channel == "all" else channel) or weekly_rank.week_start()
     return render_template("popular/index.html", channel=channel, channels=TRAFFIC_CHANNELS,
                            week_label=weekly_rank.week_label(shown_week),
                            views={ch: _channel_view(ch) for ch in valid})

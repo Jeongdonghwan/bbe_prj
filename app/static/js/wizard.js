@@ -11,7 +11,7 @@
   function digits(v) { return parseInt(String(v).replace(/[^0-9]/g, ''), 10) || 0; }
   function cnt() { return digits(qty.value); }
   function span() { return +daysVal.value || SPANS[0]; }
-  function minDays() { var t = sel(); return Math.max(1, (t && t.mind) || 1); }
+  function minDays() { var t = sel(); return Math.max(3, (t && t.mind) || 3); }   // 최소 작업일수 3일
   var MAX_DAYS = 60;
   function sel() { return T[mediaId.value] || null; }
   function day(d) { return (d.getMonth() + 1) + '.' + String(d.getDate()).padStart(2, '0') + '(' + '일월화수목금토'[d.getDay()] + ')'; }
@@ -125,7 +125,7 @@
     var t = sel(), el = $('detail');
     if (!t) { el.innerHTML = '<div class="w-db"><p class="w-ds">왼쪽에서 광고 유형을 선택하세요.</p></div>'; return; }
     var badge = t.badge ? '<span class="w-bd w-' + t.badge + '">' + t.badge_label + '</span>' : '';
-    var desc = t.desc ? t.desc : '설명이 아직 등록되지 않았습니다.';
+    var desc = t.desc || '';
     var fit = (t.fit || []).length
       ? '<div><div class="w-dk">이런 상품에 맞아요</div><div class="w-chips">' +
         t.fit.map(function (f) { return '<span>' + f + '</span>'; }).join('') + '</div></div>' : '';
@@ -136,7 +136,7 @@
       '<div class="w-dh"><div class="w-dg">' + (GROUPS[t.g] || '') + '</div>' +
       '<div class="w-dn">' + t.n + badge + '</div>' +
       '<div class="w-dp w-num"><b>' + num(t.p) + '원</b><span>/ 유입 1회</span></div></div>' +
-      '<div class="w-db"><p class="w-ds">' + desc + '</p>' + fit + flow +
+      '<div class="w-db">' + (desc ? '<p class="w-ds">' + desc + '</p>' : '') + fit + flow +
       '<div class="w-est w-num"><span>100회 × 10일 기준</span><b>' + won(t.p * 100 * 10) + '</b></div></div>';
   }
 
@@ -376,11 +376,19 @@
     if (cur !== LAST && validate(cur)) { go(cur + 1); }
   });
 
+  // 광고 만들기 → 환불 규정 확인 팝업 → 확인해야 실제 제출 (2026-11-02 JDH)
+  var agreed = false, rmodal = $('refundModal');
+  $('rmNo').addEventListener('click', function () { rmodal.hidden = true; });
+  $('rmYes').addEventListener('click', function () {
+    agreed = true; rmodal.hidden = true;
+    if ($('cwForm').requestSubmit) { $('cwForm').requestSubmit($('btn-submit')); } else { $('btn-submit').click(); }
+  });
   $('cwForm').addEventListener('submit', function (e) {
     if (cur !== LAST) { e.preventDefault(); return; }      // 최종 확인 화면에서만 제출
     for (var n = 1; n <= 4; n++) {
       if (!validate(n)) { e.preventDefault(); go(n); return; }
     }
+    if (!agreed) { e.preventDefault(); rmodal.hidden = false; $('rmYes').focus(); return; }
     recap();
     try { sessionStorage.removeItem(KEY); } catch (x) { /* ignore */ }
   });

@@ -224,3 +224,19 @@
 /* 기성 매체 — 발주 불가, 카카오톡 문의 카드 (2026-10-10) */
 .wzpage .w-card.w-ask{text-decoration:none;color:inherit;opacity:.85;border-style:dashed}
 .wzpage .w-card.w-ask:hover{opacity:1}
+
+/* 2026-11-02: 자체 개발 API 안내 · 환불 고지 · 확인 팝업 · 긴 설명은 칸 안에서 스크롤 */
+.wzpage .w-api,.wzpage .w-refund{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;line-height:1.6;border-radius:10px;padding:10px 12px;margin:0 0 14px}
+.wzpage .w-api{background:var(--brand-tint);color:var(--ink-2)}.wzpage .w-api b{color:var(--ink)}
+.wzpage .w-refund{background:var(--warn-soft);color:var(--text);margin-top:14px}.wzpage .w-refund .i{color:var(--warn)}
+.wzpage .w-api .i,.wzpage .w-refund .i{flex:none;margin-top:2px}
+.wzpage .w-modal{position:fixed;inset:0;z-index:60;background:rgba(15,15,30,.45);display:grid;place-items:center;padding:16px}
+.wzpage .w-modal[hidden]{display:none}
+.wzpage .w-modal-box{background:var(--panel);border-radius:16px;padding:22px 22px 18px;max-width:420px;width:100%;box-shadow:var(--sh-3)}
+.wzpage .w-modal-box h3{font-size:17px;margin:0 0 12px}
+.wzpage .w-modal-box ul{margin:0 0 18px;padding-left:18px;font-size:13.5px;line-height:1.8;color:var(--ink-2)}
+.wzpage .w-modal-box b{color:var(--ink)}
+.wzpage .w-modal-foot{display:flex;gap:8px;justify-content:flex-end}
+.wzpage .w-detail .w-ds{max-height:150px;overflow-y:auto}
+.wzpage .w-detail .w-chips{max-height:92px;overflow-y:auto}
+.wzpage .w-detail .w-flow{max-height:180px;overflow-y:auto}

@@ -314,6 +314,22 @@ def main():
         if cur.rowcount:
             done.append("최고 관리자 지정(가장 오래된 운영자)")
 
+    # -- 뱃지 단 시각 (2026-11-02) — 같은 뱃지끼리는 먼저 단 상품이 앞
+    if not col("media", "badge_set_at"):
+        cur.execute("ALTER TABLE media ADD COLUMN badge_set_at DATETIME NULL AFTER badge_until")
+        cur.execute("UPDATE media SET badge_set_at = NOW() WHERE badge IS NOT NULL")
+        done.append("media.badge_set_at")
+
+    # -- 섹션과 자체/기성 구분 맞추기 (2026-11-02) — 섹션만 '자체'로 저장되고 origin 이 기성으로 남은 매체
+    cur.execute("""UPDATE media SET origin = 'own',
+                     group_key = CASE WHEN group_name LIKE '%%리워드%%' THEN 'reward' WHEN group_name LIKE '%%유입%%' THEN 'inflow' ELSE NULL END
+                   WHERE group_name LIKE '자체%%' AND origin <> 'own'""")
+    if cur.rowcount:
+        done.append(f"media 자체 구분 보정 {cur.rowcount}개")
+    cur.execute("UPDATE media SET origin = 'ready', group_key = NULL WHERE group_name NOT LIKE '자체%%' AND origin <> 'ready'")
+    if cur.rowcount:
+        done.append(f"media 기성 구분 보정 {cur.rowcount}개")
+
     # -- 질문답변 비밀문의 · 모바일 배너 이미지 (2026-10-24) ---------------
     if not col("posts", "is_secret"):
         cur.execute("ALTER TABLE posts ADD COLUMN is_secret TINYINT(1) NOT NULL DEFAULT 0 AFTER is_blind")

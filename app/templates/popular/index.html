@@ -6,8 +6,10 @@
 <div class="poppage">
   <h1>인기 트래픽</h1>
   <p class="p-lede">채널별 트래픽 상품과 실제 진행한 사업자 후기. 추천 순위는 운영팀이 주간 접수량·반려율을 보고 직접 정합니다.</p>
+  <div class="p-api"><b>자체 개발(리워드 · 유입플) 상품은 API로 연동</b>되어 있어 캠페인을 만들면 자동으로 접수·진행됩니다. 기성 상품은 카카오톡으로 문의해주세요.</div>
   <div class="p-chan">
     {# JS 없이도 링크로 동작하고, JS 가 붙으면 이동 없이 즉시 전환한다. #}
+    <a href="/popular?ch=all" data-ch="all"{% if channel == 'all' %} class="p-on"{% endif %}>전체</a>
     {% for key, label in channels %}
     <a href="/popular?ch={{ key }}" data-ch="{{ key }}"{% if key == channel %} class="p-on"{% endif %}>{{ label }}</a>
     {% endfor %}
@@ -39,6 +41,24 @@
     {% endfor %}
   </div>
   {% endfor %}
+
+  {# 전체 트래픽 상품 — 채널별 구역을 위아래로 #}
+  <div data-chview="all"{% if channel != 'all' %} hidden{% endif %}>
+    <div class="p-sec-h p-all-h"><h2>전체 트래픽 상품</h2><small>{{ views.values() | sum(attribute='total') }}개</small><div class="p-sp"></div>
+      <div class="p-sort">
+        {% for skey, slabel in [('rec', '추천순'), ('rev', '후기순'), ('price', '단가순')] %}
+        <button type="button" data-sort="{{ skey }}"{% if skey == 'rec' %} class="p-on"{% endif %}>{{ slabel }}</button>
+        {% endfor %}
+      </div>
+    </div>
+    {% for key, label in channels %}{% set v = views[key] %}
+    <h2 class="p-chh">{{ label }} <small>{{ v.total }}개</small></h2>
+    {% for glabel, items in v.groups %}
+    <div class="p-gsec"><div class="p-gh">{{ glabel }}<small>{{ items | length }}개</small></div>
+      <div class="p-grid">{% for m in items %}{{ t.card(m) }}{% endfor %}</div></div>
+    {% endfor %}
+    {% endfor %}
+  </div>
 </div>
 {{ t.drawer_shell() }}
 {% endblock %}

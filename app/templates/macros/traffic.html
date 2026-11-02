@@ -35,7 +35,7 @@
 {# 뱃지·환불불가 태그 (드로어용 — 자체개발은 all_tags 가 앞에 붙인다) #}
 {% macro badge_tags(m) -%}
 {% if m.badge_label %}<span class="p-tag{% if m.badge == 'hot' %} p-hot{% elif m.badge == 'new' %} p-new{% endif %}">{{ m.badge_label }}</span>{% endif %}
-{%- if m.no_refund_days %}<span class="p-tag p-no">{{ m.no_refund_days }}일 환불불가</span>{% endif %}
+{%- if (m.no_refund_days or 0) > 3 %}<span class="p-tag p-no">{{ m.no_refund_days }}일 환불불가</span>{% endif %}
 {%- endmacro %}
 
 {# 카드 왼쪽 위 모서리에 걸치는 뱃지 알약 (2026-09-22 JDH — 프로토타입의 본문 태그 대신) #}
@@ -45,7 +45,7 @@
 
 {# 카드 본문에 남는 경고 태그 #}
 {% macro refund_tag(m) -%}
-{% if m.no_refund_days %}<span class="p-tag p-no">{{ m.no_refund_days }}일 환불불가</span>{% endif %}
+{% if (m.no_refund_days or 0) > 3 %}<span class="p-tag p-no">{{ m.no_refund_days }}일 환불불가</span>{% endif %}
 {%- endmacro %}
 
 {# 드로어용 태그 — 자체개발 태그가 앞에 붙는다 #}
@@ -71,14 +71,14 @@
 {# 상품 카드. top=True 면 이번 주 추천 카드(16:11 타일, 한줄평 포함) #}
 {% macro card(m, top=False) %}
 {% if top %}{{ pick_card(m) }}{% else %}
-<button type="button" class="p-card" data-type="{{ m.id }}"
+<button type="button" class="p-card" data-type="{{ m.id }}" data-pos="{{ m.pos if m.pos is defined else 0 }}"
         data-rank="{{ m.rank or 99 }}" data-cnt="{{ m.review_cnt }}" data-price="{{ m.unit_price }}">
   {# 2026-10-26 JDH: 타일 아래 이름 줄은 빼고 라벨을 위로 — BEST·NEW 는 라벨 옆 같은 줄 #}
   <div class="p-ctop">{{ badge_pill(m) }}<span class="p-kind {{ gc(m) }}">{{ band_text(m) }}</span></div>
   {{ tile(m) }}
   <div class="p-r"><span class="p-rt">{{ rate(m) }}</span><span class="p-pr p-num">{{ m.unit_price }}원<small> /회</small></span></div>
   <div class="p-tg">{{ refund_tag(m) }}</div>
-  <div class="p-ds">{{ m.description or '설명이 아직 등록되지 않았습니다.' }}</div>
+  {% if m.description %}<div class="p-ds">{{ m.description }}</div>{% endif %}
 </button>
 {% endif %}
 {% endmacro %}
@@ -90,7 +90,7 @@
   <div class="p-ctop">{{ badge_pill(m) }}<span class="p-kind {{ gc(m) }}">{{ band_text(m) }}</span></div>
   {{ tile(m) }}{# 2026-10-26 JDH: 추천 카드도 이름 타일 그대로 (보라 버튼형 폐기) #}
   <div class="p-r"><span class="p-rt">{{ rate(m) }}</span><span class="p-pr p-num">{{ m.unit_price }}원<small> /회</small></span></div>
-  <div class="p-ds" title="{{ m.description or '' }}">{{ m.description or '설명이 아직 등록되지 않았습니다.' }}</div>
+  {% if m.description %}<div class="p-ds" title="{{ m.description }}">{{ m.description }}</div>{% endif %}
   {% if refund_tag(m) | trim %}<div class="p-tg">{{ refund_tag(m) }}</div>{% endif %}
   {% if m.op_note %}<div class="p-op" title="{{ m.op_note }}"><span class="p-op-t"><b>운영팀 코멘트</b>{{ m.op_note }}</span></div>{% endif %}
 </button>
@@ -102,7 +102,7 @@
   {% if m.rank %}{{ medal(m.rank) }}{% else %}<span class="p-medal p-n">{{ i + 1 }}</span>{% endif %}
   <span>
     <div class="p-nm">{{ m.name }}</div>
-    <div class="p-sub">{{ rate(m) }} · {{ kind(m) }}{% if m.no_refund_days %} · <span class="p-no">{{ m.no_refund_days }}일 환불불가</span>{% endif %}</div>
+    <div class="p-sub">{{ rate(m) }} · {{ kind(m) }}{% if (m.no_refund_days or 0) > 3 %} · <span class="p-no">{{ m.no_refund_days }}일 환불불가</span>{% endif %}</div>
   </span>
   <span class="p-pr p-num">{{ m.unit_price }}원<small>유입 1회</small></span>
 </button>
@@ -121,18 +121,17 @@
   <button type="button" class="p-x" data-close aria-label="닫기">×</button>
 </div>
 <div class="p-db">
-  <section>
+  {% if m.description %}<section>
     <h3>상품 설명</h3>
-    <p>{{ m.description or '설명이 아직 등록되지 않았습니다.' }}</p>
-  </section>
+    <p>{{ m.description }}</p>
+  </section>{% endif %}
   <section>
     <h3>이용 조건</h3>
     <table class="p-spec">
       <tr><th>유입 1회 단가</th><td class="p-num">{{ m.unit_price }}원</td></tr>
       <tr><th>최소 일일 수량</th><td class="p-num">{{ m.min_daily }}회 이상</td></tr>
-      <tr><th>환불 규정</th><td{% if m.no_refund_days %} class="p-warn"{% endif %}>{% if m.no_refund_days %}시작 후 {{ m.no_refund_days }}일간 환불 불가{% else %}미진행분 환불 가능{% endif %}</td></tr>
+      <tr><th>환불 규정</th><td class="p-warn">최소 작업일수 3일 · 접수일 포함 {{ [3, m.no_refund_days or 0] | max }}일간 환불 불가<br><span class="p-dim">접수한 날 낮 12시 전 취소는 전액 환불</span></td></tr>
       <tr><th>순위 반영</th><td>{{ m.rank_lead_days or '-' }}</td></tr>
-      <tr><th>적합 업종</th><td>{{ m.fit_for | join(', ') if m.fit_for else '-' }}</td></tr>
     </table>
   </section>
   {% if m.op_note %}

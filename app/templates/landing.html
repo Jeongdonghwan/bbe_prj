@@ -11,9 +11,6 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
-<script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebSite","name":"{{ APP_NAME }}","url":"{{ PUBLIC_URL or request.url_root | trim('/') }}","description":"{{ SEO.description }}","inLanguage":"ko"}
-</script>
 </head>
 <body class="ld" style="margin:0">
 
@@ -85,7 +82,7 @@
 </div></section>
 
 <section class="ld-sec alt" style="padding-top:64px;padding-bottom:64px"><div class="ld-wrap" style="width:100%">
-  <div class="hd rv" style="margin-bottom:28px"><h2>{{ total_media }}종 매체에 <span class="hl">바로 송출</span></h2><p class="sub">실제 운영 중인 리워드 · 유입형 · 기성 프로그램. 이름을 눌러 보지 않아도 단가가 다 보입니다.</p></div>
+  <div class="hd rv" style="margin-bottom:28px"><h2>국내 모든 매체사 <span class="hl">바로 송출</span></h2><p class="sub">실제 운영 중인 리워드 · 유입형 · 기성 프로그램.</p></div>
   {% for row in marquee_rows %}
   <div class="ld-marq{% if loop.index0 == 1 %} rev{% endif %}"><div class="track">
     {% for _ in range(2) %}{% for name, label, ch in row %}<span class="m c-{{ ch }}"><i>{{ name[:1] }}</i>{{ name }}<small>{{ label }}</small></span>{% endfor %}{% endfor %}
