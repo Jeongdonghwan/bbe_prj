@@ -112,17 +112,12 @@ def main():
     check("운영점검 상품" in h, "목록에 노출")
     check(c.get(f"/campaign/store/{camp['id']}/drawer").status_code == 200, "상세 드로어")
     check(c.get(f"/campaign/store/{camp['id']}/ranks").status_code == 200, "순위 시트")
-    # 2026-11-02 정책: 접수한 날 낮 12시 전 취소는 전액 환불, 그 뒤 접수일 포함 3일은 잠금 (refund_rule).
-    # 방금 접수한 건이라 지금 시각에 따라 둘 중 하나다 — 어느 쪽이든 돈이 사라지지 않아야 한다.
+    # 2026-11-02 정책: 접수한 당일 취소는 전액 환불 (refund_rule) — 방금 접수한 건이라 바로 취소된다.
     r = c.post(f"/campaign/store/{camp['id']}/cancel", follow_redirects=True)
     with app.app_context():
         st = query_one("SELECT status FROM campaigns WHERE id=%s", [camp["id"]])["status"]
         bal2 = query_one("SELECT credit_balance FROM users WHERE id=%s", [uid])["credit_balance"]
-    from datetime import datetime as _dt
-    if _dt.now().hour < 12:
-        check(st == "cancelled", "검수 중 오전 취소 → 전액 환불 취소 (정책)", st)
-    else:
-        check(st == "review" and "최소 작업일수" in body(r), "검수 중 오후 취소는 3일 잠금 (정책)", st)
+    check(st == "cancelled", "검수 중 당일 취소 → 전액 환불 취소 (정책)", st)
     check(bal2 >= bal1, "취소 시도로 잔액이 줄지 않음", f"{bal1}→{bal2}")
 
     print("\n=== 6. 크레딧 충전 요청 ===")

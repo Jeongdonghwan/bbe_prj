@@ -130,7 +130,7 @@
     <table class="p-spec">
       <tr><th>유입 1회 단가</th><td class="p-num">{{ m.unit_price }}원</td></tr>
       <tr><th>최소 일일 수량</th><td class="p-num">{{ m.min_daily }}회 이상</td></tr>
-      <tr><th>환불 규정</th><td class="p-warn">최소 작업일수 3일 · 접수일 포함 {{ [3, m.no_refund_days or 0] | max }}일간 환불 불가<br><span class="p-dim">접수한 날 낮 12시 전 취소는 전액 환불</span></td></tr>
+      <tr><th>환불 규정</th><td class="p-warn">최소 작업일수 3일 · 접수일 포함 {{ [3, m.no_refund_days or 0] | max }}일간 환불 불가<br><span class="p-dim">접수 당일 23:59까지 취소하면 전액 환불</span></td></tr>
       <tr><th>순위 반영</th><td>{{ m.rank_lead_days or '-' }}</td></tr>
     </table>
   </section>

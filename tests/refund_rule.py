@@ -1,6 +1,6 @@
 """회원 취소·중단 환불 규칙 (2026-11-02 JDH). python tests/refund_rule.py
 
-  - 접수한 날 낮 12시 전: 전액 환불 취소
+  - 접수한 날(23:59 까지): 전액 환불 취소
   - 접수일 포함 3일: 중단·환불 불가 (서버가 거절)
   - 그 이후: 구동 전이면 전액 취소, 구동 중이면 잔여일분 중단
   - 위저드 최소 기간 3일 · 매체 섹션으로 자체/기성 구분
@@ -61,19 +61,20 @@ with app.app_context():
     created = c["created_at"]
     day0 = created.replace(hour=9, minute=0)
     c9 = {**c, "created_at": day0}
-    ok(campaign_service.refund_rule(c9, day0.replace(hour=11, minute=59))[0] == "full", "접수 당일 11:59 → 전액")
-    r, unlock = campaign_service.refund_rule(c9, day0.replace(hour=12, minute=1))
-    ok(r == "locked" and unlock == day0.date() + timedelta(days=3), "접수 당일 12:01 → 3일 잠금", (r, unlock))
+    ok(campaign_service.refund_rule(c9, day0.replace(hour=23, minute=59))[0] == "full", "접수 당일 23:59 → 전액")
+    r, unlock = campaign_service.refund_rule(c9, day0 + timedelta(hours=15, minutes=1))
+    ok(r == "locked" and unlock == day0.date() + timedelta(days=3), "다음 날 00:01 → 3일 잠금", (r, unlock))
     ok(campaign_service.refund_rule(c9, day0 + timedelta(days=2, hours=10))[0] == "locked", "접수 3일째 → 잠금")
     ok(campaign_service.refund_rule(c9, day0 + timedelta(days=3))[0] == "normal", "접수 4일째 → 가능")
     old = {**c, "created_at": datetime(2026, 10, 1, 9, 0)}
     ok(campaign_service.refund_rule(old, datetime(2026, 10, 1, 15, 0))[0] == "normal", "규칙 전 접수 건은 예전대로")
 
-# 2) 화면 경로 — 잠금 기간에 접수한 것으로 맞춘다 (오늘 오전 접수 · 지금이 정오 이후면 잠금, 아니면 전날 오후)
+# 2) 화면 경로 — 잠금 기간에 접수한 것으로 맞춘다 (어제 접수)
+campaign_service.REFUND_POLICY_FROM = datetime(2026, 1, 1)   # 배포 당일에도 '어제 접수'가 새 규칙을 타게
+
+
 def locked_created():
-    now = datetime.now()
-    t = now.replace(hour=0, minute=30) if now.hour >= 12 else (now - timedelta(days=1)).replace(hour=13)
-    return max(t, campaign_service.REFUND_POLICY_FROM)
+    return datetime.now() - timedelta(days=1)
 
 
 with app.app_context():
