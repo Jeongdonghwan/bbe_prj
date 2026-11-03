@@ -58,12 +58,28 @@ $1 cd $ROOT && $PY scripts/cron.py $2 >> $ROOT/cron.log 2>&1  # bbe-cron"
   fi
 fi
 
-# restart: kill previous instance if any
+# restart: 옛 프로세스가 완전히 내려간 뒤에 띄운다. 예전엔 1초만 기다려서, 옛 프로세스가 늦게 죽으면
+# 새 프로세스가 포트(8034)를 못 잡고 죽고, 헬스체크는 옛 프로세스가 받아 "OK" — 배포해도 옛 코드가 돌았다 (2026-11-03)
 pkill -f "scripts/serve_preview.py" 2>/dev/null || true
-sleep 1
+for i in $(seq 1 20); do
+  pgrep -f "scripts/serve_preview.py" >/dev/null || break
+  sleep 0.5
+done
+if pgrep -f "scripts/serve_preview.py" >/dev/null; then
+  echo "[deploy] 옛 서버가 안 내려가서 강제 종료합니다"
+  pkill -9 -f "scripts/serve_preview.py" 2>/dev/null || true
+  sleep 1
+fi
 nohup python scripts/serve_preview.py > preview.log 2>&1 &
-sleep 2
+NEWPID=$!
+sleep 3
+if ! kill -0 "$NEWPID" 2>/dev/null; then
+  echo "[deploy] FAILED — 새 서버가 바로 종료됐습니다 (포트 충돌 등). preview.log:"
+  tail -20 preview.log
+  exit 1
+fi
 if curl -sf -o /dev/null http://127.0.0.1:8034/; then
+  echo "[deploy] 새 서버 PID $NEWPID · 코드 $(git log --oneline -1 | cut -c1-60)"
   echo "[deploy] OK — http://$(hostname -I 2>/dev/null | awk '{print $1}'):8034"
 else
   echo "[deploy] FAILED — check preview.log"
