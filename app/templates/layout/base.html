@@ -26,7 +26,14 @@
 <div class="main">
   {% if request.endpoint not in ('main.dashboard', 'my.index') %}{% include "layout/header.html" %}{% endif %}
   <section class="page on">
-    {% with msgs = get_flashed_messages() %}{% if msgs %}<div class="flash">{% for m in msgs %}<div>{{ m }}</div>{% endfor %}</div>{% endif %}{% endwith %}
+    {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% set bar = msgs | rejectattr(0, 'equalto', 'popup') | map(attribute=1) | list %}
+    {% set pop = msgs | selectattr(0, 'equalto', 'popup') | map(attribute=1) | list %}
+    {% if bar %}<div class="flash">{% for m in bar %}<div>{{ m }}</div>{% endfor %}</div>{% endif %}
+    {% if pop %}<div class="modal on" id="flashPop" role="alertdialog" aria-modal="true"><div class="modal-box" style="max-width:420px;text-align:center">
+      {% for m in pop %}<p style="font-size:15px;line-height:1.7;margin:4px 0 16px;white-space:pre-line">{{ m }}</p>{% endfor %}
+      <button class="btn pri" type="button" style="min-width:120px" onclick="this.closest('.modal').classList.remove('on')">확인</button></div></div>{% endif %}
+    {% endwith %}
     {% block content %}{% endblock %}
   </section>
 </div>

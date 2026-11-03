@@ -18,6 +18,9 @@ def _connect():
         database=cfg["DB_NAME"],
         charset="utf8mb4",
         cursorclass=DictCursor,
+        # 한국 시각으로 고정 — 서버가 UTC 면 접수 시각(CURRENT_TIMESTAMP)과 앱 시각(datetime.now)의 '날짜'가
+        # 9시간 어긋나 "접수 당일 취소"가 다음 날로 잡혔다 (2026-11-03)
+        init_command="SET time_zone = '+09:00'",
         autocommit=False,
     )
 

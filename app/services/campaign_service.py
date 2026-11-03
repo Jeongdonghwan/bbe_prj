@@ -622,7 +622,7 @@ def refund_rule(campaign, now=None):
 
 def locked_message(unlock):
     from ..constants import MIN_WORK_DAYS
-    return f"최소 작업일수는 {MIN_WORK_DAYS}일입니다. 환불은 불가합니다. ({unlock:%m.%d}부터 중단할 수 있습니다)"
+    return f"최소 작업일수는 {MIN_WORK_DAYS}일입니다. 환불은 불가합니다.\n{unlock:%m.%d}부터 중단할 수 있습니다."
 
 
 def user_cancel(campaign, actor_id):

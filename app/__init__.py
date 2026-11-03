@@ -153,7 +153,17 @@ def resolve_active(path):
     return best
 
 
+def _pin_timezone():
+    """앱 시각을 한국 시각으로 — 환불 규칙(접수 당일)·매체 마감·나눠 오픈이 모두 '오늘'을 쓴다."""
+    import os
+    import time
+    os.environ["TZ"] = "Asia/Seoul"
+    if hasattr(time, "tzset"):   # 리눅스 서버. 윈도우 로컬은 원래 한국 시각
+        time.tzset()
+
+
 def create_app():
+    _pin_timezone()
     app = Flask(__name__)
     app.config.from_object(Config)
     if app.config["PUBLIC_URL"]:

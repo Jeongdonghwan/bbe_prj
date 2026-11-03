@@ -430,7 +430,7 @@ def cancel(channel, campaign_id):
         from ..services.notify_service import notify_admins
         notify_admins(f"환불 신청(취소) · {g.user['nickname']} [{c['order_no']}]", f"/admin/orders?q={c['order_no']}", sms=True)
     except (campaign_service.CampaignError, payment_service.PaymentError) as e:
-        flash(str(e))
+        flash(str(e), "popup")
     return redirect(url_for("campaign.manage", channel=channel))
 
 
@@ -445,7 +445,7 @@ def stop(channel, campaign_id):
         notify_admins(f"환불 신청(중단) · {g.user['nickname']} [{c['order_no']}] 잔여 {c['refund_amount']:,}원",
                       f"/admin/orders?q={c['order_no']}", sms=True)
     except (campaign_service.CampaignError, payment_service.PaymentError) as e:
-        flash(str(e))
+        flash(str(e), "popup")
     return redirect(url_for("campaign.manage", channel=channel, open=c["id"]))
 
 

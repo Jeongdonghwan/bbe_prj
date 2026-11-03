@@ -106,6 +106,26 @@ with app.app_context():
 ok(d2["status"] == "stopped" and 0 < d2["refund_amount"] < d2["paid_amount"], "잠금 후 중단 → 잔여일분 환불",
    (d2["status"], d2["refund_amount"]))
 
+# 3-1) 관리자 승인 뒤(정상·시작 전)에도 접수 당일이면 전액 취소 (2026-11-03 JDH)
+admin = app.test_client()
+admin.post("/auth/admin/login", data={"email": "admin", "password": "1234"})
+with app.app_context():
+    f = make("D")
+admin.post(f"/admin/orders/{f['id']}/action", data={"action": "approve"})
+with app.app_context():
+    ok(campaign_model.get(f["id"])["status"] == "running", "준비: 승인됨(정상·시작 전)")
+r = user.post(f"/campaign/store/{f['id']}/cancel", follow_redirects=True)
+with app.app_context():
+    f2 = campaign_model.get(f["id"])
+ok(f2["status"] == "cancelled" and f2["refund_amount"] == f2["paid_amount"], "승인 뒤에도 접수 당일 취소 → 전액 환불",
+   (f2["status"], f2["refund_amount"]))
+# 잠금 안내는 상단 띠가 아니라 팝업으로
+with app.app_context():
+    g_ = make("E")
+    execute("UPDATE campaigns SET created_at = %s WHERE id = %s", [locked_created(), g_["id"]])
+h = user.post(f"/campaign/store/{g_['id']}/cancel", follow_redirects=True).get_data(as_text=True)
+ok('id="flashPop"' in h and "최소 작업일수는 3일" in h, "잠금 안내는 팝업")
+
 # 4) 최소 기간 3일
 with app.app_context():
     e = make("C", days=2)
