@@ -309,6 +309,17 @@ def create_app():
     app.jinja_env.globals.update(sort_link=sort_link, sort_arrow=sort_arrow, per_link=per_link, per_now=per_now,
                                  PER_OPTIONS=PER_OPTIONS)
 
+    @app.url_defaults
+    def _static_version(endpoint, values):
+        """정적 파일 주소에 수정 시각을 붙인다 (?v=...). 배포 뒤에도 브라우저가 옛 JS·CSS 를 쓰던 문제
+        (띠배너·취소 팝업이 '안 바뀐' 것처럼 보였다, 2026-11-03) — 파일이 바뀌면 주소가 바뀌어 새로 받는다."""
+        if endpoint == "static" and "filename" in values and "v" not in values:
+            import os
+            try:
+                values["v"] = int(os.path.getmtime(os.path.join(app.static_folder, values["filename"])))
+            except OSError:
+                pass
+
     @app.template_filter("fmt_num")
     def fmt_num(v):
         try:
