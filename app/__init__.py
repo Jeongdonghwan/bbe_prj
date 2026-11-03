@@ -154,7 +154,7 @@ def resolve_active(path):
 
 
 def _pin_timezone():
-    """앱 시각을 한국 시각으로 — 환불 규칙(접수 당일)·매체 마감·나눠 오픈이 모두 '오늘'을 쓴다."""
+    """앱 시각을 한국 시각으로 — 환불 규칙(구동일)·매체 마감·나눠 오픈이 모두 '오늘'을 쓴다."""
     import os
     import time
     os.environ["TZ"] = "Asia/Seoul"

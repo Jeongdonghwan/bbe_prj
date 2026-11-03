@@ -93,10 +93,10 @@ BANK_DUE_DAYS = 3
 
 # 환불 규칙 (2026-11-02 JDH) — 판정은 campaign_service.refund_rule() 한 곳
 MIN_WORK_DAYS = 3            # 최소 작업일수 = 광고 기간 최소 일수
-NO_REFUND_DAYS = 3           # 접수일 포함 3일간 중단·환불 불가 (매체 no_refund_days 가 더 길면 그쪽)
-# 접수한 날(자정 전, 23:59 까지) 취소하면 전액 환불 — 2026-11-02 JDH 정정(처음엔 낮 12시였다)
-REFUND_NOTICE = (f"최소 작업일수는 {MIN_WORK_DAYS}일입니다. 접수일 포함 {NO_REFUND_DAYS}일간은 중단·환불이 불가합니다. "
-                 "(접수한 당일 23:59까지 취소하면 전액 환불)")
+NO_REFUND_DAYS = 3           # 구동 시작일부터 3일간 중단·환불 불가 (매체 no_refund_days 가 더 길면 그쪽)
+# 구동 시작 전(시작일 전날 23:59 까지)에는 승인 여부와 상관없이 전액 환불 취소 — 2026-11-03 JDH (접수일 기준 → 구동일 기준)
+REFUND_NOTICE = (f"구동 시작 전날 23:59까지는 취소하면 전액 환불됩니다. 구동이 시작되면 최소 작업일수 {MIN_WORK_DAYS}일 동안 "
+                 "중단·환불이 불가하고, 그 뒤 중단하면 남은 일수만큼 환불됩니다.")
 
 CUTOFF_TIME = "13:30"
 DATE_PRESETS = [10, 20, 30]

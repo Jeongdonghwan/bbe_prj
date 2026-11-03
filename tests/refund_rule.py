@@ -1,8 +1,8 @@
 """회원 취소·중단 환불 규칙 (2026-11-02 JDH). python tests/refund_rule.py
 
-  - 접수한 날(23:59 까지): 전액 환불 취소
-  - 접수일 포함 3일: 중단·환불 불가 (서버가 거절)
-  - 그 이후: 구동 전이면 전액 취소, 구동 중이면 잔여일분 중단
+  - 구동 시작 전(시작일 전날 23:59 까지, 승인 여부 무관): 전액 환불 취소
+  - 구동 시작일부터 3일: 중단·환불 불가 (서버가 거절, 안내는 팝업)
+  - 그 이후: 잔여일분 환불하고 중단
   - 위저드 최소 기간 3일 · 매체 섹션으로 자체/기성 구분
 """
 import os
@@ -54,77 +54,59 @@ def make(suffix, days=10):
         return query_one("SELECT * FROM campaigns WHERE biz_name = %s", [NAME + suffix])
 
 
-# 1) 판정 함수
+# 1) 판정 함수 — 구동 시작일 기준 (2026-11-03 JDH)
+from datetime import date as _d  # noqa: E402
 with app.app_context():
     c = make("A")
     ok(c is not None, "캠페인 등록")
-    created = c["created_at"]
-    day0 = created.replace(hour=9, minute=0)
-    c9 = {**c, "created_at": day0}
-    ok(campaign_service.refund_rule(c9, day0.replace(hour=23, minute=59))[0] == "full", "접수 당일 23:59 → 전액")
-    r, unlock = campaign_service.refund_rule(c9, day0 + timedelta(hours=15, minutes=1))
-    ok(r == "locked" and unlock == day0.date() + timedelta(days=3), "다음 날 00:01 → 3일 잠금", (r, unlock))
-    ok(campaign_service.refund_rule(c9, day0 + timedelta(days=2, hours=10))[0] == "locked", "접수 3일째 → 잠금")
-    ok(campaign_service.refund_rule(c9, day0 + timedelta(days=3))[0] == "normal", "접수 4일째 → 가능")
+    base = {**c, "created_at": datetime(2026, 11, 2, 10, 0)}
+    # 예 1) 11/2 승인 · 11/3 구동 → 11/2 23:59 까지 전액, 11/3~11/5 잠금, 11/6 부터 중단
+    e1 = {**base, "status": "running", "start_date": _d(2026, 11, 3)}
+    ok(campaign_service.refund_rule(e1, datetime(2026, 11, 2, 23, 59))[0] == "full", "예1) 11/2 23:59 → 전액 취소")
+    r, unlock = campaign_service.refund_rule(e1, datetime(2026, 11, 3, 0, 1))
+    ok(r == "locked" and unlock == _d(2026, 11, 6), "예1) 구동일 11/3 → 잠금, 11/6 부터", (r, unlock))
+    ok(campaign_service.refund_rule(e1, datetime(2026, 11, 5, 23, 0))[0] == "locked", "예1) 11/5 → 아직 잠금")
+    ok(campaign_service.refund_rule(e1, datetime(2026, 11, 6, 0, 0))[0] == "normal", "예1) 11/6 → 중단 가능")
+    # 예 2) 11/2 신청 · 11/3 승인 · 11/4 구동 → 11/3 23:59 까지 전액
+    e2 = {**base, "status": "running", "start_date": _d(2026, 11, 4)}
+    ok(campaign_service.refund_rule(e2, datetime(2026, 11, 3, 23, 59))[0] == "full", "예2) 승인 다음 날이라도 구동 전날 23:59 → 전액")
+    ok(campaign_service.refund_rule(e2, datetime(2026, 11, 4, 9, 0))[0] == "locked", "예2) 구동일 11/4 → 잠금")
+    ok(campaign_service.refund_rule({**base, "status": "review", "start_date": _d(2026, 11, 3)}, datetime(2026, 11, 5))[0] == "full",
+       "검수 중(한 번도 안 돎)이면 시작일이 지나도 전액")
     old = {**c, "created_at": datetime(2026, 10, 1, 9, 0)}
     ok(campaign_service.refund_rule(old, datetime(2026, 10, 1, 15, 0))[0] == "normal", "규칙 전 접수 건은 예전대로")
 
-# 2) 화면 경로 — 잠금 기간에 접수한 것으로 맞춘다 (어제 접수)
-campaign_service.REFUND_POLICY_FROM = datetime(2026, 1, 1)   # 배포 당일에도 '어제 접수'가 새 규칙을 타게
+campaign_service.REFUND_POLICY_FROM = datetime(2026, 1, 1)   # 화면 검사는 오늘 만든 캠페인으로
 
-
-def locked_created():
-    return datetime.now() - timedelta(days=1)
-
-
+# 2) 승인 뒤(정상·시작 전) 하루 지나도 구동 전이면 전액 취소 — 화면 경로
+admin = app.test_client()
+admin.post("/auth/admin/login", data={"email": "admin", "password": "1234"})
+admin.post(f"/admin/orders/{c['id']}/action", data={"action": "approve"})
 with app.app_context():
-    execute("UPDATE campaigns SET created_at = %s WHERE id = %s", [locked_created(), c["id"]])
-    ok(campaign_service.refund_rule(campaign_model.get(c["id"]))[0] == "locked", "준비: 잠금 상태")
-user.post(f"/campaign/store/{c['id']}/cancel")
-with app.app_context():
-    ok(campaign_model.get(c["id"])["status"] == "review", "잠금 기간엔 취소 안 됨")
-    # 4일 전 접수 + 구동 전 → 전액 취소
-    execute("UPDATE campaigns SET created_at = %s WHERE id = %s", [datetime.now() - timedelta(days=4), c["id"]])
+    execute("UPDATE campaigns SET created_at = %s WHERE id = %s", [datetime.now() - timedelta(days=1), c["id"]])
+    ok(campaign_model.get(c["id"])["status"] == "running", "준비: 어제 접수·승인, 내일 구동")
 user.post(f"/campaign/store/{c['id']}/cancel")
 with app.app_context():
     c2 = campaign_model.get(c["id"])
-ok(c2["status"] == "cancelled" and c2["refund_amount"] == c2["paid_amount"], "잠금 후 구동 전 취소 → 전액 환불",
+ok(c2["status"] == "cancelled" and c2["refund_amount"] == c2["paid_amount"], "구동 전이면 승인 뒤에도 전액 취소",
    (c2["status"], c2["refund_amount"], c2["paid_amount"]))
 
-# 3) 구동 중 중단 — 잠금이면 거절, 지나면 잔여일분
+# 3) 구동 중 중단 — 시작일부터 3일은 거절(팝업), 지나면 잔여일분
 with app.app_context():
     d = make("B")
-    execute("UPDATE campaigns SET status='running', start_date = DATE_SUB(CURDATE(), INTERVAL 1 DAY), end_date = DATE_ADD(CURDATE(), INTERVAL 8 DAY), "
-            "created_at = %s WHERE id = %s", [locked_created(), d["id"]])
-user.post(f"/campaign/store/{d['id']}/stop")
+    execute("UPDATE campaigns SET status='running', start_date = DATE_SUB(CURDATE(), INTERVAL 1 DAY), "
+            "end_date = DATE_ADD(CURDATE(), INTERVAL 8 DAY) WHERE id = %s", [d["id"]])
+h = user.post(f"/campaign/store/{d['id']}/stop", follow_redirects=True).get_data(as_text=True)
 with app.app_context():
-    ok(campaign_model.get(d["id"])["status"] == "running", "잠금 기간엔 중단 안 됨")
-    execute("UPDATE campaigns SET created_at = %s WHERE id = %s", [datetime.now() - timedelta(days=5), d["id"]])
+    ok(campaign_model.get(d["id"])["status"] == "running", "구동 2일째 → 중단 안 됨")
+ok('id="flashPop"' in h and "최소 작업일수는 3일" in h, "잠금 안내는 팝업")
+with app.app_context():
+    execute("UPDATE campaigns SET start_date = DATE_SUB(CURDATE(), INTERVAL 3 DAY) WHERE id = %s", [d["id"]])
 user.post(f"/campaign/store/{d['id']}/stop")
 with app.app_context():
     d2 = campaign_model.get(d["id"])
-ok(d2["status"] == "stopped" and 0 < d2["refund_amount"] < d2["paid_amount"], "잠금 후 중단 → 잔여일분 환불",
+ok(d2["status"] == "stopped" and 0 < d2["refund_amount"] < d2["paid_amount"], "구동 4일째 중단 → 잔여일분 환불",
    (d2["status"], d2["refund_amount"]))
-
-# 3-1) 관리자 승인 뒤(정상·시작 전)에도 접수 당일이면 전액 취소 (2026-11-03 JDH)
-admin = app.test_client()
-admin.post("/auth/admin/login", data={"email": "admin", "password": "1234"})
-with app.app_context():
-    f = make("D")
-admin.post(f"/admin/orders/{f['id']}/action", data={"action": "approve"})
-with app.app_context():
-    ok(campaign_model.get(f["id"])["status"] == "running", "준비: 승인됨(정상·시작 전)")
-r = user.post(f"/campaign/store/{f['id']}/cancel", follow_redirects=True)
-with app.app_context():
-    f2 = campaign_model.get(f["id"])
-ok(f2["status"] == "cancelled" and f2["refund_amount"] == f2["paid_amount"], "승인 뒤에도 접수 당일 취소 → 전액 환불",
-   (f2["status"], f2["refund_amount"]))
-# 잠금 안내는 상단 띠가 아니라 팝업으로
-with app.app_context():
-    g_ = make("E")
-    execute("UPDATE campaigns SET created_at = %s WHERE id = %s", [locked_created(), g_["id"]])
-h = user.post(f"/campaign/store/{g_['id']}/cancel", follow_redirects=True).get_data(as_text=True)
-ok('id="flashPop"' in h and "최소 작업일수는 3일" in h, "잠금 안내는 팝업")
 
 # 4) 최소 기간 3일
 with app.app_context():

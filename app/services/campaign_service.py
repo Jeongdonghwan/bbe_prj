@@ -599,22 +599,25 @@ REFUND_POLICY_FROM = datetime(2026, 11, 2)
 
 
 def refund_rule(campaign, now=None):
-    """회원이 지금 취소·중단을 누르면 어떻게 되는지.
+    """회원이 지금 취소·중단을 누르면 어떻게 되는지 — **구동 시작일 기준** (2026-11-03 JDH).
 
-    ("full", None)        접수한 날(23:59 까지) — 전액 환불하고 취소
-    ("locked", 날짜)       접수일 포함 3일(매체 환불불가 일수가 더 길면 그만큼) — 중단·환불 불가, 날짜부터 가능
-    ("normal", None)      그 이후 — 구동 전이면 전액, 구동 중이면 잔여일분 환불
+    ("full", None)        구동 시작 전(시작일 전날 23:59 까지, 승인 여부 무관) — 전액 환불하고 취소
+    ("locked", 날짜)       구동 시작일부터 3일(매체 환불불가 일수가 더 길면 그만큼) — 중단·환불 불가, 날짜부터 가능
+    ("normal", None)      그 이후 — 잔여일분 환불하고 중단
+
+    예) 11/2 승인 · 11/3 구동 → 11/2 23:59 까지 전액 취소, 11/3~11/5 잠금, 11/6 부터 중단.
+        11/2 신청 · 11/3 승인 · 11/4 구동 → 11/3 23:59 까지 전액 취소.
     """
     from ..constants import NO_REFUND_DAYS
     now = now or datetime.now()
-    created = campaign["created_at"]
-    if created < REFUND_POLICY_FROM:
+    if campaign["created_at"] < REFUND_POLICY_FROM:
         return "normal", None
-    if created.date() == now.date():
-        return "full", None
+    start = campaign["start_date"]
+    if campaign["status"] != "running" or now.date() < start:
+        return "full", None                     # 아직 한 번도 돌지 않았다
     media = media_model.get(campaign["media_id"]) or {}
     days = max(NO_REFUND_DAYS, media.get("no_refund_days") or 0)
-    unlock = created.date() + timedelta(days=days)
+    unlock = start + timedelta(days=days)
     if now.date() < unlock:
         return "locked", unlock
     return "normal", None
@@ -634,7 +637,7 @@ def user_cancel(campaign, actor_id):
     rule, unlock = refund_rule(campaign)
     if rule == "locked":
         raise CampaignError(locked_message(unlock))
-    c = transition(campaign, "cancelled", actor_id, "회원 취소 · 전액 환불" + (" (접수 당일)" if rule == "full" else ""))
+    c = transition(campaign, "cancelled", actor_id, "회원 취소 · 구동 전 전액 환불")
     left = c["paid_amount"] - c["refund_amount"]
     if left > 0:
         payment_service.refund(c, left, actor_id, "회원 취소 · 전액")

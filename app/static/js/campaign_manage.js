@@ -16,7 +16,7 @@
       if (window.lucide) window.lucide.createIcons();
     });
   }
-  // 취소·중단 — 접수일 포함 3일 안이면 막고 안내 (서버도 같은 규칙으로 거절한다, refund_rule)
+  // 취소·중단 — 구동 시작일부터 3일 안이면 막고 안내 (서버도 같은 규칙으로 거절한다, refund_rule)
   document.addEventListener('submit', function (e) {
     var f = e.target.closest('form[data-refund]'); if (!f) return;
     if (f.dataset.refund === 'locked') {
