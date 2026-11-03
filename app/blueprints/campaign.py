@@ -426,7 +426,7 @@ def cancel(channel, campaign_id):
             flash("주문을 취소했습니다.")
         else:                           # 구동 전 취소 — 환불 규칙(refund_rule) 적용, 전액 환불
             c = campaign_service.user_cancel(c, g.user["id"])
-            flash(f"캠페인을 취소했습니다. {c['refund_amount']:,}원이 크레딧으로 환불되었습니다.")
+            flash(f"캠페인을 취소했습니다.\n{c['refund_amount']:,}원이 크레딧으로 환불되었습니다.", "popup")
         from ..services.notify_service import notify_admins
         notify_admins(f"환불 신청(취소) · {g.user['nickname']} [{c['order_no']}]", f"/admin/orders?q={c['order_no']}", sms=True)
     except (campaign_service.CampaignError, payment_service.PaymentError) as e:
@@ -440,7 +440,7 @@ def stop(channel, campaign_id):
     c = _own(_channel(channel), campaign_id)
     try:
         c = campaign_service.stop(c, g.user["id"], by_user=True)
-        flash(f"캠페인을 중단했습니다. 잔여일분 {c['refund_amount']:,}원이 환불 처리됩니다.")
+        flash(f"캠페인을 중단했습니다.\n남은 일수만큼 {c['refund_amount']:,}원이 크레딧으로 환불되었습니다.", "popup")
         from ..services.notify_service import notify_admins
         notify_admins(f"환불 신청(중단) · {g.user['nickname']} [{c['order_no']}] 잔여 {c['refund_amount']:,}원",
                       f"/admin/orders?q={c['order_no']}", sms=True)
@@ -546,7 +546,7 @@ def popular():
     """채널·정렬 모두 클라이언트 전환. 현재 채널은 ?ch= 에 남겨 새로고침·공유 시 유지된다."""
     valid = [k for k, _ in TRAFFIC_CHANNELS]
     # ?ch=all = 전체 트래픽 상품 보기 (세 채널을 탭 없이 한 화면, 2026-11-02 JDH)
-    channel = request.args.get("ch") if request.args.get("ch") in valid + ["all"] else valid[0]
+    channel = request.args.get("ch") if request.args.get("ch") in valid + ["all"] else "all"   # 기본 = 전체 (2026-11-03)
     shown_week = weekly_rank.latest_week(valid[0] if channel == "all" else channel) or weekly_rank.week_start()
     return render_template("popular/index.html", channel=channel, channels=TRAFFIC_CHANNELS,
                            week_label=weekly_rank.week_label(shown_week),

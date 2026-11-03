@@ -63,7 +63,7 @@
     {% for icon, label, href in [
       ('map-pin', '플레이스 상위노출', '/campaign/place/new'), ('shopping-bag', '스토어 상위노출', '/campaign/store/new'),
       ('package', '쿠팡 상위노출', '/campaign/coupang/new'), ('trending-up', '순위 추적', '/guide'),
-      ('search', '키워드 조회', '/tools/keyword'), ('award', '인기 트래픽', '/popular'),
+      ('search', '키워드 조회', '/tools/keyword'), ('award', '전체 트래픽 보기', '/popular'),
       ('wallet', '크레딧 충전', '/credit/charge'), ('book-open', '이용가이드', '/guide'),
     ] %}
     <a class="rv" style="--d:{{ loop.index0 * 0.06 }}s" href="{{ href }}"><span class="ic"><i data-lucide="{{ icon }}"></i></span>{{ label }}</a>
@@ -178,7 +178,7 @@
 
 <footer class="ld-foot"><div class="ld-wrap">
   <a class="ld-logo" href="/"><img src="{{ url_for('static', filename='img/logo-sym-violet.png') }}" alt="">{{ APP_NAME }}</a>
-  <nav><a href="/guide">이용가이드</a><a href="/popular">인기 트래픽</a><a href="/notice">공지사항</a><a href="/terms">이용약관</a><a href="/privacy">개인정보처리방침</a><a href="/">서비스 둘러보기</a></nav>
+  <nav><a href="/guide">이용가이드</a><a href="/popular">전체 트래픽 보기</a><a href="/notice">공지사항</a><a href="/terms">이용약관</a><a href="/privacy">개인정보처리방침</a><a href="/">서비스 둘러보기</a></nav>
   <span class="copy">© {{ now_year }} {{ APP_NAME }}</span>
 </div></footer>
 

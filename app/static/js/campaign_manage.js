@@ -16,16 +16,32 @@
       if (window.lucide) window.lucide.createIcons();
     });
   }
-  // 취소·중단 — 구동 시작일부터 3일 안이면 막고 안내 (서버도 같은 규칙으로 거절한다, refund_rule)
+  // 취소·중단 — 확인 팝업을 한 번 더 띄운다. 구동 시작일부터 3일 안이면 막고 안내 (서버도 같은 규칙, refund_rule)
+  function popup(msg, onOk) {
+    var m = document.createElement('div');
+    m.className = 'modal on';
+    m.setAttribute('role', 'alertdialog');
+    m.innerHTML = '<div class="modal-box" style="max-width:420px;text-align:center">' +
+      '<p style="font-size:15px;line-height:1.7;margin:4px 0 18px;white-space:pre-line"></p>' +
+      '<div style="display:flex;gap:8px;justify-content:center">' +
+      (onOk ? '<button class="btn sec" type="button" data-no style="min-width:110px">아니요</button>' : '') +
+      '<button class="btn pri" type="button" data-yes style="min-width:110px">' + (onOk ? '네, 진행할게요' : '확인') + '</button></div></div>';
+    m.querySelector('p').textContent = msg;
+    document.body.appendChild(m);
+    function close() { m.remove(); }
+    m.querySelector('[data-yes]').addEventListener('click', function () { close(); if (onOk) onOk(); });
+    var no = m.querySelector('[data-no]'); if (no) no.addEventListener('click', close);
+    m.addEventListener('click', function (e) { if (e.target === m) close(); });
+    m.querySelector('[data-yes]').focus();
+  }
   document.addEventListener('submit', function (e) {
-    var f = e.target.closest('form[data-refund]'); if (!f) return;
+    var f = e.target.closest('form[data-refund]'); if (!f || f.dataset.ok === '1') return;
+    e.preventDefault();
     if (f.dataset.refund === 'locked') {
-      e.preventDefault();
-      alert('최소 작업일수는 3일입니다. 환불은 불가합니다.' + (f.dataset.unlock ? '
-(' + f.dataset.unlock + '부터 중단할 수 있습니다)' : ''));
+      popup('최소 작업일수는 3일입니다. 환불은 불가합니다.' + (f.dataset.unlock ? '\n' + f.dataset.unlock + '부터 중단할 수 있습니다.' : ''));
       return;
     }
-    if (!confirm(f.dataset.ask)) e.preventDefault();
+    popup(f.dataset.ask, function () { f.dataset.ok = '1'; f.submit(); });
   }, true);
   var rm = document.getElementById('rankModal'), rb = document.getElementById('rankBody');
   function closeRanks() { if (rm) rm.classList.remove('on'); }

@@ -24,7 +24,6 @@ MENU = {
             "title": "캠페인",
             "items": [
                 {"label": "전체 캠페인 관리", "icon": "layout-list", "href": "/campaign/all"},
-                {"label": "전체 트래픽 상품 보기", "icon": "layout-grid", "href": "/popular?ch=all"},
             ],
         },
         {
@@ -52,7 +51,7 @@ MENU = {
                         {"label": "캠페인 관리", "href": "/campaign/place"},
                     ],
                 },
-                {"label": "인기 트래픽", "icon": "trending-up", "href": "/popular"},
+                {"label": "전체 트래픽 보기", "icon": "layout-grid", "href": "/popular"},   # 2026-11-03 JDH: 인기 트래픽 → 전체 트래픽 보기
             ],
         },
         {
@@ -157,8 +156,8 @@ def _pin_timezone():
     """앱 시각을 한국 시각으로 — 환불 규칙(구동일)·매체 마감·나눠 오픈이 모두 '오늘'을 쓴다."""
     import os
     import time
-    os.environ["TZ"] = "Asia/Seoul"
-    if hasattr(time, "tzset"):   # 리눅스 서버. 윈도우 로컬은 원래 한국 시각
+    if hasattr(time, "tzset"):   # 리눅스 서버만. 윈도우는 tzset 이 없어 TZ 를 넣으면 오히려 UTC 로 읽는다
+        os.environ["TZ"] = "Asia/Seoul"
         time.tzset()
 
 

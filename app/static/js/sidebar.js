@@ -8,11 +8,11 @@
   });
 
   var ts = document.getElementById('topstrip'), tx = document.getElementById('stripX');
-  try { if (ts && sessionStorage.getItem('stripHide')) ts.style.display = 'none'; } catch (e) {}
+  // X 는 지금 화면에서만 닫는다 — 새로고침하면 다시 보인다 (2026-11-03 JDH, 예전엔 탭을 닫을 때까지 숨겼다)
+  try { sessionStorage.removeItem('stripHide'); } catch (e) {}
   if (tx) tx.addEventListener('click', function (e) {
     e.preventDefault(); e.stopPropagation();
     ts.style.display = 'none';
-    try { sessionStorage.setItem('stripHide', '1'); } catch (e2) {}
   });
 
   var sidebar = document.querySelector('.sidebar');

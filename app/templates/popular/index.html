@@ -1,10 +1,10 @@
 {% extends "layout/base.html" %}
 {% import "macros/traffic.html" as t with context %}
-{% block title %}인기 트래픽{% endblock %}
+{% block title %}전체 트래픽 보기{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/popular.css') }}">{% endblock %}
 {% block content %}
 <div class="poppage">
-  <h1>인기 트래픽</h1>
+  <h1>전체 트래픽 보기</h1>
   <p class="p-lede">채널별 트래픽 상품과 실제 진행한 사업자 후기. 추천 순위는 운영팀이 주간 접수량·반려율을 보고 직접 정합니다.</p>
   <div class="p-api"><b>자체 개발(리워드 · 유입플) 상품은 API로 연동</b>되어 있어 캠페인을 만들면 자동으로 접수·진행됩니다. 기성 상품은 카카오톡으로 문의해주세요.</div>
   <div class="p-chan">
