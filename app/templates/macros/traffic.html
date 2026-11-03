@@ -78,7 +78,7 @@
   {{ tile(m) }}
   <div class="p-r"><span class="p-rt">{{ rate(m) }}</span><span class="p-pr p-num">{{ m.unit_price }}원<small> /회</small></span></div>
   <div class="p-tg">{{ refund_tag(m) }}</div>
-  {% if m.description %}<div class="p-ds">{{ m.description }}</div>{% endif %}
+  {# 상품 설명은 카드에서 빼고 눌렀을 때 드로어에서만 (2026-11-03 JDH) #}
 </button>
 {% endif %}
 {% endmacro %}
