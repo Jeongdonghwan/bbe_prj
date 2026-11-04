@@ -15,20 +15,23 @@
 <meta property="og:url" content="{{ _canon }}">
 <meta property="og:title" content="{{ _title }}">
 <meta property="og:description" content="{{ _desc }}">
-<meta property="og:image" content="{{ _origin }}{{ url_for('static', filename='img/og.png') }}">
+<meta property="og:image" content="{{ _origin }}{{ og_image or url_for('static', filename='img/og.png') }}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="{{ APP_NAME }} — {{ SEO.title }}">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{{ _title }}">
 <meta name="twitter:description" content="{{ _desc }}">
-<meta name="twitter:image" content="{{ _origin }}{{ url_for('static', filename='img/og.png') }}">
+<meta name="twitter:image" content="{{ _origin }}{{ og_image or url_for('static', filename='img/og.png') }}">
 {% if NAVER_SITE_VERIFICATION %}<meta name="naver-site-verification" content="{{ NAVER_SITE_VERIFICATION }}">{% endif %}
 {% if GOOGLE_SITE_VERIFICATION %}<meta name="google-site-verification" content="{{ GOOGLE_SITE_VERIFICATION }}">{% endif %}
-<link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo-sym-violet.png') }}">
+{# 파비콘 — 구글은 정사각형·48의 배수만 쓴다 (예전 119×96 로고는 무시돼 검색결과에 지구 아이콘이 떴다, 2026-11-04) #}
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='img/favicon-192.png') }}">
+<link rel="apple-touch-icon" href="{{ url_for('static', filename='img/apple-touch-icon.png') }}">
 {% if request.path in ('/', '/intro') %}{# 브랜드 검색("마이마케팅")에 사이트 이름으로 잡히게 — 홈·인트로에만 #}
-<script type="application/ld+json">{{ {"@context": "https://schema.org", "@graph": [
-  {"@type": "WebSite", "@id": _origin ~ "/#website", "name": APP_NAME, "alternateName": ["셀프마이마케팅", SEO.domain], "url": _origin ~ "/", "inLanguage": "ko", "description": SEO.description},
-  {"@type": "Organization", "@id": _origin ~ "/#org", "name": APP_NAME, "alternateName": "셀프마이마케팅", "url": _origin ~ "/", "logo": _origin ~ url_for('static', filename='img/logo.png')}]} | tojson }}</script>
+{# @graph 하나로 묶으면 네이버·일부 도구가 최상위 @type 을 못 읽는다 — 블록을 나눈다 #}
+<script type="application/ld+json">{{ {"@context": "https://schema.org", "@type": "WebSite", "name": APP_NAME, "alternateName": ["셀프마이마케팅", SEO.domain], "url": _origin ~ "/", "inLanguage": "ko", "description": SEO.description} | tojson }}</script>
+<script type="application/ld+json">{{ {"@context": "https://schema.org", "@type": "Organization", "name": APP_NAME, "alternateName": "셀프마이마케팅", "url": _origin ~ "/", "logo": _origin ~ url_for('static', filename='img/favicon-512.png'), "sameAs": [KAKAO_CHAT_URL]} | tojson }}</script>
 {% endif %}{% for j in jsonld or [] %}<script type="application/ld+json">{{ j | tojson }}</script>
 {% endfor %}<link rel="alternate" type="application/rss+xml" title="{{ APP_NAME }} 블로그" href="{{ _origin }}/rss.xml">

@@ -59,7 +59,8 @@ def learn_page(slug):
         lds.append(jsonld.service(o, f"{page['kw']} 셀프 유입 캠페인", page["desc"], page["path"], prices[page["channel"]], name))
     from ..services import seo_regional
     m = seo_regional.meta() if page["kind"] in seo_regional.BUILDERS else seo_pages.meta()
-    return render_template("learn/page.html", page=page, meta=m, prices=prices,
+    from urllib.parse import quote
+    return render_template("learn/page.html", page=page, meta=m, prices=prices, og_image=f"/og/learn/{quote(slug)}.png",
                            meta_title=page["title"], meta_desc=page["desc"], jsonld=lds)
 
 
@@ -86,10 +87,35 @@ def blog_post(slug):
         abort(404)
     o, name = _origin(), current_app.config["APP_NAME"]
     newer = [x for x in blog.posts() if x["slug"] != slug][:6]
-    return render_template("learn/blog_post.html", p=p, more=newer, og_type="article",
+    from urllib.parse import quote
+    return render_template("learn/blog_post.html", p=p, more=newer, og_type="article", og_image=f"/og/blog/{quote(slug)}.png",
                            meta_title=p["title"], meta_desc=p["desc"],
                            jsonld=[jsonld.breadcrumb(o, [("블로그", "/blog/"), (p["title"], None)], p["path"]),
                                    jsonld.article(o, p, name)])
+
+
+@bp.route("/og/learn/<slug>.png")
+def og_learn(slug):
+    """페이지별 공유 이미지 — 키워드(h1) + 핵심 숫자 하나 (og_image.py). 열리지 않은 페이지는 404."""
+    from flask import send_file
+    from ..services import og_image
+    page = seo_pages.build(slug, _prices())
+    if not page:
+        abort(404)
+    k, v = page["stats"][0] if page.get("stats") else ("", "")
+    p = og_image.path_for("learn", slug, page["h1"], f"{k} {v}".strip(), current_app.config["APP_NAME"])
+    return send_file(p, mimetype="image/png", max_age=86400)
+
+
+@bp.route("/og/blog/<slug>.png")
+def og_blog(slug):
+    from flask import send_file
+    from ..services import og_image
+    p_ = blog.get(slug)
+    if not p_:
+        abort(404)
+    p = og_image.path_for("blog", slug, p_["title"], "셀프 마케팅 블로그", current_app.config["APP_NAME"])
+    return send_file(p, mimetype="image/png", max_age=86400)
 
 
 @bp.route("/rss.xml")

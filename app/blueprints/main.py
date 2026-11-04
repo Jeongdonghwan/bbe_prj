@@ -1,5 +1,5 @@
 """Dashboard (/) · 홍보 랜딩 (/intro) · robots/sitemap + shared placeholder renderer."""
-from flask import Blueprint, Response, g, render_template, request
+from flask import Blueprint, Response, current_app, g, render_template, request
 
 from ..models import banner as banner_model
 from ..models import content as content_model
@@ -52,6 +52,13 @@ def landing():
                            total_media=sum(c["count"] for c in channels),
                            min_charge=credit_service.MIN_CHARGE, bank_due_days=BANK_DUE_DAYS,
                            order_cutoff=ORDER_CUTOFF, min_daily=MEDIA_MIN_DAILY)
+
+
+@bp.route("/favicon.ico")
+def favicon():
+    """루트 /favicon.ico — 검색엔진·브라우저가 <link> 없이도 여기부터 찾는다."""
+    from flask import send_from_directory
+    return send_from_directory(current_app.static_folder, "favicon.ico", mimetype="image/x-icon", max_age=86400)
 
 
 @bp.route("/robots.txt")
