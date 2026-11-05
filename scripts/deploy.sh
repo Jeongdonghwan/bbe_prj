@@ -58,6 +58,44 @@ $1 cd $ROOT && $PY scripts/cron.py $2 >> $ROOT/cron.log 2>&1  # bbe-cron"
   fi
 fi
 
+# restart — systemd 서비스로 돌린다 (2026-11-05). nohup 으로 띄우면 서버 재부팅·프로세스 종료 때
+# 다시 안 떠서 사이트가 502 가 됐다. 서비스는 부팅 때 자동 시작, 죽으면 3초 뒤 다시 뜬다.
+ROOT="$(pwd)"
+if command -v systemctl >/dev/null 2>&1 && [ -d /etc/systemd/system ]; then
+  UNIT=/etc/systemd/system/mymarketing.service
+  cat > "$UNIT.new" <<UNITEOF
+[Unit]
+Description=mymarketing (bbe_prj) web :8034
+After=network.target mariadb.service mysql.service
+
+[Service]
+WorkingDirectory=$ROOT
+ExecStart=$ROOT/.venv/bin/python $ROOT/scripts/serve_preview.py
+Restart=always
+RestartSec=3
+StandardOutput=append:$ROOT/preview.log
+StandardError=append:$ROOT/preview.log
+
+[Install]
+WantedBy=multi-user.target
+UNITEOF
+  if ! cmp -s "$UNIT.new" "$UNIT" 2>/dev/null; then mv "$UNIT.new" "$UNIT"; systemctl daemon-reload; else rm -f "$UNIT.new"; fi
+  systemctl enable mymarketing >/dev/null 2>&1 || true
+  # nohup 으로 떠 있던 옛 서버(서비스 밖)가 포트를 쥐고 있으면 먼저 내린다
+  if ! systemctl is-active --quiet mymarketing; then pkill -f "scripts/serve_preview.py" 2>/dev/null || true; sleep 2; fi
+  systemctl restart mymarketing
+  for i in $(seq 1 20); do curl -sf -o /dev/null http://127.0.0.1:8034/ && break; sleep 0.5; done
+  if curl -sf -o /dev/null http://127.0.0.1:8034/; then
+    echo "[deploy] 서비스 mymarketing 실행 중 · 코드 $(git log --oneline -1 | cut -c1-60)"
+    echo "[deploy]   상태: systemctl status mymarketing   로그: tail -f preview.log"
+    exit 0
+  fi
+  echo "[deploy] FAILED — 서비스가 응답하지 않습니다. preview.log:"
+  tail -30 preview.log
+  systemctl status mymarketing --no-pager | tail -15
+  exit 1
+fi
+
 # restart: 옛 프로세스가 완전히 내려간 뒤에 띄운다. 예전엔 1초만 기다려서, 옛 프로세스가 늦게 죽으면
 # 새 프로세스가 포트(8034)를 못 잡고 죽고, 헬스체크는 옛 프로세스가 받아 "OK" — 배포해도 옛 코드가 돌았다 (2026-11-03)
 pkill -f "scripts/serve_preview.py" 2>/dev/null || true
