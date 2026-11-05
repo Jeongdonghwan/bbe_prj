@@ -1,7 +1,7 @@
 """실운영 전 테스트 데이터 초기화 (2026-11-05 JDH).
 
-    python scripts/reset_for_launch.py          # 드라이런 — 지울 개수만 보여준다
-    python scripts/reset_for_launch.py --yes    # 백업(JSON) 뒤 실제 삭제
+    python scripts/reset_for_launch.py          # 지울 개수를 보여주고, yes 를 입력하면 백업(JSON) 뒤 삭제
+    python scripts/reset_for_launch.py --yes    # 묻지 않고 바로 백업 뒤 삭제
 
 지우는 것
   1. 캠페인 전부 (+ 일자별 순위·상태 이력·후기·삭제 이력)
@@ -100,8 +100,15 @@ def main():
         print(f"  {'크레딧 잔액 0 으로':<22} {len(bal):>6}명 (합계 {sum(int(b['credit_balance']) for b in bal):,}원)")
         print("  남김: 회원·운영자 계정 · 매체 단가·설정 · 배너·띠배너 · 오늘의 인기·주간 추천 · 사이트 설정")
         if not go:
-            print("\n실제로 지우려면: python scripts/reset_for_launch.py --yes")
-            return 0
+            # 터미널에서 실행했으면 그 자리에서 확인을 받는다 (--yes 를 따로 붙이는 게 헷갈렸다, 2026-11-05)
+            if sys.stdin.isatty():
+                ans = input("\n위 내용을 지우려면 yes 를 입력하고 Enter (그 밖의 입력은 취소): ").strip().lower()
+                if ans != "yes":
+                    print("취소했습니다. 아무것도 지우지 않았습니다.")
+                    return 0
+            else:
+                print("\n실제로 지우려면: python scripts/reset_for_launch.py --yes")
+                return 0
 
         out = ROOT / "instance" / f"reset_backup_{datetime.now():%Y%m%d_%H%M%S}.json"
         out.parent.mkdir(exist_ok=True)
